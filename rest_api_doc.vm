@@ -1,0 +1,180 @@
+#macro( fieldheaders )
+<tr><th style="width: 25%">field</th><th style="width: 20%">type</th><th>description</th></tr>
+#end
+#macro( parameterheaders )
+<tr><th style="width: 25%">parameter</th><th style="width: 20%">type</th><th>description</th></tr>
+#end
+#macro( fieldrow $field )
+                    <tr>
+                        <td>
+                            <span class="fieldname">$field.name</span><br>
+                            <span class="fieldrequired">
+                #if ($field.required)
+                            required
+                #else
+                            optional
+                #end
+                            </span>
+                        </td>
+                        <td>
+                            <span class="type" id="type">$link.type( $field.type )</span>
+                #if ($field.hasRestrictions)
+                    #foreach( $restriction in $field.restrictions)
+                            <br><span>$restriction.restriction</span>
+                        #if ($restriction.hasMultipleValues)
+                            <ul>
+                            #foreach( $value in $restriction.values)
+                                <li>$value</li>
+                            #end
+                            </ul>
+                        #else
+                            $restriction.value
+                        #end
+                    #end
+                #end
+                        </td>
+                        <td>
+                            $field.description
+                        </td>
+                    </tr>
+#end
+<html>
+<head>
+    <title>$document.title</title>
+    <link href="css/api.css" rel="stylesheet">
+</head>
+<body>
+    <section id="toc" role="directory">
+        <h1>Table of Contents</h1>
+        <ul>
+#if ($document.hasDataObjects)
+            <li>Data Objects</li>
+                <ul>
+    #foreach( $dataObject in $document.dataObjects )
+                    <li><a href="#$dataObject.name">$dataObject.name</a></li>
+    #end
+                </ul>
+#end
+            <li>Resources</li>
+                <ul>
+#foreach( $resource in $document.service.resources )
+                    <li><a href="#$resource.uri">$resource.uri</a></li>
+#end
+                </ul>
+        </ul>
+    </section>
+    <section id="api" role="main">
+#if ($document.hasDataObjects)
+        <section>
+            <h2>Data Objects</h2>
+#foreach( $dataObject in $document.dataObjects )
+            <section>
+                <h3 id="$dataObject.name">$dataObject.name</h3>
+                <p>$dataObject.description</p>
+    #if ($dataObject.hasFields)
+                <table>
+                    #fieldheaders
+        #foreach( $field in $dataObject.fields )
+                    #fieldrow( $field )
+        #end
+                </table>
+    #end
+    #if ($dataObject.hasChildren)
+                <h4>Discriminator</h4>
+                <table>
+                    #fieldheaders
+                    #fieldrow( $dataObject.discriminator )
+                </table>
+                <h4>Child Types</h4>
+        #foreach( $child in $dataObject.childTypes )
+                <h5>$child.name</h5>
+                <p>$child.description</p>
+                <table>
+                    #fieldheaders
+            #foreach( $field in $child.fields )
+                    #fieldrow( $field )
+            #end
+                </table>
+        #end
+    #end
+            </section>
+#end
+        </section>
+#end
+        <section>
+            <h1>Service</h1>
+#if ($document.service.hasCommon)
+                <h2>Common Request Components</h2>
+    #if ($document.service.common.hasHeaders)
+                <h3>Headers</h3>
+                    <table>
+                        #parameterheaders
+            #foreach( $header in $document.service.common.headers )
+                    #fieldrow( $header )
+            #end
+                    </table>
+    #end
+    #if ($document.service.common.hasParameters)
+                <h3>Headers</h3>
+                    <table>
+                        #parameterheaders
+            #foreach( $parameter in $document.service.common.parameters )
+                    #fieldrow( $parameter )
+            #end
+                    </table>
+    #end
+#end
+            <section id="resources">
+            <h2>Resources</h2>
+#foreach( $resource in $document.service.resources )
+            <section>
+                <h3 id="$resource.uri">$resource.uri</h3>
+                <p>$resource.description</p>
+					<div class="methods">
+    #foreach( $method in $resource.actions )
+                <section class="method">
+                    <h4>$method.method</h4>
+                    <p>$method.description</p>
+                    <h5>Allowed Protocols</h5>
+                        <ul>
+        #foreach( $code in $method.protocolsAllowed )
+                            <li>$code</li>
+        #end
+                        </ul>
+        #if ($method.hasParameters)
+                    <h5>Parameters</h5>
+                    <table>
+                        #parameterheaders
+            #foreach( $parameter in $method.parameters )
+                    #fieldrow( $parameter )
+            #end
+                    </table>
+        #end
+        #if ($method.hasRequestBody)
+                    <h5>Request Body</h5>
+                    <p style="font-weight: bold">$method.requestBody.encoding</p>
+                    <p>$link.type($method.requestBody.description)</p>
+        #end
+                    <h5>Response</h5>
+                    <p>$link.type($method.response)</p>
+                    <h5>Success Codes</h5>
+                        <ul>
+        #foreach( $code in $method.successCodes )
+                            <li>$code</li>
+        #end
+                        </ul>
+                    <h5>Failure Codes</h5>
+                        <ul>
+        #foreach( $code in $method.failureCodes )
+                            <li>$code</li>
+        #end
+                    </ul>
+                </section>
+    #end
+                </div>
+            </section>
+#end
+            </section>
+        </section>
+    </section>
+</body></html>
