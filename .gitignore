@@ -1,3 +1,5 @@
-/artifacts/
-/classes/
-bin
+/gradle/
+
+/build/
+
+/.gradle/

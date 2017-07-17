@@ -1,0 +1,31 @@
+group 'org.giffardtechnologies'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    compile fileTree(includes: ['*.jar'], dir: 'manual-libs')
+    // https://mvnrepository.com/artifact/org.yaml/snakeyaml
+    compile group: 'org.yaml', name: 'snakeyaml', version: '1.18'
+    // https://mvnrepository.com/artifact/org.apache.velocity/velocity
+    compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
+    // https://mvnrepository.com/artifact/org.apache.velocity/velocity-tools
+    compile group: 'org.apache.velocity', name: 'velocity-tools', version: '2.0'
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.1'
+
+}
+
+
+task getDeps(type: Copy) {
+    from sourceSets.main.runtimeClasspath
+    into 'runtime-libs/'
+}

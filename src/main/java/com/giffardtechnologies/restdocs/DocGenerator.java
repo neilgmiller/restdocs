@@ -28,13 +28,17 @@ public class DocGenerator implements LogChute {
 	
 	private File mSourceFile;
 	private File mOutputFile;
-	
+
+	private File mTemplateDir;
+	private String mTemplateFileName;
+
 	public static void main(String[] args) throws IOException {
 		DocGenerator docGenerator = new DocGenerator();
 		
 		File propertiesFile;
-		if (args.length == 2 && args[0].equals("-f")) {
-			propertiesFile = new File(args[1]);
+		File executableDir = new File(args[0]);
+		if (args.length == 3 && args[1].equals("-f")) {
+			propertiesFile = new File(args[2]);
 		} else {
 			propertiesFile = new File("docbuild.properties");
 		}
@@ -44,7 +48,23 @@ public class DocGenerator implements LogChute {
 		
 		properties.load(propsInStream);
 		propsInStream.close();
-		
+
+		File templateFile;
+		String templateFilePath = properties.getProperty("templateFile");
+		if (templateFilePath == null) {
+			docGenerator.setTemplateDir(executableDir);
+		} else {
+			templateFile = new File(propertiesFile.getParentFile(), templateFilePath);
+
+			if (!templateFile.exists()) {
+				System.err.println("No template file at: " + templateFile.getAbsolutePath());
+				return;
+			}
+
+			docGenerator.setTemplateDir(templateFile.getParentFile().getAbsoluteFile());
+			docGenerator.setTemplateFileName(templateFile.getName());
+		}
+
 		docGenerator.setSourceFile(new File(propertiesFile.getParentFile(), properties.getProperty("sourceFile")));
 		docGenerator.setOutputFile(new File(propertiesFile.getParentFile(), properties.getProperty("outputFile")));
 		
@@ -67,6 +87,22 @@ public class DocGenerator implements LogChute {
 		mOutputFile = outputFile;
 	}
 	
+	public File getTemplateDir() {
+		return mTemplateDir;
+	}
+
+	public void setTemplateDir(File templateDir) {
+		mTemplateDir = templateDir;
+	}
+
+	public String getTemplateFileName() {
+		return mTemplateFileName;
+	}
+
+	public void setTemplateFileName(String templateFileName) {
+		mTemplateFileName = templateFileName;
+	}
+
 	private void generate() throws IOException {
 		BufferedInputStream input = new BufferedInputStream(new FileInputStream(mSourceFile));
 		Yaml yaml = new Yaml();
@@ -104,22 +140,31 @@ public class DocGenerator implements LogChute {
 		/*
 		 *  initialize the engine
 		 */
-		
-		ve.init();
-		
-		Template t = ve.getTemplate("rest_api_doc.vm");
-		
+
+		Template t;
+		Properties p = new Properties();
+		p.setProperty("file.resource.loader.path", mTemplateDir.getAbsolutePath());
+
+		ve.init(p);
+
+		if (getTemplateFileName() == null) {
+			t = ve.getTemplate("rest_api_doc.vm");
+		} else {
+			t = ve.getTemplate(getTemplateFileName());
+		}
+
 		VelocityContext context = new VelocityContext();
 		
 		context.put("document", doc);
 		context.put("esc", new EscapeTool());
 		context.put("link", new LinkTool(doc));
 		
-		StringWriter sw = new StringWriter();
-		t.merge(context, sw);
-		
-		output.println(sw.getBuffer().toString());
-		
+//		StringWriter sw = new StringWriter();
+//		t.merge(context, sw);
+//		
+//		output.println(sw.getBuffer().toString());
+		mOutputFile.getParentFile().mkdirs();
+
 		FileWriter fileWriter = new FileWriter(mOutputFile);
 		t.merge(context, fileWriter);
 		fileWriter.close();

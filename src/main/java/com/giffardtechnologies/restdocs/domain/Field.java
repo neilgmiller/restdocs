@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class Field {
 	private String name;
+	private String longName = "";
 	private String description;
 	private boolean required = true;
 	private String type;
@@ -16,7 +17,15 @@ public class Field {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
+	public String getLongName() {
+		return longName;
+	}
+
+	public void setLongName(String longName) {
+		this.longName = longName;
+	}
+
 	public String getDescription() {
 		return description;
 	}
