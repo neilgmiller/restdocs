@@ -133,7 +133,7 @@
 					<div class="methods">
     #foreach( $method in $resource.actions )
                 <section class="method">
-                    <h4>$method.method</h4>
+                    <h4>$method.methodString</h4>
                     <p>$method.description</p>
                     <h5>Allowed Protocols</h5>
                         <ul>

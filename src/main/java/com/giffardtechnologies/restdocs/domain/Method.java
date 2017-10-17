@@ -16,7 +16,7 @@ public class Method {
 		CONNECT
 	}
 	
-	private String method;
+	private HTTPMethod method;
 	@SerializedName("protocols allowed")
 	private ArrayList<String> protocolsAllowed = new ArrayList<>();
 	private String description = "";
@@ -35,11 +35,15 @@ public class Method {
 		protocolsAllowed.add("HTTP");
 	}
 	
-	public String getMethod() {
+	public String getMethodString() {
+		return method == null ? "null" : method.name();
+	}
+
+	public HTTPMethod getMethod() {
 		return method;
 	}
-	
-	public void setMethod(String method) {
+
+	public void setMethod(HTTPMethod method) {
 		this.method = method;
 	}
 	

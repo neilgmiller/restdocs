@@ -114,7 +114,7 @@ public class DocGenerator implements LogChute {
 		input.close();
 		
 		GsonBuilder gsonBuilder = new GsonBuilder();
-		gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
+		gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory(true));
 		gsonBuilder.registerTypeAdapter(boolean.class, new BooleanDeserializer());
 		gsonBuilder.setPrettyPrinting();
 		Gson gsonForPrinting = gsonBuilder.create();
