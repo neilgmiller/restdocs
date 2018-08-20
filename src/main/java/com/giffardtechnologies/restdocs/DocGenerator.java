@@ -6,9 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.StringWriter;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -23,9 +23,21 @@ import org.yaml.snakeyaml.Yaml;
 import com.giffardtechnologies.restdocs.domain.Document;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
-public class DocGenerator implements LogChute {
-	
+@Command(description = "Generates documents or code based for a given API descriptor",
+		name = "doc_generator", mixinStandardHelpOptions = true, version = "DocGenerator 1.0")
+public class DocGenerator implements LogChute, Callable<Void> {
+
+	@Parameters(index = "0", hidden = true, description = "The executable directory, passed by the wrapper script.")
+	private File mExecutableDir;
+
+	@Option(names = {"-f", "-p", "--properties"}, description = "The properties file describing the generation.")
+	private File mPropertiesFile;
+
 	private File mSourceFile;
 	private File mOutputFile;
 
@@ -34,43 +46,46 @@ public class DocGenerator implements LogChute {
 
 	public static void main(String[] args) throws IOException {
 		DocGenerator docGenerator = new DocGenerator();
-		
-		File propertiesFile;
-		File executableDir = new File(args[0]);
-		if (args.length == 3 && args[1].equals("-f")) {
-			propertiesFile = new File(args[2]);
-		} else {
-			propertiesFile = new File("docbuild.properties");
+
+		CommandLine.call(docGenerator, args);
+	}
+
+	@Override
+	public Void call() throws Exception {
+		if (mPropertiesFile == null) {
+			mPropertiesFile = new File("docbuild.properties");
 		}
-		
+
 		Properties properties = new Properties();
-		BufferedInputStream propsInStream = new BufferedInputStream(new FileInputStream(propertiesFile));
-		
+		BufferedInputStream propsInStream = new BufferedInputStream(new FileInputStream(mPropertiesFile));
+
 		properties.load(propsInStream);
 		propsInStream.close();
 
 		File templateFile;
 		String templateFilePath = properties.getProperty("templateFile");
 		if (templateFilePath == null) {
-			docGenerator.setTemplateDir(executableDir);
+			setTemplateDir(mExecutableDir);
 		} else {
-			templateFile = new File(propertiesFile.getParentFile(), templateFilePath);
+			templateFile = new File(mPropertiesFile.getParentFile(), templateFilePath);
 
 			if (!templateFile.exists()) {
 				System.err.println("No template file at: " + templateFile.getAbsolutePath());
-				return;
+				return null;
 			}
 
-			docGenerator.setTemplateDir(templateFile.getParentFile().getAbsoluteFile());
-			docGenerator.setTemplateFileName(templateFile.getName());
+			setTemplateDir(templateFile.getParentFile().getAbsoluteFile());
+			setTemplateFileName(templateFile.getName());
 		}
 
-		docGenerator.setSourceFile(new File(propertiesFile.getParentFile(), properties.getProperty("sourceFile")));
-		docGenerator.setOutputFile(new File(propertiesFile.getParentFile(), properties.getProperty("outputFile")));
-		
-		docGenerator.generate();
+		setSourceFile(new File(mPropertiesFile.getParentFile(), properties.getProperty("sourceFile")));
+		setOutputFile(new File(mPropertiesFile.getParentFile(), properties.getProperty("outputFile")));
+
+		generate();
+
+		return null;
 	}
-	
+
 	public File getSourceFile() {
 		return mSourceFile;
 	}
