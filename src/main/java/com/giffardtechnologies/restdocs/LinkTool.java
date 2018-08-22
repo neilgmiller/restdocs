@@ -47,4 +47,16 @@ public class LinkTool {
 		matcher.appendTail(builder);
 		return builder.toString();
 	}
+
+	public String typeSimple(String typeName) {
+		if (typeName == null) {
+			return null;
+		}
+		if (mDataObjectNames.contains(typeName)) {
+			return "<a href=\"#" + typeName + "\">" + typeName + "</a>";
+		} else {
+			return typeName;
+		}
+	}
+
 }
