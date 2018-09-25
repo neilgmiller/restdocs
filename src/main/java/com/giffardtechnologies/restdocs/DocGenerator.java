@@ -43,6 +43,7 @@ public class DocGenerator implements LogChute, Callable<Void> {
 
 	private File mTemplateDir;
 	private String mTemplateFileName;
+	private Properties mProperties;
 
 	public static void main(String[] args) throws IOException {
 		DocGenerator docGenerator = new DocGenerator();
@@ -56,14 +57,14 @@ public class DocGenerator implements LogChute, Callable<Void> {
 			mPropertiesFile = new File("docbuild.properties");
 		}
 
-		Properties properties = new Properties();
+		mProperties = new Properties();
 		BufferedInputStream propsInStream = new BufferedInputStream(new FileInputStream(mPropertiesFile));
 
-		properties.load(propsInStream);
+		mProperties.load(propsInStream);
 		propsInStream.close();
 
 		File templateFile;
-		String templateFilePath = properties.getProperty("templateFile");
+		String templateFilePath = mProperties.getProperty("templateFile");
 		if (templateFilePath == null) {
 			setTemplateDir(mExecutableDir);
 		} else {
@@ -74,12 +75,17 @@ public class DocGenerator implements LogChute, Callable<Void> {
 				return null;
 			}
 
-			setTemplateDir(templateFile.getParentFile().getAbsoluteFile());
+			File parentFile = templateFile.getParentFile();
+			if (parentFile == null) {
+				setTemplateDir(mExecutableDir);
+			} else {
+				setTemplateDir(parentFile.getAbsoluteFile());
+			}
 			setTemplateFileName(templateFile.getName());
 		}
 
-		setSourceFile(new File(mPropertiesFile.getParentFile(), properties.getProperty("sourceFile")));
-		setOutputFile(new File(mPropertiesFile.getParentFile(), properties.getProperty("outputFile")));
+		setSourceFile(new File(mPropertiesFile.getParentFile(), mProperties.getProperty("sourceFile")));
+		setOutputFile(new File(mPropertiesFile.getParentFile(), mProperties.getProperty("outputFile")));
 
 		generate();
 
@@ -119,27 +125,8 @@ public class DocGenerator implements LogChute, Callable<Void> {
 	}
 
 	private void generate() throws IOException {
-		BufferedInputStream input = new BufferedInputStream(new FileInputStream(mSourceFile));
-		Yaml yaml = new Yaml();
-//		YamlReader yamlReader = new YamlReader(new InputStreamReader(input));
-		
-//		yamlReader.read();
-		Map map = (Map) yaml.load(input);
-//		Document doc = yaml.loadAs(input, Document.class);
-		input.close();
-		
-		GsonBuilder gsonBuilder = new GsonBuilder();
-		gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory(true));
-		gsonBuilder.registerTypeAdapter(boolean.class, new BooleanDeserializer());
-		gsonBuilder.setPrettyPrinting();
-		Gson gsonForPrinting = gsonBuilder.create();
-		String json = gsonForPrinting.toJson(map);
-//		System.out.println(json);
-		PrintStream output = System.out;
-		Document doc = gsonForPrinting.fromJson(json, Document.class);
-//		for (DataObject dataObject : doc.getDataObjects()) {
-//			output.println(dataObject.getName());
-//		}
+		Document doc = parseDocument();
+
 		/*
 		 *  create a new instance of the engine
 		 */
@@ -173,7 +160,8 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		context.put("document", doc);
 		context.put("esc", new EscapeTool());
 		context.put("link", new LinkTool(doc));
-		
+		context.put("text", new PlainTextTool(doc));
+
 //		StringWriter sw = new StringWriter();
 //		t.merge(context, sw);
 //		
@@ -185,6 +173,31 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		fileWriter.close();
 	}
 	
+	private Document parseDocument() throws IOException {
+		BufferedInputStream input = new BufferedInputStream(new FileInputStream(mSourceFile));
+		Yaml yaml = new Yaml();
+//		YamlReader yamlReader = new YamlReader(new InputStreamReader(input));
+
+//		yamlReader.read();
+		Map map = (Map) yaml.load(input);
+//		Document doc = yaml.loadAs(input, Document.class);
+		input.close();
+
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory(true))
+				.registerTypeAdapter(boolean.class, new BooleanDeserializer())
+				.setPrettyPrinting();
+
+		Gson gsonForPrinting = gsonBuilder.create();
+		String json = gsonForPrinting.toJson(map);
+//		System.out.println(json);
+		PrintStream output = System.out;
+		//		for (DataObject dataObject : doc.getDataObjects()) {
+//			output.println(dataObject.getName());
+//		}
+		return gsonForPrinting.fromJson(json, Document.class);
+	}
+
 	@Override
 	public void init(RuntimeServices rsvc) throws Exception {
 		// TODO Auto-generated method stub
