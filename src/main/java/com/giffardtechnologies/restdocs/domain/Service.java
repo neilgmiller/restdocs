@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Service {
 	private String description;
 	private Common common;
-	private ArrayList<Resource> resources;
+	private ArrayList<Method> methods;
 	
 	public static class Common {
 		private ArrayList<Field> headers;
@@ -69,12 +69,12 @@ public class Service {
 		this.common = common;
 	}
 	
-	public ArrayList<Resource> getResources() {
-		return resources;
+	public ArrayList<Method> getMethods() {
+		return methods;
 	}
 	
-	public void setResources(ArrayList<Resource> resources) {
-		this.resources = resources;
+	public void setMethods(ArrayList<Method> methods) {
+		this.methods = methods;
 	}
 	
 }

@@ -19,12 +19,14 @@ public class Method {
 	private HTTPMethod method;
 	@SerializedName("protocols allowed")
 	private ArrayList<String> protocolsAllowed = new ArrayList<>();
+	private int id;
+	private String name = "";
 	private String description = "";
 	private ArrayList<Field> headers;
 	private ArrayList<Field> parameters;
 	@SerializedName("request body")
 	private RequestBody requestBody;
-	private String response;
+	private Response response;
 	@SerializedName("successful codes")
 	private ArrayList<String> successCodes;
 	@SerializedName("failure codes")
@@ -37,6 +39,22 @@ public class Method {
 	
 	public String getMethodString() {
 		return method == null ? "null" : method.name();
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public HTTPMethod getMethod() {
@@ -107,11 +125,11 @@ public class Method {
 		this.requestBody = requestBody;
 	}
 	
-	public String getResponse() {
+	public Response getResponse() {
 		return response;
 	}
 	
-	public void setResponse(String response) {
+	public void setResponse(Response response) {
 		this.response = response;
 	}
 	

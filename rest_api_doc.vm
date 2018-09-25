@@ -57,7 +57,7 @@
 #end
             <li>Resources</li>
                 <ul>
-#foreach( $resource in $document.service.resources )
+#foreach( $resource in $document.service.methods )
                     <li><a href="#$resource.uri">$resource.uri</a></li>
 #end
                 </ul>
@@ -124,9 +124,9 @@
                     </table>
     #end
 #end
-            <section id="resources">
+            <section id="methods">
             <h2>Resources</h2>
-#foreach( $resource in $document.service.resources )
+#foreach( $resource in $document.service.methods )
             <section>
                 <h3 id="$resource.uri">$resource.uri</h3>
                 <p>$resource.description</p>
