@@ -1,6 +1,7 @@
 group 'org.giffardtechnologies'
 version '1.0-SNAPSHOT'
 
+apply plugin: 'application'
 apply plugin: 'java'
 
 sourceCompatibility = 1.8
@@ -26,8 +27,28 @@ dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.1'
     compile 'com.google.guava:guava:22.0'
 
+
 }
 
+mainClassName = 'com.giffardtechnologies.restdocs.DocGenerator'
+
+startScripts {
+    applicationName = 'doc_generator'
+    def gen = unixStartScriptGenerator
+    gen.template = resources.text.fromString(
+            gen.template.asString().replaceFirst('(?=\nDEFAULT_JVM_OPTS=.*?\n)') {
+                '\nJAVA_OPTS="\\$JAVA_OPTS "\'"-Dprogdir=\\$APP_HOME" "-Dexecdir=\\$SAVED"\''
+            })
+    def genWin = windowsStartScriptGenerator
+    genWin.template = resources.text.fromString(
+            genWin.template.asString().replaceFirst('(?=\nset DEFAULT_JVM_OPTS=.*?\n)') {
+                '\nJAVA_OPTS="%JAVA_OPTS "\'"-Dprogdir=%APP_HOME" "-Dexecdir=%DIRNAME"\''
+            })
+}
+
+installDist {
+    into '/Users/ngm/Dev/API-Docs/restdocs'
+}
 
 task getDeps(type: Copy) {
     from sourceSets.main.runtimeClasspath

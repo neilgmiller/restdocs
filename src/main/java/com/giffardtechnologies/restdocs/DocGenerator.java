@@ -36,7 +36,7 @@ import picocli.CommandLine.Parameters;
 		name = "doc_generator", mixinStandardHelpOptions = true, version = "DocGenerator 1.0")
 public class DocGenerator implements LogChute, Callable<Void> {
 
-	@Parameters(index = "0", hidden = true, description = "The executable directory, passed by the wrapper script.")
+//	@Parameters(index = "0", hidden = true, description = "The executable directory, passed by the wrapper script.")
 	private File mExecutableDir;
 
 	@Option(names = {"-f", "-p", "--properties"}, description = "The properties file describing the generation.")
@@ -60,6 +60,7 @@ public class DocGenerator implements LogChute, Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
+		mExecutableDir = new File(System.getProperty("execdir"));
 		if (mPropertiesFile == null) {
 			mPropertiesFile = new File("docbuild.properties");
 		}
