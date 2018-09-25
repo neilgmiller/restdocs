@@ -6,10 +6,14 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
+import com.giffardtechnologies.restdocs.domain.DataObject;
+import com.giffardtechnologies.restdocs.domain.DataType;
+import com.giffardtechnologies.restdocs.domain.Method;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -37,6 +41,9 @@ public class DocGenerator implements LogChute, Callable<Void> {
 
 	@Option(names = {"-f", "-p", "--properties"}, description = "The properties file describing the generation.")
 	private File mPropertiesFile;
+
+	@Option(names = {"-c", "--code"}, description = "Flag indicating that the command should generate Java code.")
+	private boolean mGenCode = false;
 
 	private File mSourceFile;
 	private File mOutputFile;
@@ -87,7 +94,11 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		setSourceFile(new File(mPropertiesFile.getParentFile(), mProperties.getProperty("sourceFile")));
 		setOutputFile(new File(mPropertiesFile.getParentFile(), mProperties.getProperty("outputFile")));
 
-		generate();
+		if (mGenCode) {
+			generateCode();
+		} else {
+			generate();
+		}
 
 		return null;
 	}
@@ -172,7 +183,112 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		t.merge(context, fileWriter);
 		fileWriter.close();
 	}
-	
+
+	private void generateCode() throws IOException {
+		Document doc = parseDocument();
+
+		/*
+		 *  create a new instance of the engine
+		 */
+		VelocityEngine ve = new VelocityEngine();
+
+		/*
+		 *  configure the engine.  In this case, we are using
+		 *  ourselves as a logger (see logging examples..)
+		 */
+
+		ve.setProperty(VelocityEngine.RUNTIME_LOG_LOGSYSTEM, this);
+
+		/*
+		 *  initialize the engine
+		 */
+
+		Template t;
+		Properties p = new Properties();
+//		p.setProperty("file.resource.loader.path", mTemplateDir.getAbsolutePath());
+		p.setProperty("globbing.resource.loader.path", mTemplateDir.getAbsolutePath());
+		p.setProperty("resource.loader", "globbing,string");
+		p.setProperty("globbing.resource.loader.class", "org.apache.velocity.tools.view.StructuredGlobbingResourceLoader");
+		p.setProperty("string.resource.loader.class", "org.apache.velocity.runtime.resource.loader.StringResourceLoader");
+
+		ve.init(p);
+
+		File codeDir = new File(mProperties.getProperty("codeDir"));
+		// TODO check this exists
+
+		String dtoTemplateFileName = mProperties.getProperty("dtoTemplateFile");
+		// TODO make this parameterized
+		if (dtoTemplateFileName == null) {
+			t = ve.getTemplate("rest_api_dto.vm");
+		} else {
+			t = ve.getTemplate(dtoTemplateFileName);
+		}
+
+		VelocityContext context = new VelocityContext();
+		context.put("java", new JavaTool(doc));
+
+		String dtoPackage = mProperties.getProperty("dtoPackage");
+		String dtoPath = dtoPackage.replaceAll("\\.", "/");
+
+		File dtoDir = new File(codeDir, dtoPath);
+		dtoDir.mkdirs();
+
+		context.put("destinationPackage", dtoPackage);
+		for (DataObject dataObject : doc.getDataObjects()) {
+			context.put("dataObject", dataObject);
+
+			FileWriter fileWriter = new FileWriter(new File(dtoDir, dataObject.getName() + ".java"));
+			t.merge(context, fileWriter);
+			fileWriter.close();
+		}
+
+		// add the DTO package for future reference
+		context.put("dtoPackage", dtoPackage);
+
+		// create the responses
+		String responsePackage = mProperties.getProperty("responsePackage");
+		String responsePath = responsePackage.replaceAll("\\.", "/");
+
+		File responseDir = new File(codeDir, responsePath);
+		responseDir.mkdirs();
+
+		context.put("destinationPackage", responsePackage);
+		for (Method method : doc.getService().getMethods()) {
+			if (method.getResponse().getType() == DataType.OBJECT) {
+				String responseClassName = method.getName().substring(0, 1).toUpperCase() + method.getName().substring(1) + "Response";
+
+				// setup a temp DataObject
+				DataObject dataObject = new DataObject();
+				dataObject.setName(responseClassName);
+				dataObject.setFields(method.getResponse().getFields());
+
+				context.put("dataObject", dataObject);
+
+				FileWriter fileWriter = new FileWriter(new File(responseDir, responseClassName + ".java"));
+				t.merge(context, fileWriter);
+				fileWriter.close();
+			}
+		}
+
+		String requestTemplateFileName = mProperties.getProperty("requestTemplateFile", "rest_api_req.vm");
+		t = ve.getTemplate(requestTemplateFileName);
+
+		String requestPackage = mProperties.getProperty("requestPackage");
+		String requestPath = requestPackage.replaceAll("\\.", "/");
+
+		File requestDir = new File(codeDir, requestPath);
+		requestDir.mkdirs();
+
+		context.put("destinationPackage", requestPackage);
+		for (Method method : doc.getService().getMethods()) {
+			context.put("method", method);
+
+			FileWriter fileWriter = new FileWriter(new File(requestDir, method.getName().substring(0,1).toUpperCase() + method.getName().substring(1) + "Request.java"));
+			t.merge(context, fileWriter);
+			fileWriter.close();
+		}
+	}
+
 	private Document parseDocument() throws IOException {
 		BufferedInputStream input = new BufferedInputStream(new FileInputStream(mSourceFile));
 		Yaml yaml = new Yaml();
