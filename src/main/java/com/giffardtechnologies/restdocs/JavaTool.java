@@ -89,6 +89,10 @@ public class JavaTool {
 		return false;
 	}
 
+	public String toGetterStyle(String input) {
+		return input.replaceAll("Id$", "ID");
+	}
+
 	public String toConstantStyle(String input) {
 		input = input.replaceAll("ID", "Id");
 		return CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, input);

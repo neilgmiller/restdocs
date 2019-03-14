@@ -234,6 +234,12 @@ public class DocGenerator implements LogChute, Callable<Void> {
 
 		context.put("destinationPackage", dtoPackage);
 		for (DataObject dataObject : doc.getDataObjects()) {
+			for (Field field : dataObject.getFields()) {
+				if (field.getLongName().equalsIgnoreCase(dataObject.getName() + "id")) {
+					field.setLongName("id");
+				}
+			}
+
 			context.put("dataObject", dataObject);
 
 			FileWriter fileWriter = new FileWriter(new File(dtoDir, dataObject.getName() + ".java"));
