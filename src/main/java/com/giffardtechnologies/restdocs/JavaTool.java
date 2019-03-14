@@ -31,16 +31,27 @@ public class JavaTool {
 	}
 	
 	public String fieldClass(Field field) {
+		return fieldClass(field, false);
+	}
+
+	public String fieldClass(Field field, boolean convertIntBoolean) {
 		Objects.requireNonNull(field, "A field is required");
-		String typeStr = getTypeString(field, field.isRequired());
+		String typeStr = getTypeString(field, field.isRequired(), convertIntBoolean);
 		return typeStr;
 	}
 
-	private String getTypeString(TypeSpec typeSpec, boolean required) {
+	public String getTypeString(TypeSpec typeSpec, boolean required) {
+		return getTypeString(typeSpec, required, false );
+	}
+
+	public String getTypeString(TypeSpec typeSpec, boolean required, boolean convertIntBoolean) {
 		DataType type = typeSpec.getType();
 		if (type != null) {
 			switch (type) {
 				case INT:
+					if (convertIntBoolean && hasBooleanRestriction(typeSpec)) {
+						return required ? "boolean" : "Boolean";
+					}
 					return required ? "int" : "Integer";
 				case LONG:
 					return required ? "long" : "Long";
@@ -51,17 +62,31 @@ public class JavaTool {
 				case OBJECT:
 					return "Object";
 				case STRING:
+					if (hasBooleanRestriction(typeSpec)) {
+						return required ? "boolean" : "Boolean";
+					}
 					return "String";
 				case DATE:
 					return "LocalDate";
 				case ARRAY:
 					// pass required false, since we can't use primitives
-					return "List<" + getTypeString(typeSpec.getItems(), false) + ">";
+					return "List<" + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
 			}
 		} else if (typeSpec.getTypeRef() != null) {
 			return typeSpec.getTypeRef();
 		}
 		return null;
+	}
+
+	public boolean hasBooleanRestriction(TypeSpec typeSpec) {
+		if (typeSpec.getRestrictions() != null) {
+			for (Restriction restriction : typeSpec.getRestrictions()) {
+				if (restriction.getRestriction().equalsIgnoreCase("boolean")) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public String toConstantStyle(String input) {
