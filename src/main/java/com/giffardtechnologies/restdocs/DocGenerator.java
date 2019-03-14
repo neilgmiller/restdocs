@@ -1,19 +1,12 @@
 package com.giffardtechnologies.restdocs;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.DataType;
+import com.giffardtechnologies.restdocs.domain.Document;
+import com.giffardtechnologies.restdocs.domain.Field;
 import com.giffardtechnologies.restdocs.domain.Method;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -23,20 +16,25 @@ import org.apache.velocity.tools.generic.EscapeTool;
 import org.giffardtechnologies.json.gson.BooleanDeserializer;
 import org.giffardtechnologies.json.gson.LowercaseEnumTypeAdapterFactory;
 import org.yaml.snakeyaml.Yaml;
-
-import com.giffardtechnologies.restdocs.domain.Document;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 
 @Command(description = "Generates documents or code based for a given API descriptor",
 		name = "doc_generator", mixinStandardHelpOptions = true, version = "DocGenerator 1.0")
 public class DocGenerator implements LogChute, Callable<Void> {
 
-//	@Parameters(index = "0", hidden = true, description = "The executable directory, passed by the wrapper script.")
+	//	@Parameters(index = "0", hidden = true, description = "The executable directory, passed by the wrapper script.")
 	private File mExecutableDir;
 
 	@Option(names = {"-f", "-p", "--properties"}, description = "The properties file describing the generation.")
@@ -107,19 +105,19 @@ public class DocGenerator implements LogChute, Callable<Void> {
 	public File getSourceFile() {
 		return mSourceFile;
 	}
-	
+
 	public void setSourceFile(File sourceFile) {
 		mSourceFile = sourceFile;
 	}
-	
+
 	public File getOutputFile() {
 		return mOutputFile;
 	}
-	
+
 	public void setOutputFile(File outputFile) {
 		mOutputFile = outputFile;
 	}
-	
+
 	public File getTemplateDir() {
 		return mTemplateDir;
 	}
@@ -143,14 +141,14 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		 *  create a new instance of the engine
 		 */
 		VelocityEngine ve = new VelocityEngine();
-		
+
 		/*
 		 *  configure the engine.  In this case, we are using
 		 *  ourselves as a logger (see logging examples..)
 		 */
-		
+
 		ve.setProperty(VelocityEngine.RUNTIME_LOG_LOGSYSTEM, this);
-		
+
 		/*
 		 *  initialize the engine
 		 */
@@ -168,7 +166,7 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		}
 
 		VelocityContext context = new VelocityContext();
-		
+
 		context.put("document", doc);
 		context.put("esc", new EscapeTool());
 		context.put("link", new LinkTool(doc));
@@ -284,7 +282,7 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		for (Method method : doc.getService().getMethods()) {
 			context.put("method", method);
 
-			FileWriter fileWriter = new FileWriter(new File(requestDir, method.getName().substring(0,1).toUpperCase() + method.getName().substring(1) + "Request.java"));
+			FileWriter fileWriter = new FileWriter(new File(requestDir, method.getName().substring(0, 1).toUpperCase() + method.getName().substring(1) + "Request.java"));
 			t.merge(context, fileWriter);
 			fileWriter.close();
 		}
@@ -318,24 +316,24 @@ public class DocGenerator implements LogChute, Callable<Void> {
 	@Override
 	public void init(RuntimeServices rsvc) throws Exception {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	@Override
 	public boolean isLevelEnabled(int level) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	@Override
 	public void log(int level, String message) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	@Override
 	public void log(int level, String message, Throwable t) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }
