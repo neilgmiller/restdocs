@@ -15,7 +15,7 @@ dependencies {
 
     compile fileTree(includes: ['*.jar'], dir: 'manual-libs')
     // https://mvnrepository.com/artifact/org.yaml/snakeyaml
-    compile group: 'org.yaml', name: 'snakeyaml', version: '1.18'
+    compile group: 'org.yaml', name: 'snakeyaml', version: '1.23'
     // https://mvnrepository.com/artifact/org.apache.velocity/velocity
     compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
     // https://mvnrepository.com/artifact/org.apache.velocity/velocity-tools
