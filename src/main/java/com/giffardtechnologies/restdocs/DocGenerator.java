@@ -253,19 +253,21 @@ public class DocGenerator implements LogChute, Callable<Void> {
 
 		context.put("destinationPackage", responsePackage);
 		for (Method method : doc.getService().getMethods()) {
-			if (method.getResponse().getType() == DataType.OBJECT) {
-				String responseClassName = method.getName().substring(0, 1).toUpperCase() + method.getName().substring(1) + "Response";
+			if (method.getResponse() != null) {
+				if (method.getResponse().getType() == DataType.OBJECT) {
+					String responseClassName = method.getName().substring(0, 1).toUpperCase() + method.getName().substring(1) + "Response";
 
-				// setup a temp DataObject
-				DataObject dataObject = new DataObject();
-				dataObject.setName(responseClassName);
-				dataObject.setFields(method.getResponse().getFields());
+					// setup a temp DataObject
+					DataObject dataObject = new DataObject();
+					dataObject.setName(responseClassName);
+					dataObject.setFields(method.getResponse().getFields());
 
-				context.put("dataObject", dataObject);
+					context.put("dataObject", dataObject);
 
-				FileWriter fileWriter = new FileWriter(new File(responseDir, responseClassName + ".java"));
-				t.merge(context, fileWriter);
-				fileWriter.close();
+					FileWriter fileWriter = new FileWriter(new File(responseDir, responseClassName + ".java"));
+					t.merge(context, fileWriter);
+					fileWriter.close();
+				}
 			}
 		}
 

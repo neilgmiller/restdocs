@@ -5,6 +5,7 @@ import com.google.common.base.CaseFormat;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
@@ -68,19 +69,22 @@ public class JavaTool {
 		return CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, input);
 	}
 
-	public String responseClass(@Nonnull String requestClassName, @Nonnull Response response) {
+	public String responseClass(@Nonnull String requestClassName, @Nullable Response response) {
 		Objects.requireNonNull(requestClassName, "A requestClassName is required");
-		Objects.requireNonNull(response, "A response is required");
-		DataType type = response.getType();
-		if (type != null) {
-			if (type == DataType.OBJECT) {
-				return requestClassName.replaceAll("Request$", "Response");
-			} else {
-				// pass required false, since we can't use primitives
-				return getTypeString(response, false);
+		if (response == null) {
+			return null;
+		} else {
+			DataType type = response.getType();
+			if (type != null) {
+				if (type == DataType.OBJECT) {
+					return requestClassName.replaceAll("Request$", "Response");
+				} else {
+					// pass required false, since we can't use primitives
+					return getTypeString(response, false);
+				}
+			} else if (response.getTyperef() != null) {
+				return response.getTyperef();
 			}
-		} else if (response.getTyperef() != null) {
-			return response.getTyperef();
 		}
 		return null;
 	}
