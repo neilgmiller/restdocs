@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class TypeSpec {
 	private DataType type;
 	private String typeRef;
+	private KeyType key;
 	private TypeSpec items;
 	private ArrayList<Restriction> restrictions;
 	private ArrayList<Field> fields;
@@ -40,6 +41,14 @@ public class TypeSpec {
 
 	public void setItems(TypeSpec items) {
 		this.items = items;
+	}
+
+	public KeyType getKey() {
+		return key;
+	}
+
+	public void setKey(KeyType key) {
+		this.key = key;
 	}
 
 	public ArrayList<Restriction> getRestrictions() {

@@ -2,7 +2,6 @@ package com.giffardtechnologies.restdocs;
 
 import com.giffardtechnologies.restdocs.domain.*;
 import com.google.common.base.CaseFormat;
-import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -10,8 +9,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
 public class JavaTool {
@@ -68,6 +65,8 @@ public class JavaTool {
 					return "String";
 				case DATE:
 					return "LocalDate";
+				case COLLECTION:
+					return "Map<" + getKeyTypeString(typeSpec.getKey()) + ", " + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
 				case ARRAY:
 					// pass required false, since we can't use primitives
 					return "List<" + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
@@ -76,6 +75,25 @@ public class JavaTool {
 			return typeSpec.getTypeRef();
 		}
 		return null;
+	}
+
+	private String getKeyTypeString(KeyType key) {
+		switch (key.getType()) {
+			case INT:
+				return "Integer";
+			case LONG:
+				return "Long";
+			case FLOAT:
+				return "Float";
+			case DOUBLE:
+				return "Double";
+			case STRING:
+				return "String";
+			case DATE:
+				return "LocalDate";
+			default:
+				throw new IllegalArgumentException("Unsupported key type");
+		}
 	}
 
 	public boolean hasBooleanRestriction(TypeSpec typeSpec) {

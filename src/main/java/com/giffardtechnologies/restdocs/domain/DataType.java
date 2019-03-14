@@ -9,5 +9,6 @@ public enum DataType {
 	DATE,
 	ARRAY,
 	OBJECT,
+	COLLECTION,
 
 }
