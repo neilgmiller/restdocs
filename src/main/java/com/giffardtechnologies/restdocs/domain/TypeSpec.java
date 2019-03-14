@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class TypeSpec {
 	private DataType type;
-	private String typeref;
+	private String typeRef;
 	private TypeSpec items;
 	private ArrayList<Restriction> restrictions;
 	private ArrayList<Field> fields;
@@ -17,21 +17,21 @@ public class TypeSpec {
 		this.type = type;
 	}
 
-	public String getTyperef() {
-		return typeref;
+	public String getTypeRef() {
+		return typeRef;
 	}
 
-	public void setTyperef(String typeref) {
-		this.typeref = typeref;
+	public void setTypeRef(String typeRef) {
+		this.typeRef = typeRef;
 	}
 
 	// For velocity
 	public boolean getIsTypeRef() {
-		return typeref != null;
+		return typeRef != null;
 	}
 
 	public boolean isTypeRef() {
-		return typeref != null;
+		return typeRef != null;
 	}
 
 	public TypeSpec getItems() {

@@ -58,8 +58,8 @@ public class JavaTool {
 					// pass required false, since we can't use primitives
 					return "List<" + getTypeString(typeSpec.getItems(), false) + ">";
 			}
-		} else if (typeSpec.getTyperef() != null) {
-			return typeSpec.getTyperef();
+		} else if (typeSpec.getTypeRef() != null) {
+			return typeSpec.getTypeRef();
 		}
 		return null;
 	}
@@ -82,8 +82,8 @@ public class JavaTool {
 					// pass required false, since we can't use primitives
 					return getTypeString(response, false);
 				}
-			} else if (response.getTyperef() != null) {
-				return response.getTyperef();
+			} else if (response.getTypeRef() != null) {
+				return response.getTypeRef();
 			}
 		}
 		return null;

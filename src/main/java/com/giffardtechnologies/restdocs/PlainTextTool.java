@@ -42,8 +42,8 @@ public class PlainTextTool {
 					// pass required false, since we can't use primitives
 					return "array of " + getTypeString(typeSpec.getItems(), false);
 			}
-		} else if (typeSpec.getTyperef() != null) {
-			return typeSpec.getTyperef();
+		} else if (typeSpec.getTypeRef() != null) {
+			return typeSpec.getTypeRef();
 		}
 		return null;
 	}
