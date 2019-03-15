@@ -10,5 +10,6 @@ public enum DataType {
 	ARRAY,
 	OBJECT,
 	COLLECTION,
+	ENUM,
 
 }

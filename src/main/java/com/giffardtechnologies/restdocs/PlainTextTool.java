@@ -40,6 +40,8 @@ public class PlainTextTool {
 					return type.toString().toLowerCase(Locale.US);
 				case COLLECTION:
 					return "collection of " + typeSpec.getKey().getType().toString().toLowerCase(Locale.US) + " to " + getTypeString(typeSpec.getItems(), false);
+				case ENUM:
+					return "enum keyed on " + typeSpec.getKey().getType().toString().toLowerCase(Locale.US);
 				case ARRAY:
 					// pass required false, since we can't use primitives
 					return "array of " + getTypeString(typeSpec.getItems(), false);

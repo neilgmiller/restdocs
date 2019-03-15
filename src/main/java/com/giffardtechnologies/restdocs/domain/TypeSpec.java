@@ -1,5 +1,7 @@
 package com.giffardtechnologies.restdocs.domain;
 
+import com.giffardtechnologies.restdocs.domain.type.EnumConstant;
+
 import java.util.ArrayList;
 
 public class TypeSpec {
@@ -9,6 +11,7 @@ public class TypeSpec {
 	private TypeSpec items;
 	private ArrayList<Restriction> restrictions;
 	private ArrayList<Field> fields;
+	private ArrayList<EnumConstant> values;
 
 	public DataType getType() {
 		return type;
@@ -79,4 +82,11 @@ public class TypeSpec {
 		return fields != null && !fields.isEmpty();
 	}
 
+	public ArrayList<EnumConstant> getValues() {
+		return values;
+	}
+
+	public void setValues(ArrayList<EnumConstant> values) {
+		this.values = values;
+	}
 }

@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class JavaTool {
 
 	private final Document mDocument;
@@ -67,6 +67,13 @@ public class JavaTool {
 					return "LocalDate";
 				case COLLECTION:
 					return "Map<" + getKeyTypeString(typeSpec.getKey()) + ", " + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
+				case ENUM:
+					if (typeSpec instanceof Field) {
+						Field field = (Field) typeSpec;
+						return "FutureProofEnumContainer<" + fieldNameToClassStyle(field.getLongName()) + ">";
+					} else {
+						throw new IllegalStateException("Raw enum type specified, cannot generate name.");
+					}
 				case ARRAY:
 					// pass required false, since we can't use primitives
 					return "List<" + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
@@ -114,6 +121,13 @@ public class JavaTool {
 	public String toConstantStyle(String input) {
 		input = input.replaceAll("ID", "Id");
 		return CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, input);
+	}
+
+	public String fieldNameToClassStyle(String input) {
+		input = input.replaceAll("ID", "Id");
+		String classStyle = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, input);
+		classStyle = classStyle.replaceAll("Id[A-Z]", "ID");
+		return classStyle;
 	}
 
 	public String responseClass(@Nonnull String requestClassName, @Nullable Response response) {
