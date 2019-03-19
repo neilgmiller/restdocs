@@ -1,4 +1,4 @@
-package com.giffardtechnologies.restdocs.domain;
+package com.giffardtechnologies.restdocs.domain.type;
 
 public class Field extends TypeSpec {
 	private String name;

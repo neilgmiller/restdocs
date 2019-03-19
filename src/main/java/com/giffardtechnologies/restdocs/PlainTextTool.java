@@ -1,6 +1,9 @@
 package com.giffardtechnologies.restdocs;
 
 import com.giffardtechnologies.restdocs.domain.*;
+import com.giffardtechnologies.restdocs.domain.type.DataType;
+import com.giffardtechnologies.restdocs.domain.type.Field;
+import com.giffardtechnologies.restdocs.domain.type.TypeSpec;
 
 import java.util.*;
 

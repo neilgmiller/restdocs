@@ -2,6 +2,7 @@ package com.giffardtechnologies.restdocs.domain;
 
 import java.util.ArrayList;
 
+import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.google.gson.annotations.SerializedName;
 
 public class Method {

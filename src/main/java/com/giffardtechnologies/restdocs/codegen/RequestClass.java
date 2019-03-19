@@ -1,6 +1,6 @@
 package com.giffardtechnologies.restdocs.codegen;
 
-import com.giffardtechnologies.restdocs.domain.Field;
+import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.Method;
 
 import java.util.ArrayList;

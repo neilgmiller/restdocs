@@ -1,6 +1,6 @@
-package com.giffardtechnologies.restdocs.domain;
+package com.giffardtechnologies.restdocs.domain.type;
 
-import com.giffardtechnologies.restdocs.domain.type.EnumConstant;
+import com.giffardtechnologies.restdocs.domain.Restriction;
 
 import java.util.ArrayList;
 

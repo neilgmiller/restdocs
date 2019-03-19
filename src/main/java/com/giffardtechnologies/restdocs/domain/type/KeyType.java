@@ -1,4 +1,4 @@
-package com.giffardtechnologies.restdocs.domain;
+package com.giffardtechnologies.restdocs.domain.type;
 
 public enum KeyType {
 	INT(DataType.INT),

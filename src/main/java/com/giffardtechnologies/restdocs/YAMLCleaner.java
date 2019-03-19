@@ -2,7 +2,7 @@ package com.giffardtechnologies.restdocs;
 
 import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.Document;
-import com.giffardtechnologies.restdocs.domain.Field;
+import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.Method;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

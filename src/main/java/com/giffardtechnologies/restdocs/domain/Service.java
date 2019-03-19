@@ -1,5 +1,7 @@
 package com.giffardtechnologies.restdocs.domain;
 
+import com.giffardtechnologies.restdocs.domain.type.Field;
+
 import java.util.ArrayList;
 
 public class Service {

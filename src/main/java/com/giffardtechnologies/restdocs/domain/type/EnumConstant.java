@@ -7,7 +7,7 @@ public class EnumConstant {
 
 	/**
 	 * Returns the value of the key of this constant. This is a string regardless of the
-	 * {@link com.giffardtechnologies.restdocs.domain.KeyType}
+	 * {@link KeyType}
 	 *
 	 * @return the value of key of this constant
 	 */
