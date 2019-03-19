@@ -3,9 +3,10 @@ package com.giffardtechnologies.restdocs.domain;
 import java.util.ArrayList;
 
 import com.giffardtechnologies.restdocs.domain.type.Field;
+import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.google.gson.annotations.SerializedName;
 
-public class DataObject {
+public class DataObject implements NamedType {
 	private String name;
 	private String description;
 	private ArrayList<Field> fields;
@@ -83,5 +84,15 @@ public class DataObject {
 	public String toString() {
 		return name;
 	}
-	
+
+	@Override
+	public String getTypeName() {
+		return getName();
+	}
+
+	public void linkFields() {
+		for (Field field : fields) {
+			field.setParent(this);
+		}
+	}
 }

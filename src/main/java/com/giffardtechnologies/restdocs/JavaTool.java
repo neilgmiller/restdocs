@@ -1,34 +1,28 @@
 package com.giffardtechnologies.restdocs;
 
-import com.giffardtechnologies.restdocs.domain.*;
+import com.giffardtechnologies.restdocs.domain.DataObject;
+import com.giffardtechnologies.restdocs.domain.Document;
+import com.giffardtechnologies.restdocs.domain.Response;
+import com.giffardtechnologies.restdocs.domain.Restriction;
 import com.giffardtechnologies.restdocs.domain.type.DataType;
 import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.type.KeyType;
+import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec;
 import com.google.common.base.CaseFormat;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class JavaTool {
 
 	private final Document mDocument;
-	private final Set<String> mDataObjectNames;
 
 	public JavaTool(Document document) {
 		super();
 		mDocument = document;
-		
-		ArrayList<DataObject> dataObjects = mDocument.getDataObjects();
-		mDataObjectNames = new HashSet<String>(dataObjects.size() * 2);
-		for (DataObject dataObject : dataObjects) {
-			mDataObjectNames.add(dataObject.getName());
-		}
 	}
 	
 	public String fieldClass(Field field) {
@@ -83,6 +77,11 @@ public class JavaTool {
 					return "List<" + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
 			}
 		} else if (typeSpec.getTypeRef() != null) {
+			DataObject dataObject = mDocument.getDataObjectByName(typeSpec.getTypeRef());
+			if (dataObject == null) {
+				throw new IllegalStateException("Type reference to undefined type.");
+			}
+			// TODO handle common enums
 			return typeSpec.getTypeRef();
 		}
 		return null;

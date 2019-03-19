@@ -1,15 +1,27 @@
 package com.giffardtechnologies.restdocs.domain;
 
-import java.util.ArrayList;
-
 import com.google.gson.annotations.SerializedName;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Document {
 	private String title;
 	@SerializedName("data objects")
 	private ArrayList<DataObject> dataObjects = new ArrayList<DataObject>();
 	private Service service;
-	
+
+	private Map<String, DataObject> mDataObjectNames;
+
+	public void buildMappings() {
+		mDataObjectNames = new HashMap<>(this.dataObjects.size() * 2);
+		for (DataObject dataObject : this.dataObjects) {
+			mDataObjectNames.put(dataObject.getName(), dataObject);
+			dataObject.linkFields();
+		}
+	}
+
 	public String getTitle() {
 		return title;
 	}
@@ -40,6 +52,10 @@ public class Document {
 	
 	public void setService(Service service) {
 		this.service = service;
+	}
+
+	public DataObject getDataObjectByName(String name) {
+		return mDataObjectNames.get(name);
 	}
 	
 }

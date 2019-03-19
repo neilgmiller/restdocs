@@ -5,6 +5,7 @@ public class Field extends TypeSpec {
 	private String longName = "";
 	private String description;
 	private boolean required = true;
+	private NamedType mParent;
 
 	public String getName() {
 		return name;
@@ -36,6 +37,24 @@ public class Field extends TypeSpec {
 	
 	public void setRequired(boolean required) {
 		this.required = required;
+	}
+
+	public NamedType getParent() {
+		return mParent;
+	}
+
+	public void setParent(NamedType parent) {
+		mParent = parent;
+	}
+
+	@Override
+	public String toString() {
+		return "Field{" +
+				"name='" + name + '\'' +
+				", longName='" + longName + '\'' +
+				", description='" + description + '\'' +
+				", required=" + required +
+				'}';
 	}
 
 }

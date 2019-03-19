@@ -318,7 +318,11 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		//		for (DataObject dataObject : doc.getDataObjects()) {
 //			output.println(dataObject.getName());
 //		}
-		return gsonForPrinting.fromJson(json, Document.class);
+		Document document = gsonForPrinting.fromJson(json, Document.class);
+
+		document.buildMappings();
+
+		return document;
 	}
 
 	@Override
