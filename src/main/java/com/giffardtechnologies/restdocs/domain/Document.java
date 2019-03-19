@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+// Most of these methods are used by velocity
+@SuppressWarnings("unused")
 public class Document {
 	private String title;
 	@SerializedName("data objects")
@@ -25,31 +27,31 @@ public class Document {
 	public String getTitle() {
 		return title;
 	}
-	
+
 	public void setTitle(String title) {
 		this.title = title;
 	}
-	
+
 	public boolean hasDataObjects() {
 		return dataObjects != null && !dataObjects.isEmpty();
 	}
-	
+
 	public boolean getHasDataObjects() {
 		return hasDataObjects();
 	}
-	
+
 	public ArrayList<DataObject> getDataObjects() {
 		return dataObjects;
 	}
-	
+
 	public void setDataObjects(ArrayList<DataObject> dataObjects) {
 		this.dataObjects = dataObjects;
 	}
-	
+
 	public Service getService() {
 		return service;
 	}
-	
+
 	public void setService(Service service) {
 		this.service = service;
 	}
@@ -57,5 +59,5 @@ public class Document {
 	public DataObject getDataObjectByName(String name) {
 		return mDataObjectNames.get(name);
 	}
-	
+
 }

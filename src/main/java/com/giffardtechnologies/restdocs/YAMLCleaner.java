@@ -50,13 +50,13 @@ public class YAMLCleaner implements LogChute, Callable<Void> {
 		options.setIndicatorIndent(4);
 		options.setPrettyFlow(true);
 		Yaml yaml = new Yaml(options);
-		Map map = (Map) yaml.load(input);
+		Map map = yaml.load(input);
 		input.close();
 
 		Map typeMap = null;
 		if (mTypeSourceFile != null) {
 			input = new BufferedInputStream(new FileInputStream(mTypeSourceFile));
-			typeMap = (Map) yaml.load(input);
+			typeMap = yaml.load(input);
 			input.close();
 		}
 		GsonBuilder gsonBuilder = new GsonBuilder();

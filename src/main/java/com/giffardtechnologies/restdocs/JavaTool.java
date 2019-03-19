@@ -31,8 +31,7 @@ public class JavaTool {
 
 	public String fieldClass(Field field, boolean convertIntBoolean) {
 		Objects.requireNonNull(field, "A field is required");
-		String typeStr = getTypeString(field, field.isRequired(), convertIntBoolean);
-		return typeStr;
+		return getTypeString(field, field.isRequired(), convertIntBoolean);
 	}
 
 	public String getTypeString(TypeSpec typeSpec, boolean required) {

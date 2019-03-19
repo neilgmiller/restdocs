@@ -51,6 +51,11 @@ public class DocGenerator implements LogChute, Callable<Void> {
 	private Properties mProperties;
 
 	public static void main(String[] args) throws IOException {
+//		for (String arg : args) {
+//			System.out.print(arg);
+//			System.out.print(", ");
+//		}
+//		System.out.println();
 		DocGenerator docGenerator = new DocGenerator();
 
 		CommandLine.call(docGenerator, args);
@@ -58,6 +63,8 @@ public class DocGenerator implements LogChute, Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
+//		System.out.println(System.getProperty("execdir"));
+//		System.out.println(System.getProperty("progdir"));
 		mExecutableDir = new File(System.getProperty("execdir"));
 		if (mPropertiesFile == null) {
 			mPropertiesFile = new File("docbuild.properties");
