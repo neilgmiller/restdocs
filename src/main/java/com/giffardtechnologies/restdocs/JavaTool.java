@@ -68,7 +68,7 @@ public class JavaTool {
 				case ENUM:
 					if (typeSpec instanceof Field) {
 						Field field = (Field) typeSpec;
-						return "FutureProofEnumContainer<" + fieldNameToClassStyle(field.getLongName()) + ">";
+						return "FutureProofEnumContainer<" + fieldToClassStyle(field) + ">";
 					} else {
 						throw new IllegalStateException("Raw enum type specified, cannot generate name.");
 					}
@@ -131,6 +131,15 @@ public class JavaTool {
 		String classStyle = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, input);
 		classStyle = classStyle.replaceAll("Id[A-Z]", "ID");
 		return classStyle;
+	}
+
+	public String fieldToClassStyle(Field field) {
+		NamedType parent = field.getParent();
+		if (parent != null) {
+			return parent.getTypeName() + fieldNameToClassStyle(field.getLongName());
+		} else {
+			return fieldNameToClassStyle(field.getLongName());
+		}
 	}
 
 	public String responseClass(@Nonnull String requestClassName, @Nullable Response response) {
