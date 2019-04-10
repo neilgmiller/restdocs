@@ -82,6 +82,14 @@ public class TypeSpec {
 		return fields != null && !fields.isEmpty();
 	}
 
+	public boolean hasEnumValues() {
+		return values != null && !values.isEmpty();
+	}
+
+	public boolean getHasEnumValues() {
+		return hasEnumValues();
+	}
+
 	public ArrayList<EnumConstant> getValues() {
 		return values;
 	}

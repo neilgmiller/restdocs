@@ -39,7 +39,7 @@ public class EnumConstant {
 	 * @return a description of the semantics of this enum constant.
 	 */
 	public String getDescription() {
-		return description;
+		return description == null ? longName : description;
 	}
 
 	public void setDescription(String description) {

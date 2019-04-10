@@ -10,8 +10,9 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class Document {
 	private String title;
+	private ArrayList<NamedEnumeration> enumerations = new ArrayList<>();
 	@SerializedName("data objects")
-	private ArrayList<DataObject> dataObjects = new ArrayList<DataObject>();
+	private ArrayList<DataObject> dataObjects = new ArrayList<>();
 	private Service service;
 
 	private Map<String, DataObject> mDataObjectNames;
@@ -58,6 +59,18 @@ public class Document {
 
 	public DataObject getDataObjectByName(String name) {
 		return mDataObjectNames.get(name);
+	}
+
+	public boolean hasEnumerations() {
+		return enumerations != null && !enumerations.isEmpty();
+	}
+
+	public boolean getHasEnumerations() {
+		return hasDataObjects();
+	}
+
+	public ArrayList<NamedEnumeration> getEnumerations() {
+		return enumerations;
 	}
 
 }
