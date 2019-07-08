@@ -1,11 +1,13 @@
 package com.giffardtechnologies.restdocs.domain.type;
 
 import com.giffardtechnologies.restdocs.domain.Restriction;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
 public class TypeSpec {
 	private DataType type;
+	@SerializedName("typeref")
 	private String typeRef;
 	private KeyType key;
 	private TypeSpec items;

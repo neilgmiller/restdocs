@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import com.giffardtechnologies.restdocs.domain.DataObject;
@@ -21,9 +22,13 @@ public class LinkTool {
 		mDocument = document;
 		
 		ArrayList<DataObject> dataObjects = mDocument.getDataObjects();
-		mDataObjectNames = new HashSet<String>(dataObjects.size() * 2);
+		ArrayList<NamedEnumeration> enumerations = mDocument.getEnumerations();
+		mDataObjectNames = new HashSet<String>((dataObjects.size() + enumerations.size()) * 2);
 		for (DataObject dataObject : dataObjects) {
 			mDataObjectNames.add(dataObject.getName());
+		}
+		for (NamedEnumeration enumeration : enumerations) {
+			mDataObjectNames.add(enumeration.getName());
 		}
 	}
 	
