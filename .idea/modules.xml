@@ -3,8 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs_main.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs_main.iml" group="restdocs" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs_test.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs_test.iml" group="restdocs" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs.main.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs.test.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs.test.iml" />
     </modules>
   </component>
 </project>
