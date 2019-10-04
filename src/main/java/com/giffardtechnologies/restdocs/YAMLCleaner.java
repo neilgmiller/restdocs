@@ -77,12 +77,16 @@ public class YAMLCleaner implements LogChute, Callable<Void> {
 			System.out.println("attempting type mapping");
 			String json2 = gsonForPrinting.toJson(typeMap);
 			Document typeDoc = gsonForPrinting.fromJson(json2, Document.class);
+			ArrayList<DataObject> typedDataObjects = typeDoc.getDataObjects();
 			for (DataObject dataObject : doc.getDataObjects()) {
-				DataObject typedObject = findDataObject(dataObject.getName(), typeDoc);
+				DataObject typedObject = findDataObject(dataObject.getName(), typedDataObjects);
 				if (typedObject != null) {
+					typedDataObjects.remove(typedObject);
+					ArrayList<Field> typedObjectFields = typedObject.getFields();
 					for (Field field : dataObject.getFields()) {
-						Field typedField = findField(field.getName(), typedObject);
+						Field typedField = findField(field.getName(), typedObjectFields);
 						if (typedField != null) {
+							typedObjectFields.remove(typedField);
 							field.setLongName(typedField.getLongName());
 							field.setType(typedField.getType());
 							if (typedField.getItems() != null) {
@@ -90,8 +94,17 @@ public class YAMLCleaner implements LogChute, Callable<Void> {
 							}
 						}
 					}
+					// add any fields that are typed, but not documented
+					for (Field field : typedObjectFields) {
+						dataObject.getFields().add(field);
+					}
 				}
 			}
+			// add any objects that are typed, but not documented
+			for (DataObject dataObject : typedDataObjects) {
+				doc.getDataObjects().add(dataObject);
+			}
+
 			for (Method method : doc.getService().getMethods()) {
 				Method typedMethod = findMethod(method.getId(), typeDoc);
 				if (typedMethod != null) {
@@ -138,7 +151,12 @@ public class YAMLCleaner implements LogChute, Callable<Void> {
 	}
 
 	private DataObject findDataObject(String name, Document typeDoc) {
-		for (DataObject dataObject : typeDoc.getDataObjects()) {
+		ArrayList<DataObject> dataObjects = typeDoc.getDataObjects();
+		return findDataObject(name, dataObjects);
+	}
+
+	private DataObject findDataObject(String name, ArrayList<DataObject> dataObjects) {
+		for (DataObject dataObject : dataObjects) {
 			if (dataObject.getName().equalsIgnoreCase(name)) {
 				return dataObject;
 			}
