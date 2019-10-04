@@ -16,12 +16,17 @@ public class Document {
 	private Service service;
 
 	private Map<String, DataObject> mDataObjectNames;
+	private Map<String, NamedEnumeration> mEnumerationNames;
 
 	public void buildMappings() {
-		mDataObjectNames = new HashMap<>(this.dataObjects.size() * 2);
-		for (DataObject dataObject : this.dataObjects) {
+		mDataObjectNames = new HashMap<>(dataObjects.size() * 2);
+		for (DataObject dataObject : dataObjects) {
 			mDataObjectNames.put(dataObject.getName(), dataObject);
 			dataObject.linkFields();
+		}
+		mEnumerationNames = new HashMap<>(enumerations.size() * 2);
+		for (NamedEnumeration enumeration : enumerations) {
+			mEnumerationNames.put(enumeration.getName(), enumeration);
 		}
 	}
 
@@ -71,6 +76,10 @@ public class Document {
 
 	public ArrayList<NamedEnumeration> getEnumerations() {
 		return enumerations;
+	}
+
+	public NamedEnumeration getEnumerationByName(String name) {
+		return mEnumerationNames.get(name);
 	}
 
 }

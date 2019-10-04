@@ -4,6 +4,7 @@ public enum KeyType {
 	INT(DataType.INT),
 	LONG(DataType.LONG),
 	STRING(DataType.STRING),
+	ENUM(DataType.ENUM),
 
 	;
 

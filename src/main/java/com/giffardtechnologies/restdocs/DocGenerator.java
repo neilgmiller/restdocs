@@ -1,10 +1,11 @@
 package com.giffardtechnologies.restdocs;
 
 import com.giffardtechnologies.restdocs.domain.DataObject;
-import com.giffardtechnologies.restdocs.domain.type.DataType;
 import com.giffardtechnologies.restdocs.domain.Document;
-import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.Method;
+import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
+import com.giffardtechnologies.restdocs.domain.type.DataType;
+import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.velocity.Template;
@@ -250,6 +251,17 @@ public class DocGenerator implements LogChute, Callable<Void> {
 			context.put("dataObject", dataObject);
 
 			FileWriter fileWriter = new FileWriter(new File(dtoDir, dataObject.getName() + ".java"));
+			t.merge(context, fileWriter);
+			fileWriter.close();
+		}
+
+		String enumTemplateFileName = mProperties.getProperty("enumTemplateFile", "rest_api_enum.vm");
+		t = ve.getTemplate(enumTemplateFileName);
+
+		for (NamedEnumeration namedEnumeration : doc.getEnumerations()) {
+			context.put("enumeration", namedEnumeration);
+
+			FileWriter fileWriter = new FileWriter(new File(dtoDir, namedEnumeration.getName() + ".java"));
 			t.merge(context, fileWriter);
 			fileWriter.close();
 		}

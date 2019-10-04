@@ -2,6 +2,7 @@ package com.giffardtechnologies.restdocs;
 
 import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.Document;
+import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
 import com.giffardtechnologies.restdocs.domain.Response;
 import com.giffardtechnologies.restdocs.domain.Restriction;
 import com.giffardtechnologies.restdocs.domain.type.DataType;
@@ -32,6 +33,16 @@ public class JavaTool {
 	public String fieldClass(Field field, boolean convertIntBoolean) {
 		Objects.requireNonNull(field, "A field is required");
 		return getTypeString(field, field.isRequired(), convertIntBoolean);
+	}
+
+	public String fieldInitializer(Field field) {
+		Objects.requireNonNull(field, "A field is required");
+		if (field.getType() == DataType.ARRAY) {
+			return " = new ArrayList<>()";
+		} else if (field.getType() == DataType.ENUM) {
+			return " = new FutureProofEnumContainer<>("+ fieldToClassStyle(field) + ".class)";
+		}
+		return "";
 	}
 
 	public String getTypeString(TypeSpec typeSpec, boolean required) {
@@ -77,16 +88,16 @@ public class JavaTool {
 			}
 		} else if (typeSpec.getTypeRef() != null) {
 			DataObject dataObject = mDocument.getDataObjectByName(typeSpec.getTypeRef());
-			if (dataObject == null) {
-				throw new IllegalStateException("Type reference to undefined type.");
+			NamedEnumeration enumeration = mDocument.getEnumerationByName(typeSpec.getTypeRef());
+			if (dataObject == null && enumeration == null) {
+				throw new IllegalStateException("Type reference to undefined type: " + typeSpec.getTypeRef() + ".");
 			}
-			// TODO handle common enums
 			return typeSpec.getTypeRef();
 		}
 		return null;
 	}
 
-	private String getKeyTypeString(KeyType key) {
+	public String getKeyTypeString(KeyType key) {
 		switch (key.getType()) {
 			case INT:
 				return "Integer";
