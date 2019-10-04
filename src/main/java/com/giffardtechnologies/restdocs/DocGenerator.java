@@ -223,13 +223,8 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		File codeDir = new File(mProperties.getProperty("codeDir"));
 		// TODO check this exists
 
-		String dtoTemplateFileName = mProperties.getProperty("dtoTemplateFile");
-		// TODO make this parameterized
-		if (dtoTemplateFileName == null) {
-			t = ve.getTemplate("rest_api_dto.vm");
-		} else {
-			t = ve.getTemplate(dtoTemplateFileName);
-		}
+		String dtoTemplateFileName = mProperties.getProperty("dtoTemplateFile", "rest_api_dto.vm");
+		t = ve.getTemplate(dtoTemplateFileName);
 
 		VelocityContext context = new VelocityContext();
 		context.put("java", new JavaTool(doc));

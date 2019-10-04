@@ -3,6 +3,7 @@ package com.giffardtechnologies.restdocs.domain;
 import com.giffardtechnologies.restdocs.domain.type.Field;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Service {
 	private String description;
@@ -72,7 +73,7 @@ public class Service {
 	}
 	
 	public ArrayList<Method> getMethods() {
-		return methods;
+		return methods == null ? new ArrayList<>(0) : methods;
 	}
 	
 	public void setMethods(ArrayList<Method> methods) {
