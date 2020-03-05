@@ -227,7 +227,8 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		t = ve.getTemplate(dtoTemplateFileName);
 
 		VelocityContext context = new VelocityContext();
-		context.put("java", new JavaTool(doc));
+		JavaTool javaTool = new JavaTool(doc);
+		context.put("java", javaTool);
 
 		String dtoPackage = mProperties.getProperty("dtoPackage");
 		String dtoPath = dtoPackage.replaceAll("\\.", "/");
@@ -240,6 +241,28 @@ public class DocGenerator implements LogChute, Callable<Void> {
 			for (Field field : dataObject.getFields()) {
 				if (field.getLongName().equalsIgnoreCase(dataObject.getName() + "id")) {
 					field.setLongName("id");
+				}
+				if (field.getType() == DataType.OBJECT) {
+					DataObject fieldDataObject = new DataObject();
+					fieldDataObject.setFields(field.getFields());
+					fieldDataObject.setName(javaTool.fieldToClassStyle(field));
+
+					context.put("dataObject", fieldDataObject);
+
+					FileWriter fileWriter = new FileWriter(new File(dtoDir, fieldDataObject.getName() + ".java"));
+					t.merge(context, fileWriter);
+					fileWriter.close();
+				}
+				if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+					DataObject fieldDataObject = new DataObject();
+					fieldDataObject.setFields(field.getItems().getFields());
+					fieldDataObject.setName(javaTool.fieldToClassStyle(field));
+
+					context.put("dataObject", fieldDataObject);
+
+					FileWriter fileWriter = new FileWriter(new File(dtoDir, fieldDataObject.getName() + ".java"));
+					t.merge(context, fileWriter);
+					fileWriter.close();
 				}
 			}
 
@@ -263,6 +286,8 @@ public class DocGenerator implements LogChute, Callable<Void> {
 
 		// add the DTO package for future reference
 		context.put("dtoPackage", dtoPackage);
+
+		t = ve.getTemplate(dtoTemplateFileName);
 
 		// create the responses
 		String responsePackage = mProperties.getProperty("responsePackage");
