@@ -6,6 +6,7 @@ public enum DataType {
 	FLOAT,
 	DOUBLE,
 	STRING,
+	BOOLEAN,
 	DATE,
 	ARRAY,
 	OBJECT,

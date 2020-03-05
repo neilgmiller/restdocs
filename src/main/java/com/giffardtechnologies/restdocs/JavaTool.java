@@ -64,8 +64,15 @@ public class JavaTool {
 					return required ? "float" : "Float";
 				case DOUBLE:
 					return required ? "double" : "Double";
+				case BOOLEAN:
+					return required ? "boolean" : "Boolean";
 				case OBJECT:
-					return "Object";
+					if (typeSpec instanceof Field) {
+						Field field = (Field) typeSpec;
+						return fieldToClassStyle(field);
+					} else {
+						return "Object";
+					}
 				case STRING:
 					if (hasBooleanRestriction(typeSpec)) {
 						return required ? "boolean" : "Boolean";

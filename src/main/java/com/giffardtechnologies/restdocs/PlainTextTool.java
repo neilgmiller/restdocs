@@ -38,6 +38,7 @@ public class PlainTextTool {
 				case FLOAT:
 				case DOUBLE:
 				case STRING:
+				case BOOLEAN:
 				case OBJECT:
 				case DATE:
 					return type.toString().toLowerCase(Locale.US);
