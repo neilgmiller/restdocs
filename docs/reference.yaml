@@ -1,0 +1,304 @@
+title: API Documentation Reference
+enumerations:
+    - name:          DataType
+      description:   An enumeration of data types.
+      key:           string
+      values:
+          - value: int
+            description: a signed 32-bit integer
+          - value: long
+            description: a signed 64-bit integer
+          - value: float
+            description: a floating point number
+          - value: double
+            description: a double-precision floating point number
+          - value: string
+            description: a character string
+          - value: boolean
+            description: a boolean value
+          - value: date
+            description: a date (month, day, year)
+          - value: array
+            description: an array of objects
+          - value: object
+            description: an object with in like field descriptions
+          - value: collection
+            description: a collection of items with a key, aka a map
+          - value: enum
+            description: an enumeration of allowed values 
+    - name:          KeyType
+      description:   An enumeration of types alowed for use as keys.
+      key:           string
+      values:
+          - value: int
+            description: a signed 32-bit integer
+          - value: long
+            description: a signed 64-bit integer
+          - value: string
+            description: a character string
+data objects:
+    - name: Document
+      description: The top level node of a documentation YAML file
+      fields:
+          - name: title
+            description: The title of the document
+            required: no
+            type: string
+          - name: enumerations
+            description: A list of named enumerations
+            required: no
+            type: array
+            items:
+                typeref: NamedEnumeration
+          - name: data objects
+            description: A list of named, reusable data objects
+            required: no
+            type: array
+            items:
+                typeref: DataObject
+          - name: service
+            required: no
+            typeref: Service
+    - name: NamedEnumeration
+      description: An enumeration that can be referenced by name.
+      fields:
+          - name: name 
+            description: the name of the enumeration
+            required: yes
+            type: string
+          - name: description 
+            description: a description of the enumeration
+            required: yes
+            type: string
+          - name: key 
+            description: a key type of the enumeration
+            required: yes
+            typeref: KeyType
+          - name: values 
+            description: A list of enumeration values
+            required: no
+            type: array
+            items:
+                typeref: EnumConstant
+    - name: EnumConstant
+      description: "An enum constant: a particular value for an enum"
+      fields:
+          - name: value 
+            description: The key value for this constant. A string is used, which will be parsed to the key type.
+            required: yes
+            type: string
+          - name: longName 
+            description: A long name for this constant. Provided to give a human readable form of the key. In the case of
+                         string keys, this may be ommitted.
+            required: yes
+            type: string
+          - name: description 
+            description: The description of this constant
+            required: yes
+            type: string
+    - name: DataObject
+      description: A description of a named, reusable data object
+      fields:
+          - name: name
+            description: The name of the object
+            type: string
+          - name: description
+            description: A description of the object, it's purpose, etc.
+            type: string
+          - name: fields
+            description: A list of fields
+            type: array
+            items:
+                typeref: Field
+          - name: discriminator
+            description:
+            required: no
+            typeref: Field
+          - name: child types
+            description:
+            required: no
+            type: array
+            items:
+                typeref: DataObject
+          - name: discriminator value
+            description:
+            required: no
+            type: string
+    - name: Field
+      description: A description of a field in an object
+      fields:
+          - name: name
+            description: The name of the object, as serialized
+            type: string
+          - name: longName
+            description: The name of the object, in long form
+            type: string
+          - name: description
+            description: A description of the field, it's purpose, etc.
+            type: string
+          - name: required
+            description: An indicator as to whether this field is required or not, defaults to true
+            required: no
+            type: boolean
+          - name: type
+            description: The type of this field, either this or 'typeref' must be present
+            required: no
+            typeref: DataType
+          - name: typeref
+            description: The type of this field, referencing a named type. Either this or 'type' must be present.
+            required: no
+            type: string
+          - name: key
+            description: The key if the type is an enum or collection
+            required: no
+            typeref: KeyType
+          - name: items
+            description: The the type od items contained in an array or collection
+            required: no
+            typeref: TypeSpec
+          - name: restrictions
+            description: A list of restrictions placed on the value of this field
+            type: array
+            items:
+                typeref: Restriction
+          - name: fields
+            description: A list of fields, if this field type is 'object'
+            type: array
+            items:
+                typeref: Field
+          - name: values
+            description: A list of enum constants, if this field type is 'enum'
+            type: array
+            items:
+                typeref: EnumConstant
+    - name: TypeSpec
+      description: A description of a type
+      fields:
+          - name: type
+            description: The type of this field, either this or 'typeref' must be present
+            required: no
+            typeref: DataType
+          - name: typeref
+            description: The type of this field, referencing a named type. Either this or 'type' must be present.
+            required: no
+            type: string
+          - name: key
+            description: The key if the type is an enum or collection
+            required: no
+            typeref: KeyType
+          - name: items
+            description: The the type od items contained in an array or collection
+            required: no
+            typeref: TypeSpec
+          - name: restrictions
+            description: A list of restrictions placed on the value of this field
+            type: array
+            items:
+                typeref: Restriction
+          - name: fields
+            description: A list of fields, if this field type is 'object'
+            type: array
+            items:
+                typeref: Field
+          - name: values
+            description: A list of enum constants, if this field type is 'enum'
+            type: array
+            items:
+                typeref: EnumConstant
+    - name: Restriction
+      description: A restriction on the allowed values
+      fields:
+          - name: restriction 
+            description: The description of the restriction. E.g. 'boolean' to restrict an 'int' to 0 or 1
+            required: yes
+            type: string
+    - name: Service
+      description: A description of the service, and the calls that can be made to it
+      fields:
+          - name: description
+            description: A description of the service, it's purpose, etc.
+            type: string
+          - name: commom 
+            description: A description of common elements to all calls
+            required: no
+            type: object
+            fields:
+                - name: headers
+                  description: A list of headers
+                  type: array
+                  items:
+                      typeref: Field
+                - name: parameters
+                  description: A list of query of form parameters
+                  type: array
+                  items:
+                      typeref: Field
+          - name: methods
+            description: A description of calls that can be made to the service
+            required: no
+            type: array
+            items:
+                type: object
+                fields:
+                    - name: id
+                      description: The method id
+                      type: int
+                    - name: name
+                      description: The name of the method
+                      type: string
+                    - name: description
+                      description: A description of the method
+                      type: string
+                    - name: headers
+                      description: A list of headers
+                      type: array
+                      items:
+                          typeref: Field
+                    - name: parameters
+                      description: A list of query of form parameters, in Allego's case this is what goes inside the "p" block
+                      type: array
+                      items:
+                          typeref: Field
+                    - name: response
+                      description: A description of the data returned in the response
+                      type: object
+                      fields:
+                          - name: description
+                            description: A description of the reponse
+                            type: string
+                          - name: type
+                            description: The type of this field, either this or 'typeref' must be present
+                            required: no
+                            typeref: DataType
+                          - name: typeref
+                            description: The type of this field, referencing a named type. Either this or 'type' must be present.
+                            required: no
+                            type: string
+                          - name: key
+                            description: The key if the type is an enum or collection
+                            required: no
+                            typeref: KeyType
+                          - name: items
+                            description: The the type od items contained in an array or collection
+                            required: no
+                            typeref: TypeSpec
+                          - name: restrictions
+                            description: A list of restrictions placed on the value of this field
+                            type: array
+                            items:
+                                typeref: Restriction
+                          - name: fields
+                            description: A list of fields, if this field type is 'object'
+                            type: array
+                            items:
+                                typeref: Field
+                          - name: values
+                            description: A list of enum constants, if this field type is 'enum'
+                            type: array
+                            items:
+                                typeref: EnumConstant                          
+#	private HTTPMethod method;
+#	@SerializedName("protocols allowed")
+#	private ArrayList<String> protocolsAllowed = new ArrayList<>();
+#	@SerializedName("request body")
+#	private RequestBody requestBody;

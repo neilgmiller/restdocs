@@ -1,0 +1,230 @@
+#macro( fieldheaders )
+<tr><th style="width: 15%">field</th><th style="width: 20%">long name</th><th style="width: 20%">type</th><th>description</th></tr>
+#end
+#macro( enumheaders )
+<tr><th style="width: 20%">enum name</th><th style="width: 15%">key</th><th>description</th></tr>
+#end
+#macro( parameterheaders )
+<tr><th style="width: 15%">parameter</th><th style="width: 20%">long name</th><th style="width: 20%">type</th><th>description</th></tr>
+#end
+#macro( fieldrow $field )
+                    <tr>
+                        <td>
+                            <span class="fieldname">$field.name</span><br>
+                            <span class="fieldrequired">
+                #if ($field.required)
+                            required
+                #else
+                            optional
+                #end
+                            </span>
+                        </td>
+                        <td>
+                            <span class="fieldname">$field.longName</span><br>
+                        </td>
+                        <td>
+	                        <span class="type" id="type">
+                	#if ($field.isTypeRef)
+                            	$link.typeSimple($field.typeRef)
+                    #elseif ($field.type.name() == "ARRAY" && $field.items.isTypeRef)
+                            	array of $link.typeSimple($field.items.typeRef)
+                    #else
+                            	$link.type( $text.fieldClass($field) )
+                    #end
+                            </span>
+                #if ($field.hasRestrictions)
+                    #foreach( $restriction in $field.restrictions)
+                            <br><span>$restriction.restriction</span>
+                        #if ($restriction.hasMultipleValues)
+                            <ul>
+                            #foreach( $value in $restriction.values)
+                                <li>$value</li>
+                            #end
+                            </ul>
+                        #else
+                            $restriction.value
+                        #end
+                    #end
+                #end
+                        </td>
+                        <td>
+                            $field.description
+                        </td>
+                    </tr>
+                #if ($field.type.name() == "OBJECT" || ($field.type.name() == "ARRAY" && $field.items.type.name() == "OBJECT"))
+	                #if ($field.type.name() == "OBJECT")
+		              	#set ($object = $field)
+		              #else
+		              	#set ($object = $field.items)
+		              #end
+
+                    <tr>
+                        <td colspan=4 style="padding: 0.25em 0 0 2em">
+                            <table>
+                    			#fieldheaders
+        			#foreach( $inner_field in $object.fields )
+                    			#fieldrow( $inner_field )
+        			#end
+                			</table>
+                        </td>
+                    </tr>
+                #elseif ($field.type.name() == "ENUM")
+                    <tr>
+                        <td colspan=4 style="padding: 0.25em 0 0 2em">
+                            <table>
+                    			#enumheaders
+        			#foreach( $constant in $field.values )
+                    			#enumConstantRow( $constant )
+        			#end
+                			</table>
+                        </td>
+                    </tr>
+                #end
+
+#end
+#macro( enumConstantRow $constant )
+                    <tr>
+                        <td>
+                            <span class="fieldname">$constant.longName</span><br>
+                        </td>
+                        <td>
+                            <span class="fieldname">$constant.value</span>
+                        </td>
+                        <td>
+                            $constant.description
+                        </td>
+                    </tr>
+#end
+<html>
+<head>
+    <title>$document.title</title>
+    <link href="css/api.css" rel="stylesheet">
+</head>
+<body>
+	<script>
+		function toggleNav() {
+			var siderBar = document.getElementById("sidebar");
+			if (siderBar.classList.toggle("collapsed")) {
+				var navWidth = "300px";
+				siderBar.style.width = navWidth;
+				document.getElementById("main").style.marginLeft = navWidth;
+				document.getElementById("nav-button").style.left = navWidth;
+				document.getElementById("collapseIcon").style.display = null;
+				document.getElementById("hamburgerIcon").style.display = "none";
+			} else {
+				siderBar.style.width = null;
+				document.getElementById("main").style.marginLeft= null;
+				document.getElementById("nav-button").style.left = null;
+				document.getElementById("collapseIcon").style.display = "none";
+				document.getElementById("hamburgerIcon").style.display = null;
+			}
+		}
+	</script>
+	<nav id="sidebar">
+		<button id="nav-button" class="nav-button" onclick="toggleNav()">
+			<span id="hamburgerIcon"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" role="presentation"><path d="M6 12c0-.552.456-1 1.002-1h9.996a.999.999 0 1 1 0 2H7.002A.999.999 0 0 1 6 12zm0 4c0-.552.456-1 1.002-1h9.996a.999.999 0 1 1 0 2H7.002A.999.999 0 0 1 6 16zm0-8c0-.552.456-1 1.002-1h9.996a.999.999 0 1 1 0 2H7.002A.999.999 0 0 1 6 8z" fill="currentColor"></path></svg></span>
+			<span id="collapseIcon" style="display: none"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" role="presentation"><path d="M13.706 9.698a.988.988 0 0 0 0-1.407 1.01 1.01 0 0 0-1.419 0l-2.965 2.94a1.09 1.09 0 0 0 0 1.548l2.955 2.93a1.01 1.01 0 0 0 1.42 0 .988.988 0 0 0 0-1.407l-2.318-2.297 2.327-2.307z" fill="currentColor" fill-rule="evenodd"></path></svg></span>
+		</button>
+		<ul id="navItems">
+#if ($document.hasDataObjects)
+			<li><a href="#toc">Table of Contents</a></li>
+            <li>Data Objects</li>
+                <ul>
+    #foreach( $dataObject in $document.dataObjects )
+                    <li><a href="#$dataObject.name">$dataObject.name</a></li>
+    #end
+                </ul>
+#end
+#if ($document.hasEnumerations)
+            <li>Enumerations</li>
+                <ul>
+    #foreach( $enumeration in $document.enumerations )
+                    <li><a href="#$enumeration.name">$enumeration.name</a></li>
+    #end
+                </ul>
+#end
+        </ul>
+	</nav>
+	<div id="main">
+    <section id="toc" role="directory">
+			
+        <h1>Table of Contents</h1>
+        <ul>
+#if ($document.hasDataObjects)
+            <li>Data Objects</li>
+                <ul>
+    #foreach( $dataObject in $document.dataObjects )
+                    <li><a href="#$dataObject.name">$dataObject.name</a></li>
+    #end
+                </ul>
+#end
+#if ($document.hasEnumerations)
+            <li>Enumerations</li>
+                <ul>
+    #foreach( $enumeration in $document.enumerations )
+                    <li><a href="#$enumeration.name">$enumeration.name</a></li>
+    #end
+                </ul>
+#end
+        </ul>
+    </section>
+    <section id="api" role="main">
+#if ($document.hasDataObjects)
+        <section>
+            <h2>Data Objects</h2>
+#foreach( $dataObject in $document.dataObjects )
+            <section>
+                <h3 id="$dataObject.name">$dataObject.name</h3>
+                <p>$dataObject.description</p>
+    #if ($dataObject.hasFields)
+                <table>
+                    #fieldheaders
+        #foreach( $field in $dataObject.fields )
+                    #fieldrow( $field )
+        #end
+                </table>
+    #end
+    #if ($dataObject.hasChildren)
+                <h4>Discriminator</h4>
+                <table>
+                    #fieldheaders
+                    #fieldrow( $dataObject.discriminator )
+                </table>
+                <h4>Child Types</h4>
+        #foreach( $child in $dataObject.childTypes )
+                <h5>$child.name</h5>
+                <p>$child.description</p>
+                <table>
+                    #fieldheaders
+            #foreach( $field in $child.fields )
+                    #fieldrow( $field )
+            #end
+                </table>
+        #end
+    #end
+            </section>
+#end
+        </section>
+#end
+#if ($document.hasEnumerations)
+        <section>
+            <h2>Enumerations</h2>
+#foreach( $enumeration in $document.enumerations )
+            <section>
+                <h3 id="$enumeration.name">$enumeration.name</h3>
+                <p>$enumeration.description</p>
+    #if ($enumeration.hasEnumValues)
+                <table>
+                    #enumheaders
+        #foreach( $constant in $enumeration.values )
+                    #enumConstantRow( $constant )
+        #end
+                </table>
+    #end
+            </section>
+#end
+        </section>
+#end
+    </section>
+    </div>
+</body></html>

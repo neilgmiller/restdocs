@@ -1,0 +1,892 @@
+@charset "UTF-8";
+
+body {
+    font-family: Palatino Linotype, Book Antiqua, Palatino, serif;
+    font-size: 1em;
+    margin: 0;
+    overflow: auto;
+    padding: 0
+}
+.button-chrome {
+    background: #e1e1e1 url('../images/bg-button_chrome.png') repeat-x 0 0;
+    border: 1px solid #bbb;
+    border-bottom-color: #999;
+    border-radius: 0.25em;
+    box-shadow: 0 1px 0 #e9e9e9;
+    color: #333;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 400;
+    padding: 0.2em 0.8em;
+    text-shadow: none
+}
+
+.button-chrome:hover {
+    background-color: #dbdbdb;
+    background-position: 0 -80px;
+    border-color: #999 #999 #666
+}
+
+.button-chrome:active {
+    background-color: #fff;
+    background-position: 0 -160px
+}
+
+.new-button {
+    background: #a3ab4f;
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #a3ab4f), color-stop(100%, #6e771c));
+    background: -webkit-linear-gradient(#a3ab4f,#6e771c);
+    background: -moz-linear-gradient(#a3ab4f,#6e771c);
+    background: -o-linear-gradient(#a3ab4f,#6e771c);
+    background: linear-gradient(#a3ab4f,#6e771c);
+    border-top: 1px solid #d7dc90;
+    border-bottom: 2px solid #4c5213;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    line-height: 1.6em;
+    padding: 7px 18px 4px 12px;
+    text-shadow: 0 -1px #636927
+}
+
+.new-button:hover {
+    background: #9da443;
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #9da443), color-stop(100%, #64771c));
+    background: -webkit-linear-gradient(#9da443,#64771c);
+    background: -moz-linear-gradient(#9da443,#64771c);
+    background: -o-linear-gradient(#9da443,#64771c);
+    background: linear-gradient(#9da443,#64771c);
+    color: #fff
+}
+
+.new-button:active {
+    box-shadow: inset 0 0 10px #414141
+}
+
+.new-button img {
+    float: left;
+    margin-right: 0.6em
+}
+
+.new-button span {
+    color: #edefad;
+    font-size: 0.65em;
+    font-weight: 400;
+    text-shadow: 0 -1px #636927;
+    text-transform: uppercase
+}
+
+.keys-container .get-keys-btn,.content .keys-container .get-keys-btn {
+    cursor: pointer
+}
+
+.keys-container .working.get-keys-btn {
+    cursor: default
+}
+
+.keys-container .get-keys-btn,.content .keys-container .get-keys-btn {
+    font-family: 'Sentinel SSm A', 'Sentinel SSm B', Palatino Linotype, Book Antiqua, Palatino, serif;
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center
+}
+
+.keys-container .get-keys-btn,.content .keys-container .get-keys-btn {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 3px;
+    box-shadow: rgba(255,255,255,0.2) 0 1px 0 inset;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    display: block;
+    font-size: 1em;
+    padding: 0.5em 0;
+    width: 100%
+}
+
+.keys-container .get-keys-btn,.content .keys-container .get-keys-btn {
+    background-color: #232323;
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(55%, #303030), color-stop(100%, #000000));
+    background: -webkit-linear-gradient(#303030 55%,#000000);
+    background: -moz-linear-gradient(#303030 55%,#000000);
+    background: -o-linear-gradient(#303030 55%,#000000);
+    background: linear-gradient(#303030 55%,#000000);
+    border-color: #232323;
+    box-shadow: rgba(255,255,255,0.3) 0 1px 0 inset;
+    color: #f1f1f1;
+    font-weight: 600
+}
+
+.keys-container .get-keys-btn:hover,.keys-container .get-keys-btn:focus {
+    background-color: #040404;
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(50%, #262626), color-stop(100%, #000000));
+    background: -webkit-linear-gradient(#262626 50%,#000000);
+    background: -moz-linear-gradient(#262626 50%,#000000);
+    background: -o-linear-gradient(#262626 50%,#000000);
+    background: linear-gradient(#262626 50%,#000000)
+}
+
+.keys-container .get-keys-btn:active,.keys-container .working.get-keys-btn {
+    background-color: #040404;
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #232323), color-stop(50%, #202020));
+    background: -webkit-linear-gradient(#232323,#202020 50%);
+    background: -moz-linear-gradient(#232323,#202020 50%);
+    background: -o-linear-gradient(#232323,#202020 50%);
+    background: linear-gradient(#232323,#202020 50%)
+}
+
+body {
+    background-color: #fdfdfd
+}
+
+#readability {
+    background-image: none;
+    background-color: #fdfdfd;
+    border-top: 1px solid #e7e7e7;
+    box-shadow: inset #232323 0 195px 0,inset #000 0 201px 0;
+    padding-bottom: 0
+}
+
+.api-terms #readability {
+    box-shadow: inset #232323 0 75px 0,inset #000 0 81px 0
+}
+
+.api-terms #api .content {
+    margin-top: 83px
+}
+
+#rdb-content {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    padding: 1.3em 0.8em 0 0.6em;
+    -webkit-font-smoothing: anitaliased
+}
+
+#rdb-content:after {
+    clear: both;
+    content: " ";
+    display: block;
+    font-size: 0;
+    height: 0;
+    visibility: hidden
+}
+
+.api-nav {
+    float: right;
+    font-family: "helvetica neue", helvetica, sans-serif;
+    font-size: 0.9em;
+    width: 25%
+}
+
+.api-nav ul {
+    background-color: #fff;
+    border-radius: 0 0 3px 3px;
+    border: 1px solid #dfdfdf;
+    border-top: 4px solid #b91506;
+    box-shadow: 0 -2px 3px rgba(0,0,0,0.2)
+}
+
+.api-nav li {
+    border-bottom: 1px solid #dfdfdf;
+    list-style: none
+}
+
+.api-nav li:first-child {
+    border-top: 0
+}
+
+.api-nav li:last-child {
+    border-bottom: 0
+}
+
+.api-nav li:last-child a {
+    border-radius: 0 0 3px 3px
+}
+
+.api-nav ul a {
+    display: block;
+    padding: 0.9em 0.8em 0.9em 0.7em;
+    -webkit-transition-property: all;
+    -moz-transition-property: all;
+    -o-transition-property: all;
+    transition-property: all;
+    -webkit-transition-duration: 0.2s;
+    -moz-transition-duration: 0.2s;
+    -o-transition-duration: 0.2s;
+    transition-duration: 0.2s
+}
+
+.api-nav ul a:before {
+    background-color: #4d4d4d;
+    border: 1px solid #4d4d4d;
+    border-radius: 6px;
+    box-shadow: inset 0 0 1px 1px #fff;
+    content: "";
+    display: inline-block;
+    height: 6px;
+    margin-right: 0.7em;
+    margin-bottom: 1px;
+    opacity: 0.7;
+    text-align: center;
+    width: 6px
+}
+
+.api-nav ul a:hover,.api-nav ul a:focus {
+    background-color: #f7f7f7;
+    color: #000
+}
+
+.api-nav ul a:hover:before,.api-nav ul a:focus:before {
+    opacity: 1
+}
+
+.api-overview li.api-overview a,.api-reader li.api-reader a,.api-parser li.api-parser a,.api-shortener li.api-shortener a,.api-terms li.api-terms a {
+    background-color: #f0f0f0;
+    color: #000
+}
+
+.api-overview li.api-overview a:before,.api-reader li.api-reader a:before,.api-parser li.api-parser a:before,.api-shortener li.api-shortener a:before,.api-terms li.api-terms a:before {
+    background-color: #880f04
+}
+
+.keys-container {
+    background-color: #fff;
+    border-radius: 3px;
+    border: 1px solid #e7e7e7;
+    border-bottom-color: #ddd;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    margin-top: 1em;
+    padding: 0.3em 0.2em
+}
+
+.keys-container .get-keys-btn {
+    border-radius: 4px;
+    padding: 0.6em 0
+}
+
+.content .keys-container {
+    background-color: #f7f7f7;
+    border-top: 0;
+    border-radius: 0 0 3px 3px;
+    overflow: hidden;
+    margin: 0 auto;
+    padding: 1em 1.2em 0.8em 1.2em;
+    width: 98%
+}
+
+.content .keys-container p {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    float: left;
+    font-size: 1em;
+    line-height: 1.3;
+    margin: 0;
+    padding: 0 1.4em 0 4.2em;
+    text-align: right;
+    width: 55%
+}
+
+.content .keys-container p::after {
+    content: "»"
+}
+
+.content .keys-container .get-keys-btn {
+    float: right;
+    margin: 0 auto;
+    padding: 0.7em 0;
+    width: 45%
+}
+
+.api-intro {
+    font-size: 1.3em;
+    font-weight: 500;
+    padding-top: 0.5em;
+    margin-bottom: 0.4em;
+    text-indent: 0.2em
+}
+
+.api-overview .api-nav .keys-container {
+    display: none
+}
+
+#api .api-list {
+    border: 1px solid #e7e7e7;
+    border-top: 3px solid #b91506;
+    border-radius: 0 0 3px 3px;
+    font-weight: normal;
+    margin: 0;
+    overflow: hidden;
+    padding: 0.5em 0
+}
+
+#api .api-list h3 {
+    font-size: 1em;
+    letter-spacing: 0.1em;
+    margin: 0 0 0.2em 0;
+    text-transform: uppercase
+}
+
+#api .api-list a {
+    display: block;
+    padding: 0.8em 1.2em;
+    min-height: 6.5em
+}
+
+#api .api-list li {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    float: left;
+    list-style: none;
+    margin: 0 0 0 2%;
+    min-height: 8em;
+    width: 32%
+}
+
+#api .api-list li:first-child {
+    margin-left: 0
+}
+
+#api .api-list li:first-child a {
+    border-right: 1px solid #e7e7e7
+}
+
+#api .api-list li:last-child a {
+    border-left: 1px solid #e7e7e7
+}
+
+#api .api-list p {
+    color: #333;
+    font-family: "helvetica neue", helvetica, sans-serif;
+    font-size: 0.8em;
+    line-height: 1.5;
+    margin: 0
+}
+
+.notes {
+    border-top: 1px dashed #e7e7e7;
+    font-size: 1em;
+    margin-top: 1.8em;
+    padding: 0.7em 1em 0.8em 1em
+}
+
+[role=main] {
+    position: relative;
+    float: left;
+    width: 72%
+}
+
+[role=main] header {
+    padding-top: 0.1em;
+    position: absolute;
+    color: #f1f1f1;
+    left: 0;
+    top: 0;
+    width: 100%
+}
+
+[role=main] header h1 {
+    color: #fff;
+    font-size: 2.3em;
+    font-weight: 500;
+    margin: 0
+}
+
+[role=main] header p {
+    -moz-animation: print 1.8s 1;
+    -webkit-animation: print 1.8s 1;
+    animation: print 1.8s 1;
+    border-top: 1px dashed #d7d7d7;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    color: #d7d7d7;
+    font-family: "Droid Sans Mono", "Lucida Console", "Menlo", "Courier New", Courier, monospace;
+    font-size: 1em;
+    line-height: 1.5;
+    margin: 0.7em 0 0 0;
+    overflow: hidden;
+    padding-top: 0.8em;
+    width: 98%
+}
+
+[role=main] header .cursor {
+    -moz-animation: cursor 1.2s 5;
+    -webkit-animation: cursor 1.2s 5;
+    animation: cursor 1.2s 5;
+    background-color: #d7d7d7;
+    display: inline-block;
+    height: 1.3em;
+    margin-left: 0.4em;
+    vertical-align: top;
+    width: 0.5em
+}
+
+[role=main] header b {
+    font-weight: normal
+}
+
+[role=main] header .user {
+    color: #c2e3ed
+}
+
+[role=main] header .comp-name {
+    color: #d8fab0
+}
+
+[role=main] header .path {
+    color: #fdb4fd
+}
+
+.no-boxshadow [role=main] header {
+    color: #333
+}
+
+.no-boxshadow [role=main] header h1 {
+    color: #000
+}
+
+.no-boxshadow [role=main] header p {
+    color: #333
+}
+
+.no-boxshadow [role=main] header .cursor {
+    background-color: #333
+}
+
+.no-boxshadow [role=main] header .user,.no-boxshadow [role=main] header .comp-name,.no-boxshadow [role=main] header .path {
+    color: #333
+}
+
+@-moz-keyframes print {
+    0%,25% {
+        height: 0
+    }
+
+    25.0001%,50% {
+        height: 2.3em
+    }
+
+    50.0001%,75% {
+        height: 3.8em
+    }
+
+    75.0001%,100% {
+        height: 5.3em
+    }
+}
+
+@-webkit-keyframes print {
+    0%,25% {
+        height: 0
+    }
+
+    25.0001%,50% {
+        height: 2.3em
+    }
+
+    50.0001%,75% {
+        height: 3.8em
+    }
+
+    75.0001%,100% {
+        height: 5.3em
+    }
+}
+
+@keyframes print {
+    0%,25% {
+        height: 0
+    }
+
+    25.0001%,50% {
+        height: 2.3em
+    }
+
+    50.0001%,75% {
+        height: 3.8em
+    }
+
+    75.0001%,100% {
+        height: 5.3em
+    }
+}
+
+@-moz-keyframes cursor {
+    0%,68% {
+        opacity: 1
+    }
+
+    71%,100% {
+        opacity: 0
+    }
+}
+
+@-webkit-keyframes cursor {
+    0%,68% {
+        opacity: 1
+    }
+
+    71%,100% {
+        opacity: 0
+    }
+}
+
+@keyframes cursor {
+    0%,68% {
+        opacity: 1
+    }
+
+    71%,100% {
+        opacity: 0
+    }
+}
+
+#api {
+    margin: 10px 40px;
+    font-size: 1.2em;
+}
+
+#api .content {
+    margin-top: 203px;
+    padding-bottom: 1.4em
+}
+
+#api .content>section {
+    border-top: 1px solid #e7e7e7;
+    margin: 2em 0 0 0;
+    padding: 0.8em 0
+}
+
+#api .content>section:first-child {
+    border-top: 0
+}
+
+#api .content>section p:last-child,#api .content>section pre:last-child {
+    margin-bottom: 0
+}
+
+#api .note {
+    background-color: #fffcdf;
+    color: #000;
+    padding: 0.8em 1em
+}
+
+#api h1 {
+    font-size: 2em;
+    font-weight: 600;
+    margin: 0;
+    padding: 15px 0 0;
+}
+
+#api h2 {
+    font-size: 1.6em;
+    font-weight: 600;
+    margin: 0;
+    padding: 15px 0 0;
+}
+
+#api h2:before {
+    content: "#";
+    font-family: "Droid Sans Mono", "Lucida Console", "Menlo", "Courier New", Courier, monospace;
+    font-size: 0.65em;
+    opacity: 0.7;
+    vertical-align: top;
+    margin-left: -1em;
+    margin-right: 0.4em
+}
+
+#api .section-intro {
+    color: #595959;
+    font-size: 1.1em;
+    font-style: italic;
+    margin: 0;
+    padding: 0.3em 0 1.6em 0;
+    width: 90%
+}
+
+#api .doc-block {
+    margin-bottom: 2em;
+    margin-top: 0.2em
+}
+
+#api .doc-block h3 {
+    font-size: 1.2em;
+    margin: 1.6em 0 0.6em 0;
+    padding-bottom: 0;
+    word-wrap: break-word
+}
+
+#api .optional {
+    opacity: 0.75
+}
+
+#api .methods {
+    background: #fff;
+    border: 1px solid #e7e7e7;
+    border-radius: 3px;
+    margin: 0.4em 0 2.5em 0;
+    padding: 0.6em
+}
+
+#api .methods h4 {
+    background: #f4f4f4;
+    border-top: 1px solid #d3d3d3;
+    font-size: 1.1em;
+    margin-bottom: .6em;
+    padding: 0.2em 0 .2em .4em
+}
+
+#api .methods li {
+    margin-left: 2.2em
+}
+
+#api .methods h6 {
+    margin: .6em 0 .3em;
+    text-transform: lowercase
+}
+
+#api table {
+    border-color: #e1e1dc;
+    border-style: solid;
+    border-width: 1px;
+    border-collapse: collapse;
+    margin-bottom: 0.5em;
+    width: 100%
+}
+
+#api table th {
+    background: #6c7f8a url('../images/bg_tablehead.png') repeat-x;
+    border-top: 1px solid #465660;
+    color: white;
+    font-size: .75em !important;
+    font-weight: normal;
+    text-align: left;
+    padding: 0.3em 1.6em;
+    text-transform: uppercase
+}
+
+#api table td {
+    border-bottom: 1px solid #e1e1dc;
+    border-top: 1px solid #e1e1dc;
+    padding: .5em;
+    word-wrap: break-word
+}
+
+#api table td table th {
+    background: #e5e5ee url('../images/bg_tablehead.png') repeat-x;
+    border-top: 1px solid #465660;
+    color: black;
+    font-size: .75em !important;
+    font-weight: normal;
+    text-align: left;
+    padding: 0.3em 1.6em;
+    text-transform: uppercase
+}
+
+.fieldname {
+    font-weight: bold;
+}
+
+.fieldrequired {
+    font-style: italic;
+    color: #666666
+}
+
+
+.type {
+    color: #B82E00;
+    font-style: italic;
+}
+
+#type a {
+    text-decoration: underline;
+}
+
+#type a:visited {
+    color: #B82E00;
+}
+
+#type a:link {
+    color: #B82E00;
+}
+
+#type a:active {
+    color: #000088;
+}
+
+#type a:hover {
+    color: #000088;
+}
+
+#api code {
+    font-family: "Droid Sans Mono", "Lucida Console", "Menlo", "Courier New", Courier, monospace;
+    font-size: 14px
+}
+
+#api pre {
+    background-image: none;
+    background-color: #232323;
+    border-radius: 3px;
+    color: #e4e4e4;
+    font-family: "Droid Sans Mono", "Lucida Console", "Menlo", "Courier New", Courier, monospace;
+    padding: 1em 1.5em;
+    overflow-x: auto
+}
+
+#api h6 {
+    font-size: 1.1em;
+    margin: 0.5em 0em 0.25em 0em
+}
+
+#api tt {
+    font-size: 0.8em;
+    font-weight: normal
+}
+
+#api dt {
+    margin: 0.75em 0
+}
+
+#api li {
+    margin: 0.6em 0 0.6em 1.1em
+}
+
+#api h3 {
+    font-size: 1.5em;
+    font-weight: 500;
+    margin: 0.6em 0 0em 0;
+    padding: 0
+}
+
+#api ul {
+    font-weight: bold;
+    margin: 0.1em 0
+}
+
+#api ul ul {
+    font-weight: normal;
+    margin: 0 0 2em;
+    padding-left: 1.75em
+}
+
+#api ul ul ul {
+    margin-bottom: 0
+}
+
+#api td {
+    background-color: #f6f6ff;
+    font-size: 0.85em;
+    padding: 3px 6px;
+    vertical-align: top
+}
+
+#api td p {
+    margin: 0px
+}
+
+#api h4 {
+    margin: 0;
+    padding: 0.3em 0 .5em
+}
+
+#api dd {
+    margin-left: 1em
+}
+
+#api .resource h3 {
+    color: #435966
+}
+
+#api p+ul,p+ol,p+dl {
+    margin-top: 0em
+}
+
+#resources h5 {
+    margin: 0.6em 0px 0em;
+    padding: 0px;
+}
+
+.nav-button {
+	background: white none repeat scroll 0px center;
+	border: 0px none;
+	border-radius: 50%;
+	box-shadow: rgba(9, 30, 66, 0.08) 0px 0px 0px 1px, rgba(9, 30, 66, 0.08) 0px 2px 4px 1px;
+	color: rgb(107, 119, 140);
+	cursor: pointer;
+	height: 24px;
+	opacity: 1;
+	outline: currentcolor none 0px;
+	padding: 0px;
+	position: fixed;
+	top: 32px;
+	left: 24px;
+	transition: background-color 100ms linear 0s, color 100ms linear 0s, opacity 300ms cubic-bezier(0.2, 0, 0, 1) 0s, transform 300ms cubic-bezier(0.2, 0, 0, 1) 0s, left 0.5s;
+	transform: translate(-50%);
+	width: 24px;
+}
+
+.nav-button:hover {
+	background: #e6d0fb /* #cc99ff */
+}
+
+#sidebar {
+  height: 100%; /* 100% Full-height */
+  width: 24px; /* 0 width - change this with JavaScript */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Stay on top */
+  top: 0;
+  left: 0;
+  background-color: #b8b3cc; /* Black*/
+  overflow-x: hidden; /* Disable horizontal scroll */
+  padding-top: 60px; /* Place content 60px from the top */
+  transition: 0.5s; /* 0.5 second transition effect to slide in the sidebar */
+}
+
+/* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+#main {
+  transition: margin-left .5s; /* If you want a transition effect */
+  margin-left: 36px;
+}
+
+#navItems {
+	min-width: 240px;
+}
+
+#navItems ul {
+	padding-left: 15px;
+}
+
+#toc h1 {
+    font-size: 1.6em;
+    font-weight: 600;
+    margin: 0;
+    padding: 15px 0 0;
+}
+
+#toc h1:before {
+    content: "#";
+    font-family: "Droid Sans Mono", "Lucida Console", "Menlo", "Courier New", Courier, monospace;
+    font-size: 0.65em;
+    opacity: 0.7;
+    vertical-align: top;
+    margin-left: -1em;
+    margin-right: 0.4em
+}
+
+#toc {
+    margin: 10px 40px;
+    font-size: 1.2em;
+}
