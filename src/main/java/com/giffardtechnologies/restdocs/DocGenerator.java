@@ -71,6 +71,8 @@ public class DocGenerator implements LogChute, Callable<Void> {
 			mPropertiesFile = new File("docbuild.properties");
 		}
 
+		mPropertiesFile = mPropertiesFile.getAbsoluteFile();
+
 		mProperties = new Properties();
 		BufferedInputStream propsInStream = new BufferedInputStream(new FileInputStream(mPropertiesFile));
 
