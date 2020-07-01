@@ -25,7 +25,7 @@ public class EnumConstant {
 	 * @return a human readable name for this enum constant
 	 */
 	public String getLongName() {
-		return longName;
+		return longName == null ? value : longName;
 	}
 
 	public void setLongName(String longName) {
