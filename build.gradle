@@ -4,10 +4,16 @@ version '1.0-SNAPSHOT'
 apply plugin: 'application'
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
+
+def homePath = System.properties['user.home']
 
 repositories {
     mavenCentral()
+    ivy {
+        // change to point to your repo, e.g. http://my.org/repo
+        url = "${homePath}/.ivy/repo"
+    }
 }
 
 dependencies {
@@ -27,6 +33,13 @@ dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.1'
     compile 'com.google.guava:guava:22.0'
     compile 'org.jetbrains:annotations:13.0'
+
+    compile 'com.squareup:javapoet:1.11.1'
+    compile 'com.google.googlejavaformat:google-java-format:1.8'
+// https://mvnrepository.com/artifact/org.eclipse.jdt/org.eclipse.jdt.core
+    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.22.0'
+
+    compile "com.allego.common:futureproofenum:1.0-SNAPSHOT"
 
 }
 

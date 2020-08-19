@@ -1,5 +1,6 @@
 package com.giffardtechnologies.restdocs.domain;
 
+import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
@@ -80,6 +81,22 @@ public class Document {
 
 	public NamedEnumeration getEnumerationByName(String name) {
 		return mEnumerationNames.get(name);
+	}
+
+	public NamedType getTypeByName(String name) {
+		DataObject dataObject = mDataObjectNames.get(name);
+		NamedEnumeration namedEnumeration = mEnumerationNames.get(name);
+		if (dataObject == null && namedEnumeration == null) {
+			throw new IllegalStateException("Type reference to undefined type: " + name + ".");
+		} else if (dataObject != null && namedEnumeration != null) {
+			throw new IllegalStateException("Ambiguous type reference: " + name + ".");
+		}
+
+		if (dataObject == null) {
+			return namedEnumeration;
+		} else {
+			return dataObject;
+		}
 	}
 
 }

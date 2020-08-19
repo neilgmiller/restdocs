@@ -146,7 +146,7 @@ public class JavaTool {
 	public String fieldNameToClassStyle(String input) {
 		input = input.replaceAll("ID", "Id");
 		String classStyle = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, input);
-		classStyle = classStyle.replaceAll("Id[A-Z]", "ID");
+		classStyle = classStyle.replaceAll("Id([A-Z].*)?$", "ID$1");
 		return classStyle;
 	}
 
@@ -158,10 +158,11 @@ public class JavaTool {
 				name = name.substring(0, name.length() - 4);
 			}
 		}
-		if (parent != null) {
-			return parent.getTypeName() + fieldNameToClassStyle(name);
+		String className = fieldNameToClassStyle(name);
+		if (parent != null && !className.startsWith(parent.getTypeName())) {
+			return parent.getTypeName() + className;
 		} else {
-			return fieldNameToClassStyle(name);
+			return className;
 		}
 	}
 

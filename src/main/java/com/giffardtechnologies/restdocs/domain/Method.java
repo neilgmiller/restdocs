@@ -23,15 +23,15 @@ public class Method {
 	private int id;
 	private String name = "";
 	private String description = "";
-	private ArrayList<Field> headers;
-	private ArrayList<Field> parameters;
+	private ArrayList<Field> headers = new ArrayList<>();
+	private ArrayList<Field> parameters = new ArrayList<>();
 	@SerializedName("request body")
 	private RequestBody requestBody;
 	private Response response;
 	@SerializedName("successful codes")
-	private ArrayList<String> successCodes;
+	private ArrayList<String> successCodes = new ArrayList<>();
 	@SerializedName("failure codes")
-	private ArrayList<String> failureCodes;
+	private ArrayList<String> failureCodes = new ArrayList<>();
 	
 	public Method() {
 		super();

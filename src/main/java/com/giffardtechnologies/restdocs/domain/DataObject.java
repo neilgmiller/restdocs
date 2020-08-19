@@ -2,6 +2,7 @@ package com.giffardtechnologies.restdocs.domain;
 
 import java.util.ArrayList;
 
+import com.giffardtechnologies.restdocs.domain.type.DataType;
 import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.google.gson.annotations.SerializedName;
@@ -23,7 +24,12 @@ public class DataObject implements NamedType {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
+	@Override
+	public DataType getType() {
+		return DataType.OBJECT;
+	}
+
 	public String getDescription() {
 		return description;
 	}
