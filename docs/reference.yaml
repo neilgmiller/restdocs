@@ -137,9 +137,14 @@ data objects:
             description: A description of the field, it's purpose, etc.
             type: string
           - name: required
-            description: An indicator as to whether this field is required or not, defaults to true
+            description: An indicator as to whether this field is required or not
             required: no
+            default: true
             type: boolean
+          - name: default
+            description: The default value, if any, for optional fields, when they are not specified.
+            required: no
+            type: string
           - name: type
             description: The type of this field, either this or 'typeref' must be present
             required: no
@@ -153,33 +158,42 @@ data objects:
             required: no
             typeref: KeyType
           - name: items
-            description: The the type od items contained in an array or collection
+            description: The the type of items contained in an array or collection
             required: no
             typeref: TypeSpec
           - name: restrictions
             description: A list of restrictions placed on the value of this field
+            required: no
             type: array
             items:
                 typeref: Restriction
           - name: fields
-            description: A list of fields, if this field type is 'object'
+            description: A list of fields, required if this field type is 'object'
+            required: no
             type: array
             items:
                 typeref: Field
           - name: values
-            description: A list of enum constants, if this field type is 'enum'
+            description: A list of enum constants, required if this field type is 'enum'.
+            required: no
             type: array
             items:
                 typeref: EnumConstant
+          - name: sampleValues
+            description: A list of sample values, if this field type is 'enum', this will be ignored.
+            required: no
+            type: array
+            items:
+                type: string
     - name: TypeSpec
       description: A description of a type
       fields:
           - name: type
-            description: The type of this field, either this or 'typeref' must be present
+            description: The type being described, either this or 'typeref' must be present
             required: no
             typeref: DataType
           - name: typeref
-            description: The type of this field, referencing a named type. Either this or 'type' must be present.
+            description: The type being described as a reference to a named type. Either this or 'type' must be present.
             required: no
             type: string
           - name: key
@@ -187,21 +201,24 @@ data objects:
             required: no
             typeref: KeyType
           - name: items
-            description: The the type od items contained in an array or collection
+            description: The the type of items contained in an array or collection
             required: no
             typeref: TypeSpec
           - name: restrictions
-            description: A list of restrictions placed on the value of this field
+            description: A list of restrictions placed on the value of this type
+            required: no
             type: array
             items:
                 typeref: Restriction
           - name: fields
-            description: A list of fields, if this field type is 'object'
+            description: A list of fields, required if this type is 'object'
+            required: no
             type: array
             items:
                 typeref: Field
           - name: values
-            description: A list of enum constants, if this field type is 'enum'
+            description: A list of enum constants, required if this type is 'enum'.
+            required: no
             type: array
             items:
                 typeref: EnumConstant

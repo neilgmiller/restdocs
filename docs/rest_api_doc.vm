@@ -15,7 +15,7 @@
                 #if ($field.required)
                             required
                 #else
-                            optional
+                            optional#if ($field.hasDefaultValue), defaults to '$field.defaultValue'#end
                 #end
                             </span>
                         </td>

@@ -26,7 +26,7 @@ dependencies {
     compile 'info.picocli:picocli:3.5.2'
     compile 'com.google.code.findbugs:jsr305:3.0.1'
     compile 'com.google.guava:guava:22.0'
-
+    compile 'org.jetbrains:annotations:13.0'
 
 }
 
