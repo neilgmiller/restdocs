@@ -14,6 +14,13 @@ repositories {
         // change to point to your repo, e.g. http://my.org/repo
         url = "${homePath}/.ivy/repo"
     }
+    ivy {
+        credentials {
+            username "$allegoArtifactoryUser"
+            password "$allegoArtifactoryPassword"
+        }
+        url "https://dev-build.allego.com/artifactory/$allegoAndroidArtifactoryRepo/"
+    }
 }
 
 dependencies {
