@@ -135,7 +135,7 @@ public class JavaTool {
 	}
 
 	public String toGetterStyle(String input) {
-		return input.replaceAll("Id$", "ID");
+		return input.replaceAll("Id$", "ID").replaceAll("Ids$", "IDs");
 	}
 
 	public String toConstantStyle(String input) {
@@ -146,7 +146,7 @@ public class JavaTool {
 	public String fieldNameToClassStyle(String input) {
 		input = input.replaceAll("ID", "Id");
 		String classStyle = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, input);
-		classStyle = classStyle.replaceAll("Id([A-Z].*)?$", "ID$1");
+		classStyle = classStyle.replaceAll("Id(s)?([A-Z].*)?$", "ID$1$2");
 		return classStyle;
 	}
 
