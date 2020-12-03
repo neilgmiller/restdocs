@@ -74,6 +74,14 @@ startScripts {
             })
 }
 
+task createJavaStartScript(type: Copy) {
+    from file("$buildDir/scripts/doc_generator")
+    rename { String filename -> return 'java_generator' }
+    filter { String line -> line.replaceAll("(.*)DocGenerator(.*)", '$1JavaGenerator$2') }
+    into file("$buildDir/scripts")
+}
+startScripts.finalizedBy createJavaStartScript
+
 installDist {
     into installDir
 }
