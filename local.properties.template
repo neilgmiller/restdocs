@@ -1,0 +1,4 @@
+# Template properties file, copy to 'local.properties' to make use of it
+
+# Set this to the path where you'd like gradle to install the distribution in the 'installDist' task
+installDir=<your install dir>

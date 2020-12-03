@@ -8,6 +8,14 @@ sourceCompatibility = 11
 
 def homePath = System.properties['user.home']
 
+def installDir = '/Users/ngm/Dev/API-Docs/restdocs'
+def locPropertiesFile = project.rootProject.file('local.properties')
+if (locPropertiesFile.exists()) {
+    Properties locProperties = new Properties()
+    locProperties.load(locPropertiesFile.newDataInputStream())
+    installDir = locProperties.getProperty('installDir', installDir)
+}
+
 repositories {
     mavenCentral()
     ivy {
@@ -67,7 +75,7 @@ startScripts {
 }
 
 installDist {
-    into '/Users/ngm/Dev/API-Docs/restdocs'
+    into installDir
 }
 
 task getDeps(type: Copy) {
