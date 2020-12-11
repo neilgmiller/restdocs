@@ -1,10 +1,12 @@
 package com.giffardtechnologies.restdocs;
 
+import com.allego.util.futureproofenum.FutureProof;
 import com.allego.util.futureproofenum.FutureProofEnumAccessor;
 import com.allego.util.futureproofenum.FutureProofEnumContainer;
 import com.allego.util.futureproofenum.IntId;
 import com.allego.util.futureproofenum.LongId;
 import com.allego.util.futureproofenum.StringId;
+import com.allego.util.futureproofenum.Unknown;
 import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.Document;
 import com.giffardtechnologies.restdocs.domain.Method;
@@ -265,13 +267,18 @@ public class JavaGenerator implements Callable<Void> {
 		processEnum(namedEnumeration, enumPackage, true);
 	}
 
+	/**
+	 * @param namedEnumeration   the enumeration to process
+	 * @param enumPackage        the package where teh enum should be placed
+	 * @param useFutureProofEnum whether the enum should be generating using {@link FutureProof} annotations
+	 */
 	private void processEnum(NamedEnumeration namedEnumeration, String enumPackage, boolean useFutureProofEnum) {
 		ClassName enumClassName = ClassName.get(enumPackage, namedEnumeration.getName());
 
 		TypeSpec.Builder builder = TypeSpec.enumBuilder(enumClassName).addModifiers(Modifier.PUBLIC);
 
-		ClassName futureProofAnnotation = ClassName.get(FUTURE_PROOF_ENUM_PACKAGE, "FutureProof");
-		ClassName futureProofUnknownAnnotation = ClassName.get(FUTURE_PROOF_ENUM_PACKAGE, "Unknown");
+		ClassName futureProofAnnotation = ClassName.get(FutureProof.class);
+		ClassName futureProofUnknownAnnotation = ClassName.get(Unknown.class);
 
 		switch (namedEnumeration.getKey()) {
 			case INT:
@@ -316,11 +323,14 @@ public class JavaGenerator implements Callable<Void> {
 
 		writeFormattedClassFile(enumPackage, builder);
 	}
-
 	private void writeFormattedClassFile(String packageName, TypeSpec.Builder builder) {
+		writeFormattedClassFile(packageName, builder.build());
+	}
+
+	private void writeFormattedClassFile(String packageName, TypeSpec typeSpec) {
 		try {
 			StringBuilder source = new StringBuilder();
-			JavaFile javaFile = JavaFile.builder(packageName, builder.build())
+			JavaFile javaFile = JavaFile.builder(packageName, typeSpec)
 			                            .indent("    ")
 			                            .skipJavaLangImports(true) // NOTE - this is a little dangerous if there is a naming collision
 			                            .build();
@@ -391,10 +401,20 @@ public class JavaGenerator implements Callable<Void> {
 		@NotNull
 		protected FieldSpec createFieldSpec(Field field, AnnotationSpec nullableAnnotation, boolean useFutureProofEnum)
 		{
+			return createFieldSpec(field, nullableAnnotation, useFutureProofEnum, null);
+		}
+
+		@NotNull
+		protected FieldSpec createFieldSpec(Field field,
+		                                    AnnotationSpec nullableAnnotation,
+		                                    boolean useFutureProofEnum,
+		                                    @Nullable ClassName objectClassName)
+		{
 			FieldSpec.Builder fieldBuilder = FieldSpec.builder(getTypeName(field,
 			                                                               field.isRequired(),
 			                                                               false,
-			                                                               useFutureProofEnum), field.getLongName())
+			                                                               useFutureProofEnum,
+			                                                               objectClassName), field.getLongName())
 			                                          .addModifiers(Modifier.PRIVATE)
 			                                          .addAnnotation(AnnotationSpec.builder(SerializedName.class)
 			                                                                       .addMember("value",
@@ -472,6 +492,15 @@ public class JavaGenerator implements Callable<Void> {
 		                               boolean convertIntBoolean,
 		                               boolean futureProofEnum)
 		{
+			return getTypeName(typeSpec, required, convertIntBoolean, futureProofEnum, null);
+		}
+
+		protected TypeName getTypeName(com.giffardtechnologies.restdocs.domain.type.TypeSpec typeSpec,
+		                               boolean required,
+		                               boolean convertIntBoolean,
+		                               boolean futureProofEnum,
+		                               @Nullable TypeName objectTypeName)
+		{
 			DataType type = typeSpec.getType();
 			if (type != null) {
 				switch (type) {
@@ -489,8 +518,10 @@ public class JavaGenerator implements Callable<Void> {
 						if (typeSpec instanceof Field) {
 							Field field = (Field) typeSpec;
 							return ClassName.get(getSubObjectPackage(), mJavaTool.fieldToClassStyle(field));
-						} else {
+						} else if (objectTypeName == null) {
 							return ClassName.get(Object.class);
+						} else {
+							return objectTypeName;
 						}
 					case STRING:
 						if (hasBooleanRestriction(typeSpec)) {
@@ -502,7 +533,11 @@ public class JavaGenerator implements Callable<Void> {
 					case COLLECTION:
 						return ParameterizedTypeName.get(ClassName.get(Map.class),
 						                                 getKeyTypeName(typeSpec.getKey()),
-						                                 getTypeName(typeSpec.getItems(), false, convertIntBoolean));
+						                                 getTypeName(typeSpec.getItems(),
+						                                             false,
+						                                             convertIntBoolean,
+						                                             futureProofEnum,
+						                                             objectTypeName));
 					case ENUM:
 						if (typeSpec instanceof Field) {
 							Field field = (Field) typeSpec;
@@ -521,7 +556,11 @@ public class JavaGenerator implements Callable<Void> {
 					case ARRAY:
 						// pass required false, since we can't use primitives
 						return ParameterizedTypeName.get(ClassName.get(List.class),
-						                                 getTypeName(typeSpec.getItems(), false, convertIntBoolean));
+						                                 getTypeName(typeSpec.getItems(),
+						                                             false,
+						                                             convertIntBoolean,
+						                                             futureProofEnum,
+						                                             objectTypeName));
 				}
 			} else if (typeSpec.getTypeRef() != null) {
 				NamedType namedType = mDocument.getTypeByName(typeSpec.getTypeRef());
@@ -588,13 +627,45 @@ public class JavaGenerator implements Callable<Void> {
 		}
 	}
 
-	public class DataObjectProcessor extends FieldAndTypeProcessor {
+	private class DataObjectProcessor extends FieldAndTypeProcessor {
+
+		private class ProcessingContext {
+			private final DataObject mDataObject;
+			private DataObjectProcessor mSubObjectProcessor;
+
+			private ProcessingContext(DataObject dataObject) {
+				mDataObject = dataObject;
+			}
+
+			public DataObject getDataObject() {
+				return mDataObject;
+			}
+
+			public DataObjectProcessor getSubObjectProcessor() {
+				if (mSubObjectProcessor == null) {
+					mSubObjectProcessor = new DataObjectProcessor(mObjectPackage + "." + mDataObject.getName(),
+					                                              mTypeRefPackage);
+				}
+				return mSubObjectProcessor;
+			}
+		}
 
 		private DataObjectProcessor(String objectPackage, String typeRefPackage) {
 			super(objectPackage, typeRefPackage);
 		}
 
-		private void processDataObject(DataObject dataObject) {
+		public ClassName processDataObject(DataObject dataObject) {
+			TypeSpec typeSpec = processDataObjectToTypeSpec(dataObject);
+			writeFormattedClassFile(mObjectPackage, typeSpec);
+			return ClassName.get(mObjectPackage, dataObject.getName());
+		}
+
+		public TypeSpec processDataObjectToTypeSpec(DataObject dataObject) {
+			ProcessingContext processingContext = new ProcessingContext(dataObject);
+
+			ClassName dtoClassName = ClassName.get(mObjectPackage, dataObject.getName());
+			TypeSpec.Builder dataObjectClassBuilder = TypeSpec.classBuilder(dtoClassName).addModifiers(Modifier.PUBLIC);
+
 			for (Field field : dataObject.getFields()) {
 				if (field.getLongName().equalsIgnoreCase(dataObject.getName() + "id")) {
 					field.setLongName("id");
@@ -605,7 +676,8 @@ public class JavaGenerator implements Callable<Void> {
 					DataObject fieldDataObject = new DataObject();
 					fieldDataObject.setFields(field.getFields());
 					fieldDataObject.setName(getFieldClassName(field));
-					processDataObject(fieldDataObject);
+					dataObjectClassBuilder.addType(processingContext.getSubObjectProcessor()
+					                                                .processDataObjectToTypeSpec(fieldDataObject));
 				}
 				if (field.getType() == DataType.ENUM) {
 					NamedEnumeration fieldEnumeration = new NamedEnumeration();
@@ -618,20 +690,17 @@ public class JavaGenerator implements Callable<Void> {
 					DataObject fieldDataObject = new DataObject();
 					fieldDataObject.setFields(field.getItems().getFields());
 					fieldDataObject.setName(getFieldClassName(field));
-					processDataObject(fieldDataObject);
+					dataObjectClassBuilder.addType(processingContext.getSubObjectProcessor()
+					                                                .processDataObjectToTypeSpec(fieldDataObject));
 				}
 			}
-
-			ClassName dtoClassName = ClassName.get(mObjectPackage, dataObject.getName());
-
-			TypeSpec.Builder builder = TypeSpec.classBuilder(dtoClassName).addModifiers(Modifier.PUBLIC);
 
 			AnnotationSpec nullableAnnotation = AnnotationSpec.builder(Nullable.class).build();
 
 			for (Field field : dataObject.getFields()) {
 				try {
 					FieldSpec fieldSpec = createFieldSpec(field, nullableAnnotation);
-					builder.addField(fieldSpec);
+					dataObjectClassBuilder.addField(fieldSpec);
 				} catch (Exception e) {
 					throw new IllegalStateException(String.format("Error processing field %s in %s",
 					                                              field.getLongName(),
@@ -654,14 +723,14 @@ public class JavaGenerator implements Callable<Void> {
 						getterBuilder.addAnnotation(nullableAnnotation);
 						setterParameter.addAnnotation(nullableAnnotation);
 					}
-					builder.addMethod(getterBuilder.build());
+					dataObjectClassBuilder.addMethod(getterBuilder.build());
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
 							"set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
 					                                             .addModifiers(Modifier.PUBLIC)
 					                                             .addParameter(setterParameter.build());
 					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
-					builder.addMethod(setterBuilder.build());
+					dataObjectClassBuilder.addMethod(setterBuilder.build());
 
 					getterBuilder = MethodSpec.methodBuilder(
 							"getFutureProof" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
@@ -669,7 +738,7 @@ public class JavaGenerator implements Callable<Void> {
 					                                                             typeName))
 					                          .addModifiers(Modifier.PUBLIC);
 					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
-					builder.addMethod(getterBuilder.build());
+					dataObjectClassBuilder.addMethod(getterBuilder.build());
 				} else {
 					TypeName typeName = getTypeName(field, field.isRequired(), true);
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
@@ -693,7 +762,7 @@ public class JavaGenerator implements Callable<Void> {
 						setterParameter.addAnnotation(nullableAnnotation);
 					}
 
-					builder.addMethod(getterBuilder.build());
+					dataObjectClassBuilder.addMethod(getterBuilder.build());
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
 							"set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
@@ -716,27 +785,13 @@ public class JavaGenerator implements Callable<Void> {
 						setterBuilder.addStatement("this.$N = $N", field.getLongName(), field.getLongName());
 					}
 
-					builder.addMethod(setterBuilder.build());
+					dataObjectClassBuilder.addMethod(setterBuilder.build());
 				}
 			}
 
-//		builder.addMethod(MethodSpec.constructorBuilder()
-//		                            .addModifiers(Modifier.PUBLIC)
-//		                            .addParameter(int.class, "id")
-//		                            .addStatement("$N = $N",
-//				                            "this.id",
-//				                            "id")
-//		                            .build());
-//
-//		builder.addMethod(MethodSpec.methodBuilder("getId")
-//		                            .returns(int.class)
-//		                            .addModifiers(Modifier.PUBLIC)
-//		                            .addStatement("return $N",
-//				                            "id")
-//		                            .build());
-
-			writeFormattedClassFile(mObjectPackage, builder);
+			return dataObjectClassBuilder.build();
 		}
+
 	}
 
 	public class MethodProcessor extends FieldAndTypeProcessor {
@@ -792,84 +847,48 @@ public class JavaGenerator implements Callable<Void> {
 			                                                                    paramsClassName,
 			                                                                    responseTypeName);
 
-			TypeSpec.Builder builder = TypeSpec.classBuilder(requestClassName)
-			                                   .superclass(superClassParamed)
-			                                   .addAnnotation(methodAnnotation)
-			                                   .addModifiers(Modifier.PUBLIC);
-
-			AnnotationSpec nullableAnnotation = AnnotationSpec.builder(Nullable.class).build();
-
-//		/**
-//		 * Construct a request for a content list using defaults
-//		 *
-//		 * @param accessKey the access key for the request
-//		 * @param archiveType the archive type
-//		 */
-//    public GetArchiveListRequest(String accessKey, ArchiveType archiveType)
-//		{
-//			this(accessKey, new GetArchiveListParams(archiveType));
-//		}
-//
-//		/**
-//		 * Internal constructor for builder and other more specific constructors
-//		 *
-//		 * @param accessKey the access key
-//		 * @param params the parameters to the request
-//		 */
-//    private GetArchiveListRequest(String accessKey, GetArchiveListParams params)
-//		{
-//			super(accessKey, params);
-//		}
-//
-//		/**
-//		 * Get a builder for constructing a GetContentIDsListRequest
-//		 *
-//		 * @return a {@link GetContentIDsListRequestBuilder}
-//		 */
-//		public static GetContentIDsListRequestBuilder builder()
-//		{
-//			return new GetContentIDsListRequestBuilder();
-//		}
+			TypeSpec.Builder requestClassBuilder = TypeSpec.classBuilder(requestClassName)
+			                                               .superclass(superClassParamed)
+			                                               .addAnnotation(methodAnnotation)
+			                                               .addModifiers(Modifier.PUBLIC);
 
 			if (method.getParameters().isEmpty()) {
-				builder.addMethod(MethodSpec.constructorBuilder()
-				                            .addModifiers(Modifier.PUBLIC)
-				                            .addParameter(String.class, "accessKey")
-				                            .addStatement("super($N, null)", "accessKey")
+				requestClassBuilder.addMethod(MethodSpec.constructorBuilder()
+				                                        .addModifiers(Modifier.PUBLIC)
+				                                        .addParameter(String.class, "accessKey")
+				                                        .addStatement("super($N, null)", "accessKey")
 //			                            .addJavadoc(CodeBlock.builder()
 //			                                                 .add("Creates a request that " +
 //					                                                      method.getDescription())
 //			                                                 .add(" @param accessKey the access key to use for the request")
 //			                                                 .build())
-                                            .build());
+                                                        .build());
 			} else {
 				if (method.getParameters().size() < 3) {
-					builder.addMethod(MethodSpec.constructorBuilder()
-					                            .addModifiers(Modifier.PUBLIC)
-					                            .addParameter(String.class, "accessKey")
-					                            .addStatement("super($N, null)", "accessKey")
-					                            .build());
+					requestClassBuilder.addMethod(MethodSpec.constructorBuilder()
+					                                        .addModifiers(Modifier.PUBLIC)
+					                                        .addParameter(String.class, "accessKey")
+					                                        .addStatement("super($N, null)", "accessKey")
+					                                        .build());
 				}
 
-				builder.addMethod(MethodSpec.constructorBuilder()
-				                            .addModifiers(Modifier.PRIVATE)
-				                            .addParameter(String.class, "accessKey")
-				                            .addParameter(paramsClassName, "params")
-				                            .addStatement("super($N, $N)", "accessKey", "params")
-				                            .build());
+				requestClassBuilder.addMethod(MethodSpec.constructorBuilder()
+				                                        .addModifiers(Modifier.PRIVATE)
+				                                        .addParameter(String.class, "accessKey")
+				                                        .addParameter(paramsClassName, "params")
+				                                        .addStatement("super($N, $N)", "accessKey", "params")
+				                                        .build());
 
+				String paramsObjectPackage = mObjectPackage + "." + requestClassNameStr;
+				DataObjectProcessor paramsDataObjectProcessor = new DataObjectProcessor(paramsObjectPackage,
+				                                                                        mTypeRefPackage);
 
-				//		public static class GetContentIDsListRequestBuilder
-//				extends AuthenticatedRequestBuilder<GetArchiveListRequest, GetContentIDsListRequestBuilder, GetArchiveListParams>
-//		{
-//
-//			public GetContentIDsListRequestBuilder archiveType(ArchiveType archiveType)
-//			{
-//				params.archiveType = archiveType;
-//				return this;
-//			}
-//
-//		}
+				for (Field field : method.getParameters()) {
+					TypeSpec typeSpec = null;
+					if (field.getLongName().equalsIgnoreCase(method.getName() + "id")) {
+						field.setLongName("id");
+					}
+				}
 
 				// build the request builder inner class
 				ClassName builderClassName = ClassName.get(mObjectPackage + "." + requestClassNameStr, "Builder");
@@ -879,7 +898,7 @@ public class JavaGenerator implements Callable<Void> {
 				                                             .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
 
 				getterBuilder.addStatement("return new $T()", builderClassName);
-				builder.addMethod(getterBuilder.build());
+				requestClassBuilder.addMethod(getterBuilder.build());
 
 				ClassName authenticatedRequestBuilderClassName = ClassName.get(
 						"com.allego.api.client2.requests.support.AuthenticatedAllegoRequest",
@@ -893,9 +912,9 @@ public class JavaGenerator implements Callable<Void> {
 				                                               .superclass(builderSuperClass)
 				                                               .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
 
-				processParamsForBuilder(method, builderClassName, builderClassBuilder, false);
+				processParamsForBuilder(method, requestClassName, builderClassName, builderClassBuilder, false);
 
-				builder.addType(builderClassBuilder.build());
+				requestClassBuilder.addType(builderClassBuilder.build());
 
 				// build the Params inner class
 				ClassName copyableClassName = ClassName.get("com.allego.api.client2.requests.support", "Copyable");
@@ -906,9 +925,35 @@ public class JavaGenerator implements Callable<Void> {
 				                                         .addSuperinterface(Cloneable.class)
 				                                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
 
-				processParams(method, paramsBuilder);
+				processParams(method, requestClassName, paramsBuilder);
 
-				builder.addType(paramsBuilder.build());
+				requestClassBuilder.addType(paramsBuilder.build());
+
+				for (Field field : method.getParameters()) {
+					TypeSpec typeSpec = null;
+					if (field.getType() == DataType.OBJECT) {
+						DataObject fieldDataObject = new DataObject();
+						fieldDataObject.setFields(field.getFields());
+						fieldDataObject.setName(getFieldClassName(field));
+						paramsDataObjectProcessor.processDataObjectToTypeSpec(fieldDataObject);
+					}
+					if (field.getType() == DataType.ENUM) {
+						NamedEnumeration fieldEnumeration = new NamedEnumeration();
+						fieldEnumeration.setValues(field.getValues());
+						fieldEnumeration.setKey(field.getKey());
+						fieldEnumeration.setName(getFieldClassName(field));
+						processEnum(fieldEnumeration, paramsObjectPackage, false);
+					}
+					if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+						DataObject fieldDataObject = new DataObject();
+						fieldDataObject.setFields(field.getItems().getFields());
+						fieldDataObject.setName(getFieldClassName(field));
+						typeSpec = paramsDataObjectProcessor.processDataObjectToTypeSpec(fieldDataObject);
+					}
+					if (typeSpec != null) {
+						requestClassBuilder.addType(typeSpec);
+					}
+				}
 			}
 
 //		for (Field field : method.getParameters()) {
@@ -1018,12 +1063,11 @@ public class JavaGenerator implements Callable<Void> {
 //				                            "id")
 //		                            .build());
 
-			writeFormattedClassFile(mObjectPackage, builder);
+			writeFormattedClassFile(mObjectPackage, requestClassBuilder);
 
 		}
 
-		private void processParamsForBuilder(Method method,
-		                                     ClassName builderClassName,
+		private void processParamsForBuilder(Method method, ClassName requestClassName, ClassName builderClassName,
 		                                     TypeSpec.Builder builderClassBuilder,
 		                                     boolean useFutureProofEnum)
 		{
@@ -1031,6 +1075,15 @@ public class JavaGenerator implements Callable<Void> {
 			ClassName futureProofEnumAccessor = ClassName.get(FutureProofEnumAccessor.class);
 
 			for (Field field : method.getParameters()) {
+				ClassName className = null;
+				if (field.getType() == DataType.OBJECT) {
+					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
+				} else if (field.getType() == DataType.ENUM) {
+					// TODO handle inner enums
+				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
+				}
+
 				DataType type = getEffectiveFieldType(field);
 				if (type == DataType.ENUM && useFutureProofEnum) {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, false);
@@ -1048,7 +1101,7 @@ public class JavaGenerator implements Callable<Void> {
 					setterBuilder.addStatement("return this;");
 					builderClassBuilder.addMethod(setterBuilder.build());
 				} else {
-					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum);
+					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum, className);
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
 					boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
@@ -1085,53 +1138,34 @@ public class JavaGenerator implements Callable<Void> {
 			}
 		}
 
-		private void processParams(Method method, TypeSpec.Builder paramsBuilder) {
-			String paramsObjectPackage = getSubObjectPackage();
-			DataObjectProcessor paramsDataObjectProcessor = new DataObjectProcessor(paramsObjectPackage,
-			                                                                        mTypeRefPackage);
-
+		private void processParams(Method method, ClassName requestClassName, TypeSpec.Builder paramsBuilder) {
 			boolean useFutureProofEnum = false;
 
+			ClassName booleanUtil = ClassName.get("com.allego.api.client2.helpers", "BooleanUtil");
+			ClassName futureProofEnumAccessor = ClassName.get(FutureProofEnumAccessor.class);
+
 			for (Field field : method.getParameters()) {
-				if (field.getLongName().equalsIgnoreCase(method.getName() + "id")) {
-					field.setLongName("id");
-				}
+				ClassName className = null;
 				if (field.getType() == DataType.OBJECT) {
-					DataObject fieldDataObject = new DataObject();
-					fieldDataObject.setFields(field.getFields());
-					fieldDataObject.setName(getFieldClassName(field));
-					paramsDataObjectProcessor.processDataObject(fieldDataObject);
+					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
+				} else if (field.getType() == DataType.ENUM) {
+					// TODO handle inner enums
+				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				}
-				if (field.getType() == DataType.ENUM) {
-					NamedEnumeration fieldEnumeration = new NamedEnumeration();
-					fieldEnumeration.setValues(field.getValues());
-					fieldEnumeration.setKey(field.getKey());
-					fieldEnumeration.setName(getFieldClassName(field));
-					processEnum(fieldEnumeration, paramsObjectPackage, useFutureProofEnum);
-				}
-				if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
-					DataObject fieldDataObject = new DataObject();
-					fieldDataObject.setFields(field.getItems().getFields());
-					fieldDataObject.setName(getFieldClassName(field));
-					paramsDataObjectProcessor.processDataObject(fieldDataObject);
-				}
+
 				try {
-					FieldSpec fieldSpec = createFieldSpec(field, NULLABLE_ANNOTATION, useFutureProofEnum);
+					FieldSpec fieldSpec = createFieldSpec(field, NULLABLE_ANNOTATION, useFutureProofEnum, className);
 					paramsBuilder.addField(fieldSpec);
 				} catch (Exception e) {
 					throw new IllegalStateException(String.format("Error processing field %s in %s",
 					                                              field.getLongName(),
 					                                              method.getName()), e);
 				}
-			}
 
-			ClassName booleanUtil = ClassName.get("com.allego.api.client2.helpers", "BooleanUtil");
-			ClassName futureProofEnumAccessor = ClassName.get(FutureProofEnumAccessor.class);
-
-			for (Field field : method.getParameters()) {
 				DataType type = getEffectiveFieldType(field);
 				if (type == DataType.ENUM && useFutureProofEnum) {
-					TypeName typeName = getTypeName(field, field.isRequired(), true, false);
+					TypeName typeName = getTypeName(field, field.isRequired(), true, false, className);
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
@@ -1159,7 +1193,7 @@ public class JavaGenerator implements Callable<Void> {
 					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
 					paramsBuilder.addMethod(getterBuilder.build());
 				} else {
-					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum);
+					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum, className);
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
