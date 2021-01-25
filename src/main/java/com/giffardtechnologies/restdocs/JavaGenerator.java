@@ -16,6 +16,7 @@ import com.giffardtechnologies.restdocs.domain.type.EnumConstant;
 import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.type.KeyType;
 import com.giffardtechnologies.restdocs.domain.type.NamedType;
+import com.giffardtechnologies.restdocs.gson.GsonFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
@@ -38,8 +39,6 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
-import org.giffardtechnologies.json.gson.BooleanDeserializer;
-import org.giffardtechnologies.json.gson.LowercaseEnumTypeAdapterFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -249,10 +248,7 @@ public class JavaGenerator implements Callable<Void> {
 		Map<String, Object> map = yaml.load(input);
 		input.close();
 
-		GsonBuilder gsonBuilder = new GsonBuilder();
-		gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory(true))
-		           .registerTypeAdapter(boolean.class, new BooleanDeserializer())
-		           .setPrettyPrinting();
+		GsonBuilder gsonBuilder = GsonFactory.getGsonBuilder();
 
 		Gson gson = gsonBuilder.create();
 		String json = gson.toJson(map);

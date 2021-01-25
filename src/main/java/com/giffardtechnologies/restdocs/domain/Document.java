@@ -23,12 +23,13 @@ public class Document {
 		mDataObjectNames = new HashMap<>(dataObjects.size() * 2);
 		for (DataObject dataObject : dataObjects) {
 			mDataObjectNames.put(dataObject.getName(), dataObject);
-			dataObject.linkFields();
+			dataObject.setParent(this);
 		}
 		mEnumerationNames = new HashMap<>(enumerations.size() * 2);
 		for (NamedEnumeration enumeration : enumerations) {
 			mEnumerationNames.put(enumeration.getName(), enumeration);
 		}
+		service.setParentDocument(this);
 	}
 
 	public String getTitle() {

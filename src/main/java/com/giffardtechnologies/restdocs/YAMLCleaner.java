@@ -4,6 +4,7 @@ import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.Document;
 import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.Method;
+import com.giffardtechnologies.restdocs.gson.GsonFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.velocity.runtime.RuntimeServices;
@@ -59,11 +60,9 @@ public class YAMLCleaner implements LogChute, Callable<Void> {
 			typeMap = yaml.load(input);
 			input.close();
 		}
-		GsonBuilder gsonBuilder = new GsonBuilder();
-		gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory(true))
-				.registerTypeAdapter(boolean.class, new BooleanDeserializer())
-				.setPrettyPrinting();
 
+		// setup Gson to convert to objects
+		GsonBuilder gsonBuilder = GsonFactory.getGsonBuilder();
 		Gson gsonForPrinting = gsonBuilder.create();
 		String json = gsonForPrinting.toJson(map);
 //		System.out.println(json);

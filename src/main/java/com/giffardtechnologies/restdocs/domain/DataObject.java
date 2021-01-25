@@ -10,13 +10,16 @@ import com.google.gson.annotations.SerializedName;
 public class DataObject implements NamedType {
 	private String name;
 	private String description;
-	private ArrayList<Field> fields;
+	@SerializedName("fields")
+	private FieldElementList fieldElementList = new FieldElementList();
 	private Field discriminator;
 	@SerializedName("child types")
 	private ArrayList<DataObject> childTypes;
 	@SerializedName("discriminator value")
 	private String discriminatorValue;
-	
+
+	private transient Document parent;
+
 	public String getName() {
 		return name;
 	}
@@ -39,21 +42,29 @@ public class DataObject implements NamedType {
 	}
 	
 	public ArrayList<Field> getFields() {
-		return fields;
+		return fieldElementList.getFields();
 	}
 	
 	public void setFields(ArrayList<Field> fields) {
-		this.fields = fields;
+		fieldElementList.setFields(fields);
 	}
 	
 	public boolean hasFields() {
-		return fields != null && !fields.isEmpty();
+		return fieldElementList.hasFields();
 	}
 	
 	public boolean getHasFields() {
-		return fields != null && !fields.isEmpty();
+		return fieldElementList.getHasFields();
 	}
-	
+
+	public ArrayList<FieldListElement> getFieldListElements() {
+		return fieldElementList.getFieldListElements();
+	}
+
+	public void setFieldListElements(ArrayList<FieldListElement> fieldListElements) {
+		fieldElementList.setFieldListElements(fieldListElements);
+	}
+
 	public Field getDiscriminator() {
 		return discriminator;
 	}
@@ -96,9 +107,10 @@ public class DataObject implements NamedType {
 		return getName();
 	}
 
-	public void linkFields() {
-		for (Field field : fields) {
-			field.setParent(this);
-		}
+	public void setParent(Document parent) {
+		this.parent = parent;
+		fieldElementList.setParentDocument(parent);
+		fieldElementList.setParentType(this);
 	}
+
 }

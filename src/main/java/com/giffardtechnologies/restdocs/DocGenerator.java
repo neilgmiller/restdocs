@@ -6,6 +6,7 @@ import com.giffardtechnologies.restdocs.domain.Method;
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
 import com.giffardtechnologies.restdocs.domain.type.DataType;
 import com.giffardtechnologies.restdocs.domain.type.Field;
+import com.giffardtechnologies.restdocs.gson.GsonFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.velocity.Template;
@@ -14,8 +15,6 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.log.LogChute;
 import org.apache.velocity.tools.generic.EscapeTool;
-import org.giffardtechnologies.json.gson.BooleanDeserializer;
-import org.giffardtechnologies.json.gson.LowercaseEnumTypeAdapterFactory;
 import org.yaml.snakeyaml.Yaml;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -347,10 +346,7 @@ public class DocGenerator implements LogChute, Callable<Void> {
 //		Document doc = yaml.loadAs(input, Document.class);
 		input.close();
 
-		GsonBuilder gsonBuilder = new GsonBuilder();
-		gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory(true))
-				.registerTypeAdapter(boolean.class, new BooleanDeserializer())
-				.setPrettyPrinting();
+		GsonBuilder gsonBuilder = GsonFactory.getGsonBuilder();
 
 		Gson gsonForPrinting = gsonBuilder.create();
 		String json = gsonForPrinting.toJson(map);

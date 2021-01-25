@@ -9,7 +9,19 @@ public class Service {
 	private String description;
 	private Common common;
 	private ArrayList<Method> methods;
-	
+	private Document mParentDocument;
+
+	public void setParentDocument(Document parentDocument) {
+		mParentDocument = parentDocument;
+		for (Method method : methods) {
+			method.setParent(this);
+		}
+	}
+
+	public Document getParentDocument() {
+		return mParentDocument;
+	}
+
 	public static class Common {
 		private ArrayList<Field> headers;
 		private ArrayList<Field> parameters;

@@ -1,5 +1,8 @@
 package com.giffardtechnologies.restdocs.domain.type;
 
+import com.giffardtechnologies.restdocs.domain.Document;
+import com.giffardtechnologies.restdocs.domain.FieldElementList;
+import com.giffardtechnologies.restdocs.domain.FieldListElement;
 import com.giffardtechnologies.restdocs.domain.Restriction;
 import com.google.gson.annotations.SerializedName;
 
@@ -12,7 +15,8 @@ public class TypeSpec {
 	private KeyType key;
 	private TypeSpec items;
 	private ArrayList<Restriction> restrictions;
-	private ArrayList<Field> fields;
+	@SerializedName("fields")
+	private FieldElementList fieldElementList = new FieldElementList();
 	private ArrayList<EnumConstant> values;
 
 	public DataType getType() {
@@ -69,19 +73,31 @@ public class TypeSpec {
 	}
 
 	public ArrayList<Field> getFields() {
-		return fields;
+		return fieldElementList.getFields();
 	}
 
 	public void setFields(ArrayList<Field> fields) {
-		this.fields = fields;
+		fieldElementList.setFields(fields);
 	}
 
 	public boolean hasFields() {
-		return fields != null && !fields.isEmpty();
+		return fieldElementList.hasFields();
 	}
 
 	public boolean getHasFields() {
-		return fields != null && !fields.isEmpty();
+		return fieldElementList.getHasFields();
+	}
+
+	public ArrayList<FieldListElement> getFieldListElements() {
+		return fieldElementList.getFieldListElements();
+	}
+
+	public void setFieldListElements(ArrayList<FieldListElement> fieldListElements) {
+		fieldElementList.setFieldListElements(fieldListElements);
+	}
+
+	public void setParentDocument(Document parentDocument) {
+		fieldElementList.setParentDocument(parentDocument);
 	}
 
 	public boolean hasEnumValues() {

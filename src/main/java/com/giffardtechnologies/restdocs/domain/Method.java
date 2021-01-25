@@ -24,7 +24,7 @@ public class Method {
 	private String name = "";
 	private String description = "";
 	private ArrayList<Field> headers = new ArrayList<>();
-	private ArrayList<Field> parameters = new ArrayList<>();
+	private FieldElementList parameters = new FieldElementList();
 	@SerializedName("request body")
 	private RequestBody requestBody;
 	private Response response;
@@ -37,7 +37,14 @@ public class Method {
 		super();
 		protocolsAllowed.add("HTTP");
 	}
-	
+
+	public void setParent(Service service) {
+		if (response != null) {
+			response.setParentDocument(service.getParentDocument());
+		}
+		parameters.setParentDocument(service.getParentDocument());
+	}
+
 	public String getMethodString() {
 		return method == null ? "null" : method.name();
 	}
@@ -103,15 +110,15 @@ public class Method {
 	}
 	
 	public boolean getHasParameters() {
-		return parameters != null && !parameters.isEmpty();
+		return parameters.getHasFields();
 	}
 	
 	public ArrayList<Field> getParameters() {
-		return parameters;
+		return parameters.getFields();
 	}
 	
 	public void setParameters(ArrayList<Field> parameters) {
-		this.parameters = parameters;
+		this.parameters.setFields(parameters);
 	}
 	
 	public boolean getHasRequestBody() {

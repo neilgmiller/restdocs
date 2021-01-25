@@ -1,11 +1,12 @@
 package com.giffardtechnologies.restdocs.domain.type;
 
+import com.giffardtechnologies.restdocs.domain.FieldListElement;
 import com.google.gson.annotations.SerializedName;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class Field extends TypeSpec {
+public class Field extends TypeSpec implements FieldListElement {
 	private String name;
 	private String longName = "";
 	private String description;
