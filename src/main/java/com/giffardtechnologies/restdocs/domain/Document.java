@@ -2,18 +2,23 @@ package com.giffardtechnologies.restdocs.domain;
 
 import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.google.gson.annotations.SerializedName;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 // Most of these methods are used by velocity
 @SuppressWarnings("unused")
 public class Document {
 	private String title;
-	private ArrayList<NamedEnumeration> enumerations = new ArrayList<>();
+	private final ArrayList<NamedEnumeration> enumerations = new ArrayList<>();
 	@SerializedName("data objects")
-	private ArrayList<DataObject> dataObjects = new ArrayList<>();
+	private final ArrayList<DataObject> dataObjects = new ArrayList<>();
+	@Nullable
+	private transient List<DataObject> visibleDataObjects;
 	private Service service;
 
 	private Map<String, DataObject> mDataObjectNames;
@@ -53,7 +58,24 @@ public class Document {
 	}
 
 	public void setDataObjects(ArrayList<DataObject> dataObjects) {
-		this.dataObjects = dataObjects;
+		visibleDataObjects = null;
+		this.dataObjects.clear();
+		this.dataObjects.addAll(dataObjects);
+	}
+
+	public List<DataObject> getVisibleDataObjects() {
+		if (visibleDataObjects == null) {
+			visibleDataObjects = dataObjects.stream().filter(o -> !o.isHidden()).collect(Collectors.toList());
+		}
+		return visibleDataObjects;
+	}
+
+	public boolean hasVisibleDataObjects() {
+		return !getVisibleDataObjects().isEmpty();
+	}
+
+	public boolean getHasVisibleDataObjects() {
+		return hasVisibleDataObjects();
 	}
 
 	public Service getService() {

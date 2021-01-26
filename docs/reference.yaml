@@ -105,6 +105,11 @@ data objects:
           - name: description
             description: A description of the object, it's purpose, etc.
             type: string
+          - name: hidden
+            description: Allows an object to be hidden in documentation and in generated code. Used if the object is
+                         being defined for internal use.
+            type: boolean
+            default: false
           - name: fields
             description: A list of fields
             type: array

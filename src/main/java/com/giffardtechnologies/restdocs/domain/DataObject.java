@@ -9,6 +9,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class DataObject implements NamedType {
 	private String name;
+	private boolean hidden = false;
 	private String description;
 	@SerializedName("fields")
 	private FieldElementList fieldElementList = new FieldElementList();
@@ -26,6 +27,14 @@ public class DataObject implements NamedType {
 	
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public boolean isHidden() {
+		return hidden;
+	}
+
+	public void setHidden(boolean hidden) {
+		this.hidden = hidden;
 	}
 
 	@Override
