@@ -746,6 +746,57 @@ public class JavaGenerator implements Callable<Void> {
 				}
 			}
 
+			MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC);
+			// add empty constructor
+			dataObjectClassBuilder.addMethod(constructorBuilder.build());
+			// add full constructor
+			for (Field field : dataObject.getFields()) {
+				DataType type = getEffectiveFieldType(field);
+				try {
+					if (type == DataType.ENUM) {
+						TypeName typeName = getTypeName(field, field.isRequired(), true, false);
+						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+
+						if (!field.isRequired() && field.getDefaultValue() == null) {
+							setterParameter.addAnnotation(nullableAnnotation);
+						}
+						constructorBuilder.addParameter(setterParameter.build());
+						constructorBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
+					} else {
+						TypeName typeName = getTypeName(field, field.isRequired(), true);
+						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+
+						boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
+
+						if (!field.isRequired() && field.getDefaultValue() == null) {
+							setterParameter.addAnnotation(nullableAnnotation);
+						}
+
+						constructorBuilder.addParameter(setterParameter.build());
+						if (convertToBoolean) {
+							if (field.isRequired()) {
+								constructorBuilder.addStatement("this.$N = $T.convertToInt($N)",
+								                                field.getLongName(),
+								                                CLASS_NAME_BOOLEAN_UTIL,
+								                                field.getLongName());
+							} else {
+								constructorBuilder.addStatement("this.$N = $T.convertToInteger($N)",
+								                                field.getLongName(),
+								                                CLASS_NAME_BOOLEAN_UTIL,
+								                                field.getLongName());
+							}
+						} else {
+							constructorBuilder.addStatement("this.$N = $N", field.getLongName(), field.getLongName());
+						}
+					}
+				} catch (Exception e) {
+					throw new IllegalStateException(String.format("Error processing field %s in %s",
+					                                              field.getLongName(),
+					                                              dataObject.getName()), e);
+				}
+			}
+			dataObjectClassBuilder.addMethod(constructorBuilder.build());
+
 			for (Field field : dataObject.getFields()) {
 				DataType type = getEffectiveFieldType(field);
 				if (type == DataType.ENUM) {
