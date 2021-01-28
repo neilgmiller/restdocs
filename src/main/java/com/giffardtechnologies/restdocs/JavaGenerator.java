@@ -699,6 +699,14 @@ public class JavaGenerator implements Callable<Void> {
 		}
 
 		public TypeSpec processDataObjectToTypeSpec(DataObject dataObject) {
+			TypeSpec.Builder dataObjectClassBuilder = processDataObjectToBuilder(dataObject);
+
+			return dataObjectClassBuilder.build();
+		}
+
+		@NotNull
+		private TypeSpec.Builder processDataObjectToBuilder(DataObject dataObject)
+		{
 			ProcessingContext processingContext = new ProcessingContext(dataObject);
 
 			ClassName dtoClassName = ClassName.get(mObjectPackage, dataObject.getName());
@@ -715,7 +723,9 @@ public class JavaGenerator implements Callable<Void> {
 					fieldDataObject.setFields(field.getFields());
 					fieldDataObject.setName(getFieldClassName(field));
 					dataObjectClassBuilder.addType(processingContext.getSubObjectProcessor()
-					                                                .processDataObjectToTypeSpec(fieldDataObject));
+					                                                .processDataObjectToBuilder(fieldDataObject)
+					                                                .addModifiers(Modifier.STATIC)
+					                                                .build());
 				}
 				if (field.getType() == DataType.ENUM) {
 					NamedEnumeration fieldEnumeration = new NamedEnumeration();
@@ -729,7 +739,9 @@ public class JavaGenerator implements Callable<Void> {
 					fieldDataObject.setFields(field.getItems().getFields());
 					fieldDataObject.setName(getFieldClassName(field));
 					dataObjectClassBuilder.addType(processingContext.getSubObjectProcessor()
-					                                                .processDataObjectToTypeSpec(fieldDataObject));
+					                                                .processDataObjectToBuilder(fieldDataObject)
+					                                                .addModifiers(Modifier.STATIC)
+					                                                .build());
 				}
 			}
 
@@ -877,8 +889,7 @@ public class JavaGenerator implements Callable<Void> {
 					dataObjectClassBuilder.addMethod(setterBuilder.build());
 				}
 			}
-
-			return dataObjectClassBuilder.build();
+			return dataObjectClassBuilder;
 		}
 
 	}
@@ -1024,7 +1035,9 @@ public class JavaGenerator implements Callable<Void> {
 						DataObject fieldDataObject = new DataObject();
 						fieldDataObject.setFields(field.getFields());
 						fieldDataObject.setName(getFieldClassName(field));
-						paramsDataObjectProcessor.processDataObjectToTypeSpec(fieldDataObject);
+						typeSpec = paramsDataObjectProcessor.processDataObjectToBuilder(fieldDataObject)
+						                                    .addModifiers(Modifier.STATIC)
+						                                    .build();
 					}
 					if (field.getType() == DataType.ENUM) {
 						NamedEnumeration fieldEnumeration = new NamedEnumeration();
@@ -1037,7 +1050,9 @@ public class JavaGenerator implements Callable<Void> {
 						DataObject fieldDataObject = new DataObject();
 						fieldDataObject.setFields(field.getItems().getFields());
 						fieldDataObject.setName(getFieldClassName(field));
-						typeSpec = paramsDataObjectProcessor.processDataObjectToTypeSpec(fieldDataObject);
+						typeSpec = paramsDataObjectProcessor.processDataObjectToBuilder(fieldDataObject)
+						                                    .addModifiers(Modifier.STATIC)
+						                                    .build();
 					}
 					if (typeSpec != null) {
 						requestClassBuilder.addType(typeSpec);
