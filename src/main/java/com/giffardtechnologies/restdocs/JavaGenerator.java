@@ -359,6 +359,7 @@ public class JavaGenerator implements Callable<Void> {
 			edit.apply(document);
 
 			File javaFilePath = new File(mCodeDir, javaFileObject.getName());
+			//noinspection ResultOfMethodCallIgnored
 			javaFilePath.getParentFile().mkdirs();
 			FileWriter fileWriter = new FileWriter(javaFilePath);
 			fileWriter.append(String.format(
@@ -407,7 +408,9 @@ public class JavaGenerator implements Callable<Void> {
 		}
 
 		@NotNull
-		protected FieldSpec createFieldSpec(Field field, AnnotationSpec nullableAnnotation, boolean useFutureProofEnum)
+		protected FieldSpec createFieldSpec(Field field,
+		                                    AnnotationSpec nullableAnnotation,
+		                                    @SuppressWarnings("SameParameterValue") boolean useFutureProofEnum)
 		{
 			return createFieldSpec(field, nullableAnnotation, useFutureProofEnum, null);
 		}
@@ -416,7 +419,7 @@ public class JavaGenerator implements Callable<Void> {
 		protected FieldSpec createFieldSpec(Field field,
 		                                    AnnotationSpec nullableAnnotation,
 		                                    boolean useFutureProofEnum,
-		                                    @Nullable ClassName objectClassName)
+		                                    @SuppressWarnings("SameParameterValue") @Nullable ClassName objectClassName)
 		{
 			return createFieldSpec(field, nullableAnnotation, useFutureProofEnum, objectClassName, true);
 		}
@@ -984,7 +987,6 @@ public class JavaGenerator implements Callable<Void> {
 				                                                                        mTypeRefPackage);
 
 				for (Field field : method.getParameters()) {
-					TypeSpec typeSpec = null;
 					if (field.getLongName().equalsIgnoreCase(method.getName() + "id")) {
 						field.setLongName("id");
 					}
