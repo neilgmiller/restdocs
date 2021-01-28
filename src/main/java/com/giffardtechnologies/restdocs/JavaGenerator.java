@@ -57,6 +57,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -406,6 +407,16 @@ public class JavaGenerator implements Callable<Void> {
 		                                    boolean useFutureProofEnum,
 		                                    @Nullable ClassName objectClassName)
 		{
+			return createFieldSpec(field, nullableAnnotation, useFutureProofEnum, objectClassName, true);
+		}
+
+		@NotNull
+		protected FieldSpec createFieldSpec(Field field,
+		                                    AnnotationSpec nullableAnnotation,
+		                                    boolean useFutureProofEnum,
+		                                    @Nullable ClassName objectClassName,
+		                                    boolean initializeCollections)
+		{
 			FieldSpec.Builder fieldBuilder = FieldSpec.builder(getTypeName(field,
 			                                                               field.isRequired(),
 			                                                               false,
@@ -423,7 +434,9 @@ public class JavaGenerator implements Callable<Void> {
 			}
 
 			DataType type = getEffectiveFieldType(field);
-			if (!field.isRequired() && field.getDefaultValue() != null) {
+			if (!field.isRequired() && (field.getDefaultValue() != null ||
+					(initializeCollections && (type == DataType.ARRAY || type == DataType.COLLECTION))))
+			{
 				switch (type) {
 					case STRING:
 						fieldBuilder.initializer("$S", field.getDefaultValue());
@@ -441,6 +454,12 @@ public class JavaGenerator implements Callable<Void> {
 							fieldBuilder.initializer("$T.$L", className, field.getDefaultValue());
 						}
 						break;
+					case ARRAY:
+						fieldBuilder.initializer("$T.emptyList()", ClassName.get(Collections.class));
+						break;
+					case COLLECTION:
+						fieldBuilder.initializer("$T.emptyMap()", ClassName.get(Collections.class));
+						break;
 					default:
 						fieldBuilder.initializer("$L", field.getDefaultValue());
 						break;
@@ -451,7 +470,19 @@ public class JavaGenerator implements Callable<Void> {
 				                         JavaGenerator.CLASS_NAME_FUTURE_PROOF_ENUM_CONTAINER,
 				                         className);
 				fieldBuilder.addModifiers(Modifier.FINAL);
+			} else if (type == DataType.ARRAY || type == DataType.COLLECTION) {
+				switch (type) {
+					case ARRAY:
+						fieldBuilder.initializer("$T.emptyList()", ClassName.get(Collections.class));
+						break;
+					case COLLECTION:
+						fieldBuilder.initializer("$T.emptyMap()", ClassName.get(Collections.class));
+						break;
+					default:
+						break;
+				}
 			}
+
 			FieldSpec fieldSpec = fieldBuilder.build();
 			return fieldSpec;
 		}
@@ -1151,7 +1182,7 @@ public class JavaGenerator implements Callable<Void> {
 				}
 
 				try {
-					FieldSpec fieldSpec = createFieldSpec(field, NULLABLE_ANNOTATION, useFutureProofEnum, className);
+					FieldSpec fieldSpec = createFieldSpec(field, NULLABLE_ANNOTATION, useFutureProofEnum, className, false);
 					paramsBuilder.addField(fieldSpec);
 				} catch (Exception e) {
 					throw new IllegalStateException(String.format("Error processing field %s in %s",
