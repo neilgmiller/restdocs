@@ -269,7 +269,17 @@ public class JavaGenerator implements Callable<Void> {
 	 * @param enumPackage        the package where teh enum should be placed
 	 * @param useFutureProofEnum whether the enum should be generating using {@link FutureProof} annotations
 	 */
-	private void processEnum(NamedEnumeration namedEnumeration, String enumPackage, boolean useFutureProofEnum) {
+	private void processEnum(NamedEnumeration namedEnumeration, String enumPackage, @SuppressWarnings("SameParameterValue") boolean useFutureProofEnum) {
+		TypeSpec typeSpec = processEnumToTypeSpec(namedEnumeration, enumPackage, useFutureProofEnum);
+
+		writeFormattedClassFile(enumPackage, typeSpec);
+	}
+
+	@NotNull
+	private TypeSpec processEnumToTypeSpec(NamedEnumeration namedEnumeration,
+	                                       String enumPackage,
+	                                       boolean useFutureProofEnum)
+	{
 		ClassName enumClassName = ClassName.get(enumPackage, namedEnumeration.getName());
 
 		TypeSpec.Builder builder = TypeSpec.enumBuilder(enumClassName).addModifiers(Modifier.PUBLIC);
@@ -318,8 +328,9 @@ public class JavaGenerator implements Callable<Void> {
 		                            .addStatement("return $N", "id")
 		                            .build());
 
-		writeFormattedClassFile(enumPackage, builder);
+		return builder.build();
 	}
+
 	private void writeFormattedClassFile(String packageName, TypeSpec.Builder builder) {
 		writeFormattedClassFile(packageName, builder.build());
 	}
@@ -969,7 +980,7 @@ public class JavaGenerator implements Callable<Void> {
 						fieldEnumeration.setValues(field.getValues());
 						fieldEnumeration.setKey(field.getKey());
 						fieldEnumeration.setName(getFieldClassName(field));
-						processEnum(fieldEnumeration, paramsObjectPackage, false);
+						typeSpec = processEnumToTypeSpec(fieldEnumeration, paramsObjectPackage, false);
 					}
 					if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
 						DataObject fieldDataObject = new DataObject();
@@ -1106,7 +1117,7 @@ public class JavaGenerator implements Callable<Void> {
 				if (field.getType() == DataType.OBJECT) {
 					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				} else if (field.getType() == DataType.ENUM) {
-					// TODO handle inner enums
+					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
 					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				}
@@ -1176,7 +1187,7 @@ public class JavaGenerator implements Callable<Void> {
 				if (field.getType() == DataType.OBJECT) {
 					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				} else if (field.getType() == DataType.ENUM) {
-					// TODO handle inner enums
+					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
 					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				}
