@@ -139,7 +139,7 @@ public class JavaGenerator implements Callable<Void> {
 		mDocument = parseDocument();
 		mJavaTool = new JavaTool(mDocument);
 
-		mCodeDir = new File(mProperties.getProperty("codeDir"));
+		mCodeDir = new File(mPropertiesFile.getParentFile(), mProperties.getProperty("codeDir"));
 		// TODO check this exists
 
 		String dtoPackage = mProperties.getProperty("dtoPackage");
