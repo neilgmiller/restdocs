@@ -151,15 +151,21 @@ public class JavaTool {
 	}
 
 	public String fieldToClassStyle(Field field) {
+		return fieldToClassStyle(field, false);
+	}
+
+	public String fieldToClassStyle(Field field, boolean asInner) {
 		NamedType parent = field.getParent();
 		String name = field.getLongName();
 		if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
 			if (name.endsWith("List")) {
 				name = name.substring(0, name.length() - 4);
+			} else if (name.endsWith("s") && !name.endsWith("ss")) {
+				name = name.substring(0, name.length() - 1);
 			}
 		}
 		String className = fieldNameToClassStyle(name);
-		if (parent != null && !className.startsWith(parent.getTypeName())) {
+		if (parent != null && !className.startsWith(parent.getTypeName()) && !asInner) {
 			return parent.getTypeName() + className;
 		} else {
 			return className;

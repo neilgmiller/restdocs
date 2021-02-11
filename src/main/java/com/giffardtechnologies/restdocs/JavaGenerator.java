@@ -9,6 +9,7 @@ import com.allego.util.futureproofenum.StringId;
 import com.allego.util.futureproofenum.Unknown;
 import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.Document;
+import com.giffardtechnologies.restdocs.domain.FieldReference;
 import com.giffardtechnologies.restdocs.domain.Method;
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
 import com.giffardtechnologies.restdocs.domain.type.DataType;
@@ -17,6 +18,7 @@ import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.type.KeyType;
 import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.giffardtechnologies.restdocs.gson.GsonFactory;
+import com.giffardtechnologies.restdocs.mappers.JavaFieldMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
@@ -56,14 +58,16 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Command(description = "Generates java code based for a given API descriptor", name = "java_generator", mixinStandardHelpOptions = true, version = "1.0")
@@ -144,8 +148,7 @@ public class JavaGenerator implements Callable<Void> {
 
 		List<DataObject> dataObjects;
 		if (mProperties.containsKey("javagen.includeDataObjects")) {
-			Set<String> includeDataObjects = new HashSet<>(Arrays.asList(mProperties.getProperty(
-					"javagen.includeDataObjects").split(",")));
+			Set<String> includeDataObjects = getSetProperty("javagen.includeDataObjects", s -> s);
 			dataObjects = mDocument.getDataObjects()
 			                       .stream()
 			                       .filter(dataObject -> includeDataObjects.contains(dataObject.getName()))
@@ -153,8 +156,14 @@ public class JavaGenerator implements Callable<Void> {
 		} else {
 			dataObjects = mDocument.getDataObjects();
 		}
+		Set<FieldReference> forceTopLevel;
+		if (mProperties.containsKey("javagen.forceTopLevel")) {
+			forceTopLevel = getSetProperty("javagen.forceTopLevel", FieldReference::fromString);
+		} else {
+			forceTopLevel = Collections.emptySet();
+		}
 
-		DataObjectProcessor dataObjectProcessor = new DataObjectProcessor(dtoPackage, dtoPackage);
+		DataObjectProcessor dataObjectProcessor = new DataObjectProcessor(dtoPackage, dtoPackage, forceTopLevel);
 
 		for (DataObject dataObject : dataObjects) {
 			dataObjectProcessor.processDataObject(dataObject);
@@ -162,8 +171,7 @@ public class JavaGenerator implements Callable<Void> {
 
 		List<NamedEnumeration> enumerations;
 		if (mProperties.containsKey("javagen.includeEnums")) {
-			Set<String> includeDataObjects = new HashSet<>(Arrays.asList(mProperties.getProperty("javagen.includeEnums")
-			                                                                        .split(",")));
+			Set<String> includeDataObjects = getSetProperty("javagen.includeEnums", s -> s);
 			enumerations = mDocument.getEnumerations()
 			                        .stream()
 			                        .filter(namedEnumeration -> includeDataObjects.contains(namedEnumeration.getName()))
@@ -182,10 +190,7 @@ public class JavaGenerator implements Callable<Void> {
 
 			List<Method> methods;
 			if (mProperties.containsKey("javagen.includeMethodIDs")) {
-				Set<Integer> includeDataObjects = Arrays.stream(mProperties.getProperty("javagen.includeMethodIDs")
-				                                                           .split(","))
-				                                        .map(Integer::parseInt)
-				                                        .collect(Collectors.toSet());
+				Set<Integer> includeDataObjects = getSetProperty("javagen.includeMethodIDs", Integer::parseInt);
 				methods = mDocument.getService()
 				                   .getMethods()
 				                   .stream()
@@ -204,6 +209,18 @@ public class JavaGenerator implements Callable<Void> {
 				methodProcessor.processMethod(method);
 			}
 		}
+	}
+
+	@NotNull
+	private <T> Set<T> getSetProperty(String key, Function<String, T> parser) {
+		String property = mProperties.getProperty(key);
+		Set<T> includeDataObjects;
+		if (property.isBlank()) {
+			includeDataObjects = Collections.emptySet();
+		} else {
+			includeDataObjects = Arrays.stream(property.split(",")).map(parser).collect(Collectors.toSet());
+		}
+		return includeDataObjects;
 	}
 
 	private void initCodeFormatter() {
@@ -410,6 +427,14 @@ public class JavaGenerator implements Callable<Void> {
 		@NotNull
 		protected FieldSpec createFieldSpec(Field field,
 		                                    AnnotationSpec nullableAnnotation,
+		                                    @SuppressWarnings("SameParameterValue") @Nullable ClassName objectClassName)
+		{
+			return createFieldSpec(field, nullableAnnotation, true, objectClassName, true);
+		}
+
+		@NotNull
+		protected FieldSpec createFieldSpec(Field field,
+		                                    AnnotationSpec nullableAnnotation,
 		                                    @SuppressWarnings("SameParameterValue") boolean useFutureProofEnum)
 		{
 			return createFieldSpec(field, nullableAnnotation, useFutureProofEnum, null);
@@ -431,6 +456,12 @@ public class JavaGenerator implements Callable<Void> {
 		                                    @Nullable ClassName objectClassName,
 		                                    boolean initializeCollections)
 		{
+			if (field instanceof JavaField) {
+				JavaField javaField = (JavaField) field;
+				if (objectClassName == null && javaField.getTypeName() instanceof ClassName) {
+					objectClassName = (ClassName) javaField.getTypeName();
+				}
+			}
 			FieldSpec.Builder fieldBuilder = FieldSpec.builder(getTypeName(field,
 			                                                               field.isRequired(),
 			                                                               false,
@@ -447,6 +478,7 @@ public class JavaGenerator implements Callable<Void> {
 				fieldBuilder.addAnnotation(nullableAnnotation);
 			}
 
+			// add initializers
 			DataType type = getEffectiveFieldType(field);
 			if (!field.isRequired() && (field.getDefaultValue() != null ||
 					(initializeCollections && (type == DataType.ARRAY || type == DataType.COLLECTION))))
@@ -456,7 +488,13 @@ public class JavaGenerator implements Callable<Void> {
 						fieldBuilder.initializer("$S", field.getDefaultValue());
 						break;
 					case ENUM:
-						ClassName className = ClassName.get(getSubObjectPackage(), getFieldClassName(field));
+						// STOPSHIP: 2/8/21 handle references
+						ClassName className;
+						if (field.isTypeRef()) {
+							className = ClassName.get(mTypeRefPackage, getFieldClassName(field));
+						} else {
+							className = ClassName.get(getSubObjectPackage(), getFieldClassName(field));
+						}
 						if (useFutureProofEnum) {
 							fieldBuilder.initializer(CodeBlock.builder()
 							                                  .addStatement("new $T<>($T.class)",
@@ -479,7 +517,12 @@ public class JavaGenerator implements Callable<Void> {
 						break;
 				}
 			} else if (type == DataType.ENUM && useFutureProofEnum) {
-				ClassName className = ClassName.get(getSubObjectPackage(), getFieldClassName(field));
+				ClassName className;
+				if (field.isTypeRef()) {
+					className = ClassName.get(mTypeRefPackage, getFieldClassName(field));
+				} else {
+					className = ClassName.get(getSubObjectPackage(), getFieldClassName(field));
+				}
 				fieldBuilder.initializer("new $T<>($T.class)",
 				                         JavaGenerator.CLASS_NAME_FUTURE_PROOF_ENUM_CONTAINER,
 				                         className);
@@ -506,6 +549,14 @@ public class JavaGenerator implements Callable<Void> {
 				return field.getTypeRef();
 			}
 			return mJavaTool.fieldToClassStyle(field);
+		}
+
+		protected String getFieldInnerClassName(Field field) {
+			if (field.isTypeRef()) {
+				throw new IllegalArgumentException("Passed fields cannot be a TypeRef");
+			}
+			// STOPSHIP: 2/10/21 figure out override for this variable
+			return mJavaTool.fieldToClassStyle(field, true);
 		}
 
 		protected DataType getEffectiveFieldType(Field field) {
@@ -539,6 +590,14 @@ public class JavaGenerator implements Callable<Void> {
 		protected TypeName getTypeName(com.giffardtechnologies.restdocs.domain.type.TypeSpec typeSpec,
 		                               boolean required,
 		                               boolean convertIntBoolean,
+		                               @Nullable TypeName objectTypeName)
+		{
+			return getTypeName(typeSpec, required, convertIntBoolean, true, objectTypeName);
+		}
+
+		protected TypeName getTypeName(com.giffardtechnologies.restdocs.domain.type.TypeSpec typeSpec,
+		                               boolean required,
+		                               boolean convertIntBoolean,
 		                               boolean futureProofEnum,
 		                               @Nullable TypeName objectTypeName)
 		{
@@ -556,13 +615,13 @@ public class JavaGenerator implements Callable<Void> {
 					case BOOLEAN:
 						return getBasicTypeName(type, required);
 					case OBJECT:
-						if (typeSpec instanceof Field) {
+						if (objectTypeName != null) {
+							return objectTypeName;
+						} else if (typeSpec instanceof Field) {
 							Field field = (Field) typeSpec;
 							return ClassName.get(getSubObjectPackage(), mJavaTool.fieldToClassStyle(field));
-						} else if (objectTypeName == null) {
-							return ClassName.get(Object.class);
 						} else {
-							return objectTypeName;
+							return ClassName.get(Object.class);
 						}
 					case STRING:
 						if (hasBooleanRestriction(typeSpec)) {
@@ -670,12 +729,17 @@ public class JavaGenerator implements Callable<Void> {
 
 	private class DataObjectProcessor extends FieldAndTypeProcessor {
 
+		private Set<FieldReference> mForceTopLevel;
+
 		private class ProcessingContext {
 			private final DataObject mDataObject;
+			private final Set<FieldReference> mForceTopLevel;
 			private DataObjectProcessor mSubObjectProcessor;
+			private DataObjectProcessor mTopLevelSubObjectProcessor;
 
-			private ProcessingContext(DataObject dataObject) {
+			private ProcessingContext(DataObject dataObject, Set<FieldReference> forceTopLevel) {
 				mDataObject = dataObject;
+				mForceTopLevel = forceTopLevel;
 			}
 
 			public DataObject getDataObject() {
@@ -685,14 +749,26 @@ public class JavaGenerator implements Callable<Void> {
 			public DataObjectProcessor getSubObjectProcessor() {
 				if (mSubObjectProcessor == null) {
 					mSubObjectProcessor = new DataObjectProcessor(mObjectPackage + "." + mDataObject.getName(),
-					                                              mTypeRefPackage);
+					                                              mTypeRefPackage,
+					                                              mForceTopLevel);
 				}
 				return mSubObjectProcessor;
 			}
+
+			public DataObjectProcessor getTopLevelSubObjectProcessor() {
+				if (mTopLevelSubObjectProcessor == null) {
+					mTopLevelSubObjectProcessor = new DataObjectProcessor(mObjectPackage,
+					                                              mTypeRefPackage,
+					                                              mForceTopLevel);
+				}
+				return mTopLevelSubObjectProcessor;
+			}
+
 		}
 
-		private DataObjectProcessor(String objectPackage, String typeRefPackage) {
+		private DataObjectProcessor(String objectPackage, String typeRefPackage, Set<FieldReference> forceTopLevel) {
 			super(objectPackage, typeRefPackage);
+			mForceTopLevel = forceTopLevel;
 		}
 
 		public ClassName processDataObject(DataObject dataObject) {
@@ -710,47 +786,62 @@ public class JavaGenerator implements Callable<Void> {
 		@NotNull
 		private TypeSpec.Builder processDataObjectToBuilder(DataObject dataObject)
 		{
-			ProcessingContext processingContext = new ProcessingContext(dataObject);
+			Set<FieldReference> scopedForceTopLevel = mForceTopLevel.stream()
+			                                                        .filter(fieldReference -> fieldReference.isNode(
+					                                                        dataObject.getName()))
+			                                                        .filter(Predicate.not(FieldReference::isLeafNode))
+			                                                        .map(FieldReference::getChild)
+			                                                        .collect(Collectors.toSet());
+			Set<String> thisForceTopLevel = scopedForceTopLevel.stream()
+			                                                   .filter(FieldReference::isLeafNode)
+			                                                   .map(FieldReference::getNode)
+			                                                   .collect(Collectors.toSet());
+
+			ProcessingContext processingContext = new ProcessingContext(dataObject, scopedForceTopLevel);
 
 			ClassName dtoClassName = ClassName.get(mObjectPackage, dataObject.getName());
 			TypeSpec.Builder dataObjectClassBuilder = TypeSpec.classBuilder(dtoClassName).addModifiers(Modifier.PUBLIC);
 
-			for (Field field : dataObject.getFields()) {
+			List<JavaField> javaFields = new ArrayList<>();
+			dataObject.getFields().stream().map(JavaFieldMapper.INSTANCE::dtoToJavaModel).map(field -> {
 				if (field.getLongName().equalsIgnoreCase(dataObject.getName() + "id")) {
 					field.setLongName("id");
 				} else {
 					field.setLongName(mJavaTool.toGetterStyle(field.getLongName()));
 				}
+
+				boolean forceTopLevel = thisForceTopLevel.contains(field.getLongName());
 				if (field.getType() == DataType.OBJECT) {
-					DataObject fieldDataObject = new DataObject();
-					fieldDataObject.setFields(field.getFields());
-					fieldDataObject.setName(getFieldClassName(field));
-					dataObjectClassBuilder.addType(processingContext.getSubObjectProcessor()
-					                                                .processDataObjectToBuilder(fieldDataObject)
-					                                                .addModifiers(Modifier.STATIC)
-					                                                .build());
-				}
-				if (field.getType() == DataType.ENUM) {
+					generateSubObject(processingContext,
+					                  dtoClassName,
+					                  dataObjectClassBuilder,
+					                  field,
+					                  forceTopLevel,
+					                  field.getFields());
+				} else if (field.getType() == DataType.ENUM) {
 					NamedEnumeration fieldEnumeration = new NamedEnumeration();
 					fieldEnumeration.setValues(field.getValues());
 					fieldEnumeration.setKey(field.getKey());
 					fieldEnumeration.setName(getFieldClassName(field));
 					processEnum(fieldEnumeration, mObjectPackage);
+					field.setTypeName(ClassName.get(mObjectPackage,
+					                                dtoClassName.simpleName(),
+					                                fieldEnumeration.getName()));
+				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+					generateSubObject(processingContext,
+					                  dtoClassName,
+					                  dataObjectClassBuilder,
+					                  field,
+					                  forceTopLevel,
+					                  field.getItems().getFields());
 				}
-				if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
-					DataObject fieldDataObject = new DataObject();
-					fieldDataObject.setFields(field.getItems().getFields());
-					fieldDataObject.setName(getFieldClassName(field));
-					dataObjectClassBuilder.addType(processingContext.getSubObjectProcessor()
-					                                                .processDataObjectToBuilder(fieldDataObject)
-					                                                .addModifiers(Modifier.STATIC)
-					                                                .build());
-				}
-			}
+
+				return field;
+			}).collect(Collectors.toCollection(() -> javaFields));
 
 			AnnotationSpec nullableAnnotation = AnnotationSpec.builder(Nullable.class).build();
 
-			for (Field field : dataObject.getFields()) {
+			for (JavaField field : javaFields) {
 				try {
 					FieldSpec fieldSpec = createFieldSpec(field, nullableAnnotation);
 					dataObjectClassBuilder.addField(fieldSpec);
@@ -765,11 +856,11 @@ public class JavaGenerator implements Callable<Void> {
 			// add empty constructor
 			dataObjectClassBuilder.addMethod(constructorBuilder.build());
 			// add full constructor
-			for (Field field : dataObject.getFields()) {
+			for (JavaField field : javaFields) {
 				DataType type = getEffectiveFieldType(field);
 				try {
 					if (type == DataType.ENUM) {
-						TypeName typeName = getTypeName(field, field.isRequired(), true, false);
+						TypeName typeName = getTypeName(field, field.isRequired(), true, false, field.getTypeName());
 						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
 						if (!field.isRequired() && field.getDefaultValue() == null) {
@@ -778,7 +869,7 @@ public class JavaGenerator implements Callable<Void> {
 						constructorBuilder.addParameter(setterParameter.build());
 						constructorBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
 					} else {
-						TypeName typeName = getTypeName(field, field.isRequired(), true);
+						TypeName typeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
 						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
 						boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
@@ -812,10 +903,10 @@ public class JavaGenerator implements Callable<Void> {
 			}
 			dataObjectClassBuilder.addMethod(constructorBuilder.build());
 
-			for (Field field : dataObject.getFields()) {
+			for (JavaField field : javaFields) {
 				DataType type = getEffectiveFieldType(field);
 				if (type == DataType.ENUM) {
-					TypeName typeName = getTypeName(field, field.isRequired(), true, false);
+					TypeName typeName = getTypeName(field, field.isRequired(), true, false, field.getTypeName());
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
@@ -844,7 +935,7 @@ public class JavaGenerator implements Callable<Void> {
 					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
 					dataObjectClassBuilder.addMethod(getterBuilder.build());
 				} else {
-					TypeName typeName = getTypeName(field, field.isRequired(), true);
+					TypeName typeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
@@ -895,6 +986,36 @@ public class JavaGenerator implements Callable<Void> {
 			return dataObjectClassBuilder;
 		}
 
+		private void generateSubObject(ProcessingContext processingContext,
+		                               ClassName dtoClassName,
+		                               TypeSpec.Builder dataObjectClassBuilder,
+		                               JavaField field,
+		                               boolean forceTopLevel,
+		                               ArrayList<Field> fields)
+		{
+			String fieldClassName;
+			if (forceTopLevel) {
+				fieldClassName = getFieldClassName(field);
+				field.setTypeName(ClassName.get(mObjectPackage, fieldClassName));
+			} else {
+				fieldClassName = getFieldInnerClassName(field);
+				field.setTypeName(ClassName.get(mObjectPackage, dtoClassName.simpleName(), fieldClassName));
+			}
+
+			DataObject fieldDataObject = new DataObject();
+			fieldDataObject.setFields(fields);
+			fieldDataObject.setName(fieldClassName);
+
+			if (forceTopLevel) {
+				processingContext.getTopLevelSubObjectProcessor().processDataObject(fieldDataObject);
+			} else {
+				dataObjectClassBuilder.addType(processingContext.getSubObjectProcessor()
+				                                                .processDataObjectToBuilder(fieldDataObject)
+				                                                .addModifiers(Modifier.STATIC)
+				                                                .build());
+			}
+		}
+
 	}
 
 	public class MethodProcessor extends FieldAndTypeProcessor {
@@ -910,7 +1031,8 @@ public class JavaGenerator implements Callable<Void> {
 		}
 
 		private void processMethod(Method method) {
-			DataObjectProcessor dataObjectProcessor = new DataObjectProcessor(mResponsePackage, mTypeRefPackage);
+			DataObjectProcessor dataObjectProcessor = new DataObjectProcessor(mResponsePackage, mTypeRefPackage,
+			                                                                  Collections.emptySet());
 			String methodName = StringUtils.capitalize(method.getName());
 
 			String responseClassName = null;
@@ -984,7 +1106,8 @@ public class JavaGenerator implements Callable<Void> {
 
 				String paramsObjectPackage = mObjectPackage + "." + requestClassNameStr;
 				DataObjectProcessor paramsDataObjectProcessor = new DataObjectProcessor(paramsObjectPackage,
-				                                                                        mTypeRefPackage);
+				                                                                        mTypeRefPackage,
+				                                                                        Collections.emptySet());
 
 				for (Field field : method.getParameters()) {
 					if (field.getLongName().equalsIgnoreCase(method.getName() + "id")) {
@@ -1348,4 +1471,15 @@ public class JavaGenerator implements Callable<Void> {
 		}
 	}
 
+	public static class JavaField extends Field {
+		private TypeName mTypeName;
+
+		public TypeName getTypeName() {
+			return mTypeName;
+		}
+
+		public void setTypeName(TypeName typeName) {
+			mTypeName = typeName;
+		}
+	}
 }
