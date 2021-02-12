@@ -737,7 +737,7 @@ public class JavaGenerator implements Callable<Void> {
 
 	private class DataObjectProcessor extends FieldAndTypeProcessor {
 
-		private Set<FieldReference> mForceTopLevel;
+		private final Set<FieldReference> mForceTopLevel;
 
 		private class ProcessingContext {
 			private final DataObject mDataObject;
