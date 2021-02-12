@@ -74,6 +74,18 @@ public class DataObject implements NamedType {
 		fieldElementList.setFieldListElements(fieldListElements);
 	}
 
+	/**
+	 * Used for translating objects, general case should use the list getters.
+	 *
+	 * @return the FieldElementList object for this object
+	 *
+	 * @see #getFieldListElements()
+	 * @see #getFields()
+	 */
+	public FieldElementList getFieldElementList() {
+		return fieldElementList;
+	}
+
 	public Field getDiscriminator() {
 		return discriminator;
 	}

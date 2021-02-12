@@ -7,6 +7,7 @@ import com.allego.util.futureproofenum.IntId;
 import com.allego.util.futureproofenum.LongId;
 import com.allego.util.futureproofenum.StringId;
 import com.allego.util.futureproofenum.Unknown;
+import com.giffardtechnologies.restdocs.codegen.JavaDataObject;
 import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.Document;
 import com.giffardtechnologies.restdocs.domain.FieldReference;
@@ -171,6 +172,13 @@ public class JavaGenerator implements Callable<Void> {
 			forceTopLevel = Collections.emptySet();
 		}
 
+		if (mProperties.containsKey("javagen.excludeFields")) {
+			Set<FieldReference> excludeFields = getSetProperty("javagen.excludeFields", FieldReference::fromString);
+			for (DataObject dataObject : dataObjects) {
+				removeExcludedFields(JavaDataObject.fromDataObject(dataObject), excludeFields);
+			}
+		}
+
 		DataObjectProcessor dataObjectProcessor = new DataObjectProcessor(dtoPackage, dtoPackage, forceTopLevel);
 
 		for (DataObject dataObject : dataObjects) {
@@ -215,6 +223,31 @@ public class JavaGenerator implements Callable<Void> {
 
 			for (Method method : methods) {
 				methodProcessor.processMethod(method);
+			}
+		}
+	}
+
+	private void removeExcludedFields(JavaDataObject dataObject, Set<FieldReference> excludedFields) {
+		Set<FieldReference> scopedForceTopLevel = excludedFields.stream()
+		                                                        .filter(fieldReference -> fieldReference.isNode(
+				                                                        dataObject.getName()))
+		                                                        .filter(Predicate.not(FieldReference::isLeafNode))
+		                                                        .map(FieldReference::getChild)
+		                                                        .collect(Collectors.toSet());
+		Set<String> thisForceTopLevel = scopedForceTopLevel.stream()
+		                                                   .filter(FieldReference::isLeafNode)
+		                                                   .map(FieldReference::getNode)
+		                                                   .collect(Collectors.toSet());
+
+		ArrayList<Field> fields = dataObject.getFields()
+		                                    .stream()
+		                                    .filter(field -> !thisForceTopLevel.contains(field.getLongName()))
+		                                    .collect(Collectors.toCollection(ArrayList::new));
+		dataObject.setFields(fields);
+
+		for (Field field : fields) {
+			if (field.getType() == DataType.OBJECT) {
+				removeExcludedFields(JavaDataObject.fromField(field), scopedForceTopLevel);
 			}
 		}
 	}
