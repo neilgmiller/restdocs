@@ -482,7 +482,8 @@ public class JavaGenerator implements Callable<Void> {
 			                                                                                  field.getName())
 			                                                                       .build());
 
-			if (!field.isRequired() && field.getDefaultValue() == null) {
+			if (!field.isRequired() && field.getDefaultValue() == null &&
+					!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION)) {
 				fieldBuilder.addAnnotation(nullableAnnotation);
 			}
 
@@ -496,7 +497,6 @@ public class JavaGenerator implements Callable<Void> {
 						fieldBuilder.initializer("$S", field.getDefaultValue());
 						break;
 					case ENUM:
-						// STOPSHIP: 2/8/21 handle references
 						ClassName className;
 						if (field.isTypeRef()) {
 							className = ClassName.get(mTypeRefPackage, getFieldClassName(field));
@@ -882,7 +882,9 @@ public class JavaGenerator implements Callable<Void> {
 
 						boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
 
-						if (!field.isRequired() && field.getDefaultValue() == null) {
+						if (!field.isRequired() && field.getDefaultValue() == null &&
+								!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION))
+						{
 							setterParameter.addAnnotation(nullableAnnotation);
 						}
 
@@ -922,6 +924,7 @@ public class JavaGenerator implements Callable<Void> {
 					                                             .returns(typeName)
 					                                             .addModifiers(Modifier.PUBLIC);
 					getterBuilder.addStatement("return $N.getEnumValue()", field.getLongName());
+
 					if (!field.isRequired() && field.getDefaultValue() == null) {
 						getterBuilder.addAnnotation(nullableAnnotation);
 						setterParameter.addAnnotation(nullableAnnotation);
@@ -960,7 +963,9 @@ public class JavaGenerator implements Callable<Void> {
 						getterBuilder.addStatement("return $N", field.getLongName());
 					}
 
-					if (!field.isRequired() && field.getDefaultValue() == null) {
+					if (!field.isRequired() && field.getDefaultValue() == null &&
+							!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION))
+					{
 						getterBuilder.addAnnotation(nullableAnnotation);
 						setterParameter.addAnnotation(nullableAnnotation);
 					}
