@@ -367,7 +367,7 @@ public class JavaGenerator implements Callable<Void> {
 		}
 
 		for (EnumConstant enumConstant : namedEnumeration.getValues()) {
-			builder.addEnumConstant(enumConstant.getLongName().toUpperCase().replace('-', '_'),
+			builder.addEnumConstant(convertToEnumConstantStyle(enumConstant.getLongName()),
 			                        TypeSpec.anonymousClassBuilder("$L", enumConstant.getValue()).build());
 		}
 
@@ -387,6 +387,11 @@ public class JavaGenerator implements Callable<Void> {
 		                            .build());
 
 		return builder.build();
+	}
+
+	@NotNull
+	private String convertToEnumConstantStyle(String longName) {
+		return longName.toUpperCase().replace('-', '_');
 	}
 
 	private void writeFormattedClassFile(String packageName, TypeSpec.Builder builder) {
@@ -537,14 +542,14 @@ public class JavaGenerator implements Callable<Void> {
 							className = ClassName.get(getSubObjectPackage(), getFieldClassName(field));
 						}
 						if (useFutureProofEnum) {
-							fieldBuilder.initializer(CodeBlock.builder()
-							                                  .addStatement("new $T<>($T.class)",
-							                                                JavaGenerator.CLASS_NAME_FUTURE_PROOF_ENUM_CONTAINER,
-							                                                className)
-							                                  .build());
+							fieldBuilder.initializer("new $T<>($T.class, $T.$L)",
+							                         JavaGenerator.CLASS_NAME_FUTURE_PROOF_ENUM_CONTAINER,
+							                         className,
+							                         className,
+							                         convertToEnumConstantStyle(field.getDefaultValue()));
 							fieldBuilder.addModifiers(Modifier.FINAL);
 						} else {
-							fieldBuilder.initializer("$T.$L", className, field.getDefaultValue());
+							fieldBuilder.initializer("$T.$L", className, convertToEnumConstantStyle(field.getDefaultValue()));
 						}
 						break;
 					case ARRAY:
