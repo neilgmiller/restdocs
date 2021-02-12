@@ -124,7 +124,15 @@ public class JavaGenerator implements Callable<Void> {
 		mProperties.load(propsInStream);
 		propsInStream.close();
 
-		setSourceFile(new File(mPropertiesFile.getParentFile(), mProperties.getProperty("sourceFile")));
+		File localPropertiesFile = new File(mPropertiesFile.getParentFile(), "javabuild-local.properties");
+		Properties localProperties = new Properties(mProperties);
+		if (localPropertiesFile.exists()) {
+			propsInStream = new BufferedInputStream(new FileInputStream(localPropertiesFile));
+			localProperties.load(propsInStream);
+			propsInStream.close();
+		}
+
+		setSourceFile(new File(mPropertiesFile.getParentFile(), localProperties.getProperty("sourceFile")));
 
 		generateCode();
 
