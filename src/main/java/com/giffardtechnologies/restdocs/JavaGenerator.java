@@ -125,8 +125,10 @@ public class JavaGenerator implements Callable<Void> {
 		mProperties.load(propsInStream);
 		propsInStream.close();
 
-		File localPropertiesFile = new File(mPropertiesFile.getParentFile(), "javabuild-local.properties");
+		String basename = mPropertiesFile.getName().replaceAll(".properties$", "");
+		File localPropertiesFile = new File(mPropertiesFile.getParentFile(), basename + "-local.properties");
 		Properties localProperties = new Properties(mProperties);
+		System.out.println("Looking for " + localPropertiesFile);
 		if (localPropertiesFile.exists()) {
 			propsInStream = new BufferedInputStream(new FileInputStream(localPropertiesFile));
 			localProperties.load(propsInStream);
