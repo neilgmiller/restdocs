@@ -34,7 +34,9 @@ public class Document {
 		for (NamedEnumeration enumeration : enumerations) {
 			mEnumerationNames.put(enumeration.getName(), enumeration);
 		}
-		service.setParentDocument(this);
+		if (service != null) {
+			service.setParentDocument(this);
+		}
 	}
 
 	public String getTitle() {
