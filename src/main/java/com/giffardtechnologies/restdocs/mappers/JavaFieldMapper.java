@@ -13,10 +13,11 @@ import org.mapstruct.factory.Mappers;
 public interface JavaFieldMapper {
     JavaFieldMapper INSTANCE = Mappers.getMapper(JavaFieldMapper.class);
 
-    @Mappings({@Mapping(target = "typeName", ignore = true)})
+    @Mappings({@Mapping(target = "typeName", ignore = true),
+               @Mapping(target = "parentDocument", ignore = true)})
     JavaGenerator.JavaField dtoToJavaModel(Field field);
 
     @InheritConfiguration
-    void updateJavaModel(Field fieldO, @MappingTarget JavaGenerator.JavaField jvaField);
+    void updateJavaModel(Field fieldDTO, @MappingTarget JavaGenerator.JavaField javaField);
 
 }
