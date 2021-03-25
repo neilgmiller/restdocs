@@ -1,9 +1,9 @@
 package com.giffardtechnologies.restdocs.domain;
 
 import com.giffardtechnologies.restdocs.domain.type.Field;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 public class Service {
 	private String description;
@@ -25,7 +25,9 @@ public class Service {
 	public static class Common {
 		private ArrayList<Field> headers;
 		private ArrayList<Field> parameters;
-		
+		@SerializedName("response objects")
+		private ArrayList<DataObject> responseDataObjects;
+
 		public boolean hasHeaders() {
 			return headers != null && !headers.isEmpty();
 		}
@@ -57,7 +59,22 @@ public class Service {
 		public void setParameters(ArrayList<Field> parameters) {
 			this.parameters = parameters;
 		}
-		
+
+		public boolean hasResponseDataObjects() {
+			return responseDataObjects != null && !responseDataObjects.isEmpty();
+		}
+
+		public boolean getHasResponseDataObjects() {
+			return hasResponseDataObjects();
+		}
+
+		public ArrayList<DataObject> getResponseDataObjects() {
+			return responseDataObjects;
+		}
+
+		public void setResponseDataObjects(ArrayList<DataObject> responseDataObjects) {
+			this.responseDataObjects = responseDataObjects;
+		}
 	}
 	
 	public String getDescription() {

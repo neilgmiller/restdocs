@@ -30,6 +30,9 @@ public class LinkTool {
 		for (NamedEnumeration enumeration : enumerations) {
 			mDataObjectNames.add(enumeration.getName());
 		}
+		for (DataObject dataObject : mDocument.getService().getCommon().getResponseDataObjects()) {
+			mDataObjectNames.add(dataObject.getName());
+		}
 	}
 	
 	public String type(String string) {
