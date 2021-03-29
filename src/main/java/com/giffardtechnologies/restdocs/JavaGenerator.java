@@ -13,6 +13,7 @@ import com.giffardtechnologies.restdocs.domain.Document;
 import com.giffardtechnologies.restdocs.domain.FieldReference;
 import com.giffardtechnologies.restdocs.domain.Method;
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
+import com.giffardtechnologies.restdocs.domain.Response;
 import com.giffardtechnologies.restdocs.domain.type.DataType;
 import com.giffardtechnologies.restdocs.domain.type.EnumConstant;
 import com.giffardtechnologies.restdocs.domain.type.Field;
@@ -1108,14 +1109,17 @@ public class JavaGenerator implements Callable<Void> {
 			String methodName = StringUtils.capitalize(method.getName());
 
 			String responseClassName = null;
-			if (method.getResponse() != null) {
-				if (method.getResponse().getType() == DataType.OBJECT) {
+			Response response = method.getResponse();
+			if (response != null) {
+				if (response.isTypeRef()) {
+					responseClassName = response.getTypeRef();
+				} else if (response.getType() == DataType.OBJECT) {
 					responseClassName = methodName + "Response";
 
 					// setup a temp DataObject
 					DataObject dataObject = new DataObject();
 					dataObject.setName(responseClassName);
-					dataObject.setFields(method.getResponse().getFields());
+					dataObject.setFields(response.getFields());
 
 					// TODO this need to handle imports for type refs
 					dataObjectProcessor.processDataObject(dataObject);
