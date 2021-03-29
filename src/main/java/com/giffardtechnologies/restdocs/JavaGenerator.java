@@ -26,7 +26,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -362,6 +361,14 @@ public class JavaGenerator implements Callable<Void> {
 	{
 		ClassName enumClassName = ClassName.get(enumPackage, namedEnumeration.getName());
 
+		return processEnumToTypeSpec(namedEnumeration, enumClassName, useFutureProofEnum);
+	}
+
+	@NotNull
+	private TypeSpec processEnumToTypeSpec(NamedEnumeration namedEnumeration,
+	                                       ClassName enumClassName,
+	                                       boolean useFutureProofEnum)
+	{
 		TypeSpec.Builder builder = TypeSpec.enumBuilder(enumClassName).addModifiers(Modifier.PUBLIC);
 
 		ClassName futureProofAnnotation = ClassName.get(FutureProof.class);
@@ -560,6 +567,8 @@ public class JavaGenerator implements Callable<Void> {
 						ClassName className;
 						if (field.isTypeRef()) {
 							className = ClassName.get(mTypeRefPackage, getFieldClassName(field));
+						} else if (objectClassName != null) {
+							className = objectClassName;
 						} else {
 							className = ClassName.get(getSubObjectPackage(), getFieldClassName(field));
 						}
@@ -588,6 +597,8 @@ public class JavaGenerator implements Callable<Void> {
 				ClassName className;
 				if (field.isTypeRef()) {
 					className = ClassName.get(mTypeRefPackage, getFieldClassName(field));
+				} else if (objectClassName != null) {
+					className = objectClassName;
 				} else {
 					className = ClassName.get(getSubObjectPackage(), getFieldClassName(field));
 				}
@@ -707,19 +718,22 @@ public class JavaGenerator implements Callable<Void> {
 						                                             futureProofEnum,
 						                                             objectTypeName));
 					case ENUM:
-						if (typeSpec instanceof Field) {
+						TypeName enumName;
+						if (objectTypeName != null) {
+							enumName = objectTypeName;
+						} else if (typeSpec instanceof Field) {
 							Field field = (Field) typeSpec;
-							ClassName enumName = ClassName.get(getSubObjectPackage(),
-							                                   mJavaTool.fieldToClassStyle(field));
-							if (futureProofEnum) {
-								ClassName futureProofEnumContainer = ClassName.get(FUTURE_PROOF_ENUM_PACKAGE,
-								                                                   "FutureProofEnumContainer");
-								return ParameterizedTypeName.get(futureProofEnumContainer, enumName);
-							} else {
-								return enumName;
-							}
+							enumName = ClassName.get(getSubObjectPackage(),
+							                         mJavaTool.fieldToClassStyle(field));
 						} else {
 							throw new IllegalStateException("Raw enum type specified, cannot generate name.");
+						}
+						if (futureProofEnum) {
+							ClassName futureProofEnumContainer = ClassName.get(FUTURE_PROOF_ENUM_PACKAGE,
+							                                                   "FutureProofEnumContainer");
+							return ParameterizedTypeName.get(futureProofEnumContainer, enumName);
+						} else {
+							return enumName;
 						}
 					case ARRAY:
 						// pass required false, since we can't use primitives
@@ -890,11 +904,20 @@ public class JavaGenerator implements Callable<Void> {
 					NamedEnumeration fieldEnumeration = new NamedEnumeration();
 					fieldEnumeration.setValues(field.getValues());
 					fieldEnumeration.setKey(field.getKey());
-					fieldEnumeration.setName(getFieldClassName(field));
-					processEnum(fieldEnumeration, mObjectPackage);
-					field.setTypeName(ClassName.get(mObjectPackage,
-					                                dtoClassName.simpleName(),
-					                                fieldEnumeration.getName()));
+
+					if (forceTopLevel) {
+						fieldEnumeration.setName(getFieldClassName(field));
+						processEnum(fieldEnumeration, mObjectPackage);
+						field.setTypeName(ClassName.get(mObjectPackage,
+						                                fieldEnumeration.getName()));
+					} else {
+						String fieldInnerClassName = getFieldInnerClassName(field);
+						fieldEnumeration.setName(fieldInnerClassName);
+						ClassName enumClassName = dtoClassName.nestedClass(fieldInnerClassName);
+						TypeSpec typeSpec = processEnumToTypeSpec(fieldEnumeration, enumClassName, true);
+						dataObjectClassBuilder.addType(typeSpec);
+						field.setTypeName(enumClassName);
+					}
 				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
 					generateSubObject(processingContext,
 					                  dtoClassName,
