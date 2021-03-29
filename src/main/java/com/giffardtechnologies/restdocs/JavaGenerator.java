@@ -1109,10 +1109,8 @@ public class JavaGenerator implements Callable<Void> {
 			                                                              "AuthenticatedAllegoRequest");
 
 			ClassName methodIDAnnotation = ClassName.get("com.allego.api.client2.requests.support", "MethodID");
-			ClassName methodIDsClass = ClassName.get("com.allego.api.client2.requests.support", "MethodIds");
-			String methodConstant = method.getName().replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
 			AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
-			                                                .addMember("id", "$T.$N", methodIDsClass, methodConstant)
+			                                                .addMember("id", "$L", method.getId())
 			                                                .build();
 
 			ClassName paramsClassName = method.getParameters().isEmpty() ? ClassName.get(Void.class) : ClassName.get(
