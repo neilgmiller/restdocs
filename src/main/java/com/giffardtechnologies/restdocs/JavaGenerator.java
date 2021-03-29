@@ -1446,11 +1446,11 @@ public class JavaGenerator implements Callable<Void> {
 			for (Field field : method.getParameters()) {
 				ClassName className = null;
 				if (field.getType() == DataType.OBJECT) {
-					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
+					className = requestClassName.nestedClass(getFieldClassName(field));
 				} else if (field.getType() == DataType.ENUM) {
-					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
+					className = requestClassName.nestedClass(getFieldClassName(field));
 				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
-					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
+					className = requestClassName.nestedClass(getFieldClassName(field));
 				}
 
 				try {
