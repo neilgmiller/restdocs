@@ -206,6 +206,25 @@ public class JavaGenerator implements Callable<Void> {
 			String responsePackage = mProperties.getProperty("responsePackage");
 			String requestPackage = mProperties.getProperty("requestPackage");
 
+			List<DataObject> responseObjects;
+			if (mProperties.containsKey("javagen.includeResponseObjects")) {
+				Set<String> includeDataObjects = getSetProperty("javagen.includeResponseObjects", s -> s);
+				responseObjects = mDocument.getService()
+				                           .getCommon()
+				                           .getResponseDataObjects()
+				                           .stream()
+				                           .filter(dataObject -> includeDataObjects.contains(dataObject.getName()))
+				                           .collect(Collectors.toList());
+			} else {
+				responseObjects = mDocument.getService().getCommon().getResponseDataObjects();
+			}
+
+			dataObjectProcessor = new DataObjectProcessor(responsePackage, dtoPackage, forceTopLevel);
+
+			for (DataObject dataObject : responseObjects) {
+				dataObjectProcessor.processDataObject(dataObject);
+			}
+
 			List<Method> methods;
 			if (mProperties.containsKey("javagen.includeMethodIDs")) {
 				Set<Integer> includeDataObjects = getSetProperty("javagen.includeMethodIDs", Integer::parseInt);
