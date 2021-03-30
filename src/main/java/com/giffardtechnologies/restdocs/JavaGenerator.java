@@ -537,8 +537,9 @@ public class JavaGenerator implements Callable<Void> {
 					objectClassName = (ClassName) javaField.getTypeName();
 				}
 			}
+			boolean isNullable = !field.isRequired() && field.getDefaultValue() == null;
 			FieldSpec.Builder fieldBuilder = FieldSpec.builder(getTypeName(field,
-			                                                               field.isRequired(),
+			                                                               !isNullable,
 			                                                               false,
 			                                                               useFutureProofEnum,
 			                                                               objectClassName), field.getLongName())
@@ -549,8 +550,7 @@ public class JavaGenerator implements Callable<Void> {
 			                                                                                  field.getName())
 			                                                                       .build());
 
-			if (!field.isRequired() && field.getDefaultValue() == null &&
-					!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION)) {
+			if (isNullable && !(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION)) {
 				fieldBuilder.addAnnotation(nullableAnnotation);
 			}
 
@@ -978,6 +978,12 @@ public class JavaGenerator implements Callable<Void> {
 								                                field.getLongName(),
 								                                CLASS_NAME_BOOLEAN_UTIL,
 								                                field.getLongName());
+							} else if (field.hasDefaultValue()) {
+								constructorBuilder.addStatement("this.$N = $T.convertToInt($N, $L)",
+								                                field.getLongName(),
+								                                CLASS_NAME_BOOLEAN_UTIL,
+								                                field.getLongName(),
+								                                field.getDefaultValue());
 							} else {
 								constructorBuilder.addStatement("this.$N = $T.convertToInteger($N)",
 								                                field.getLongName(),
@@ -998,6 +1004,7 @@ public class JavaGenerator implements Callable<Void> {
 
 			for (JavaField field : javaFields) {
 				DataType type = getEffectiveFieldType(field);
+				boolean isOptionalWithDefault = !field.isRequired() && !field.hasDefaultValue();
 				if (type == DataType.ENUM) {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, false, field.getTypeName());
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
@@ -1029,8 +1036,9 @@ public class JavaGenerator implements Callable<Void> {
 					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
 					dataObjectClassBuilder.addMethod(getterBuilder.build());
 				} else {
-					TypeName typeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
-					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+					TypeName typeName = getTypeName(field, !isOptionalWithDefault, true, field.getTypeName());
+					TypeName setterTypeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
+					ParameterSpec.Builder setterParameter = ParameterSpec.builder(setterTypeName, field.getLongName());
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
 							"get" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
@@ -1046,10 +1054,12 @@ public class JavaGenerator implements Callable<Void> {
 						getterBuilder.addStatement("return $N", field.getLongName());
 					}
 
-					if (!field.isRequired() && field.getDefaultValue() == null &&
+					if (!field.isRequired() && (field.getDefaultValue() == null || convertToBoolean) &&
 							!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION))
 					{
-						getterBuilder.addAnnotation(nullableAnnotation);
+						if (!field.hasDefaultValue()) {
+							getterBuilder.addAnnotation(nullableAnnotation);
+						}
 						setterParameter.addAnnotation(nullableAnnotation);
 					}
 
@@ -1066,6 +1076,12 @@ public class JavaGenerator implements Callable<Void> {
 							                           field.getLongName(),
 							                           CLASS_NAME_BOOLEAN_UTIL,
 							                           field.getLongName());
+						} else if (field.hasDefaultValue()) {
+							setterBuilder.addStatement("this.$N = $T.convertToInt($N, $L)",
+							                           field.getLongName(),
+							                           CLASS_NAME_BOOLEAN_UTIL,
+							                           field.getLongName(),
+							                           field.getDefaultValue());
 						} else {
 							setterBuilder.addStatement("this.$N = $T.convertToInteger($N)",
 							                           field.getLongName(),
@@ -1231,8 +1247,8 @@ public class JavaGenerator implements Callable<Void> {
 				ClassName requestBuilderBaseClassName;
 				if (method.isAuthenticationRequired()) {
 					requestBuilderBaseClassName = ClassName.get(
-						"com.allego.api.client2.requests.support.AuthenticatedAllegoRequest",
-						"AuthenticatedRequestBuilder");
+							"com.allego.api.client2.requests.support.AuthenticatedAllegoRequest",
+							"AuthenticatedRequestBuilder");
 				} else {
 					requestBuilderBaseClassName = ClassName.get(
 							"com.allego.api.client2.requests.support.AllegoRequest",
