@@ -1116,6 +1116,8 @@ public class JavaGenerator implements Callable<Void> {
 
 	public class MethodProcessor extends FieldAndTypeProcessor {
 		private final String mResponsePackage;
+		private final ClassName mAuthenticatedAllegoRequestClassName;
+		private final ClassName mAllegoRequestClassName;
 
 		private MethodProcessor(String objectPackage,
 		                        String paramsObjectPackage,
@@ -1124,6 +1126,10 @@ public class JavaGenerator implements Callable<Void> {
 		{
 			super(objectPackage, paramsObjectPackage, typeRefPackage);
 			mResponsePackage = responsePackage;
+			mAuthenticatedAllegoRequestClassName = ClassName.get(mObjectPackage + ".support",
+			                                                     "AuthenticatedAllegoRequest");
+			mAllegoRequestClassName = ClassName.get(mObjectPackage + ".support",
+			                                        "AllegoRequest");
 		}
 
 		private void processMethod(Method method) {
@@ -1151,8 +1157,12 @@ public class JavaGenerator implements Callable<Void> {
 
 			String requestClassNameStr = methodName + "Request";
 			ClassName requestClassName = ClassName.get(mObjectPackage, requestClassNameStr);
-			ClassName authenticatedAllegoRequestClassName = ClassName.get(mObjectPackage + ".support",
-			                                                              "AuthenticatedAllegoRequest");
+			ClassName baseClassName;
+			if (method.isAuthenticationRequired()) {
+				baseClassName = mAuthenticatedAllegoRequestClassName;
+			} else {
+				baseClassName = mAllegoRequestClassName;
+			}
 
 			ClassName methodIDAnnotation = ClassName.get("com.allego.api.client2.requests.support", "MethodID");
 			AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
@@ -1165,7 +1175,7 @@ public class JavaGenerator implements Callable<Void> {
 			TypeName responseTypeName = responseClassName == null ? TypeName.get(Void.class) : ClassName.get(
 					mResponsePackage,
 					responseClassName);
-			ParameterizedTypeName superClassParamed = ParameterizedTypeName.get(authenticatedAllegoRequestClassName,
+			ParameterizedTypeName superClassParamed = ParameterizedTypeName.get(baseClassName,
 			                                                                    paramsClassName,
 			                                                                    responseTypeName);
 
@@ -1175,32 +1185,28 @@ public class JavaGenerator implements Callable<Void> {
 			                                               .addModifiers(Modifier.PUBLIC);
 
 			if (method.getParameters().isEmpty()) {
-				requestClassBuilder.addMethod(MethodSpec.constructorBuilder()
-				                                        .addModifiers(Modifier.PUBLIC)
-				                                        .addParameter(String.class, "accessKey")
-				                                        .addStatement("super($N, null)", "accessKey")
-//			                            .addJavadoc(CodeBlock.builder()
-//			                                                 .add("Creates a request that " +
-//					                                                      method.getDescription())
-//			                                                 .add(" @param accessKey the access key to use for the request")
-//			                                                 .build())
-                                                        .build());
+				addMinimalConstructor(method, requestClassBuilder);
 			} else {
 				if (method.getParameters().size() < 3) {
-					requestClassBuilder.addMethod(MethodSpec.constructorBuilder()
-					                                        .addModifiers(Modifier.PUBLIC)
-					                                        .addParameter(String.class, "accessKey")
-					                                        .addStatement("super($N, null)", "accessKey")
-					                                        .build());
+					addMinimalConstructor(method, requestClassBuilder);
 				}
 
-				requestClassBuilder.addMethod(MethodSpec.constructorBuilder()
-				                                        .addModifiers(Modifier.PRIVATE)
-				                                        .addParameter(String.class, "accessKey")
-				                                        .addParameter(paramsClassName, "params")
-				                                        .addStatement("super($N, $N)", "accessKey", "params")
-				                                        .build());
+				// make the constructor that the builder will use
+				MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE);
+				if (method.isAuthenticationRequired()) {
+					constructorBuilder.addParameter(String.class, "accessKey");
+				}
+				constructorBuilder.addParameter(paramsClassName, "params");
 
+				if (method.isAuthenticationRequired()) {
+					constructorBuilder.addStatement("super($N, $N)", "accessKey", "params");
+				} else {
+					constructorBuilder.addStatement("super($N)", "params");
+				}
+
+				requestClassBuilder.addMethod(constructorBuilder.build());
+
+				// prepare the params data object
 				String paramsObjectPackage = mObjectPackage + "." + requestClassNameStr;
 				DataObjectProcessor paramsDataObjectProcessor = new DataObjectProcessor(paramsObjectPackage,
 				                                                                        mTypeRefPackage,
@@ -1222,10 +1228,17 @@ public class JavaGenerator implements Callable<Void> {
 				getterBuilder.addStatement("return new $T()", builderClassName);
 				requestClassBuilder.addMethod(getterBuilder.build());
 
-				ClassName authenticatedRequestBuilderClassName = ClassName.get(
+				ClassName requestBuilderBaseClassName;
+				if (method.isAuthenticationRequired()) {
+					requestBuilderBaseClassName = ClassName.get(
 						"com.allego.api.client2.requests.support.AuthenticatedAllegoRequest",
 						"AuthenticatedRequestBuilder");
-				ParameterizedTypeName builderSuperClass = ParameterizedTypeName.get(authenticatedRequestBuilderClassName,
+				} else {
+					requestBuilderBaseClassName = ClassName.get(
+							"com.allego.api.client2.requests.support.AllegoRequest",
+							"RequestBuilder");
+				}
+				ParameterizedTypeName builderSuperClass = ParameterizedTypeName.get(requestBuilderBaseClassName,
 				                                                                    requestClassName,
 				                                                                    builderClassName,
 				                                                                    paramsClassName);
@@ -1391,6 +1404,23 @@ public class JavaGenerator implements Callable<Void> {
 
 			writeFormattedClassFile(mObjectPackage, requestClassBuilder);
 
+		}
+
+		private void addMinimalConstructor(Method method, TypeSpec.Builder requestClassBuilder) {
+			MethodSpec.Builder builder = MethodSpec.constructorBuilder()
+			                                       .addModifiers(Modifier.PUBLIC);
+			if (method.isAuthenticationRequired()) {
+				builder.addParameter(String.class, "accessKey").addStatement("super($N, null)", "accessKey");
+//			                            .addJavadoc(CodeBlock.builder()
+//			                                                 .add("Creates a request that " +
+//					                                                      method.getDescription())
+//			                                                 .add(" @param accessKey the access key to use for the request")
+//			                                                 .build())
+			} else {
+				builder.addStatement("super(null)");
+			}
+
+			requestClassBuilder.addMethod(builder.build());
 		}
 
 		private void processParamsForBuilder(Method method, ClassName requestClassName, ClassName builderClassName,

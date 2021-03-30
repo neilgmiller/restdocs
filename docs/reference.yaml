@@ -271,6 +271,11 @@ data objects:
                     - name: description
                       description: A description of the method
                       type: string
+                    - name: authentication required
+                      description: Indicates whether authentication is required for this method.
+                      required: no
+                      type: boolean
+                      default: true
                     - name: headers
                       description: A list of headers
                       type: array

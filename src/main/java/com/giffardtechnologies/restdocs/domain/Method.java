@@ -23,6 +23,8 @@ public class Method {
 	private int id;
 	private String name = "";
 	private String description = "";
+	@SerializedName("authentication required")
+	private boolean authenticationRequired = true;
 	private ArrayList<Field> headers = new ArrayList<>();
 	private FieldElementList parameters = new FieldElementList();
 	@SerializedName("request body")
@@ -92,7 +94,19 @@ public class Method {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	
+
+	public boolean isAuthenticationRequired() {
+		return authenticationRequired;
+	}
+
+	public boolean getIsAuthenticationRequired() {
+		return isAuthenticationRequired();
+	}
+
+	public void setAuthenticationRequired(boolean authenticationRequired) {
+		this.authenticationRequired = authenticationRequired;
+	}
+
 	public boolean hasHeaders() {
 		return headers != null && !headers.isEmpty();
 	}
