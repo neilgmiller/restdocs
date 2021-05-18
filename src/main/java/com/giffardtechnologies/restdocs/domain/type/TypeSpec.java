@@ -110,6 +110,9 @@ public class TypeSpec {
 
 	public void setParentDocument(Document parentDocument) {
 		fieldElementList.setParentDocument(parentDocument);
+		if (items != null) {
+			items.setParentDocument(parentDocument);
+		}
 	}
 
 	public boolean hasEnumValues() {
