@@ -5,8 +5,9 @@ import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +37,15 @@ public class FieldElementList {
 					if (include.getExcluding().isEmpty()) {
 						fields.addAll(includedObject.getFields());
 					} else {
+						Set<String> fieldNameSet = includedObject.getFields()
+						                                         .stream()
+						                                         .map(Field::getLongName)
+						                                         .collect(Collectors.toSet());
+						if (!fieldNameSet.containsAll(include.getExcluding())) {
+							HashSet<String> nonMatching = new HashSet<>(include.getExcluding());
+							nonMatching.removeAll(fieldNameSet);
+							throw new IllegalStateException("Cannot find excluded field(s): " + String.join(", ", nonMatching));
+						}
 						List<Field> fieldsToAdd = includedObject.getFields()
 						                                        .stream()
 						                                        .filter(field -> !include.getExcluding()
