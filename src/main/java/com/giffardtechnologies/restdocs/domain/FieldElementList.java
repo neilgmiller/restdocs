@@ -5,7 +5,13 @@ import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * A class that manages a list of fields whether a straight list or a include
+ */
 public class FieldElementList {
 
 	private ArrayList<FieldListElement> fieldListElements = new ArrayList<>();
@@ -27,7 +33,16 @@ public class FieldElementList {
 					if (includedObject == null) {
 						throw new IllegalStateException("Cannot find '" + include.getInclude());
 					}
-					fields.addAll(includedObject.getFields());
+					if (include.getExcluding().isEmpty()) {
+						fields.addAll(includedObject.getFields());
+					} else {
+						List<Field> fieldsToAdd = includedObject.getFields()
+						                                        .stream()
+						                                        .filter(field -> !include.getExcluding()
+						                                                                 .contains(field.getLongName()))
+						                                        .collect(Collectors.toList());
+						this.fields.addAll(fieldsToAdd);
+					}
 				} else {
 					throw new IllegalStateException("Unsupported element type: " + fieldListElement.getClass().getName());
 				}
