@@ -286,6 +286,23 @@ data objects:
                       type: array
                       items:
                           typeref: Field
+                    - name: request body
+                      description: Speicifies what are valid request bodies.
+                      type: object
+                      fields:
+                          - name: description
+                            description: A description of the request body to be sent
+                            type: string
+                          - name: content types
+                            description: 'A list of the accepted content types. See https://www.w3.org/Protocols/rfc1341/4_Content-Type.html'
+                            type: array
+                            items:
+                                type: string
+                                restrictions:
+                                    - restriction: a MIME type
+                            sampleValues:
+                                - application/JSON
+                                - multipart/mixed
                     - name: response
                       description: A description of the data returned in the response
                       type: object

@@ -1,8 +1,13 @@
 package com.giffardtechnologies.restdocs.domain;
 
+import com.google.gson.annotations.SerializedName;
+
+import java.util.ArrayList;
+
 public class RequestBody {
 	private String description;
-	private String encoding;
+	@SerializedName("content types")
+	private ArrayList<String> contentTypes;
 	
 	public String getDescription() {
 		return description;
@@ -11,13 +16,12 @@ public class RequestBody {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	
-	public String getEncoding() {
-		return encoding;
+
+	public ArrayList<String> getContentTypes() {
+		return contentTypes;
 	}
-	
-	public void setEncoding(String encoding) {
-		this.encoding = encoding;
+
+	public void setContentTypes(ArrayList<String> contentTypes) {
+		this.contentTypes = contentTypes;
 	}
-	
 }
