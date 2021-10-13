@@ -1036,16 +1036,29 @@ public class JavaGenerator implements Callable<Void> {
 					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
 					dataObjectClassBuilder.addMethod(getterBuilder.build());
 				} else {
+					boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
+
 					TypeName typeName = getTypeName(field, !isOptionalWithDefault, true, field.getTypeName());
 					TypeName setterTypeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(setterTypeName, field.getLongName());
 
-					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
-							"get" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+					String getterPrefix;
+					if (convertToBoolean || field.getType() == DataType.BOOLEAN) {
+						if (field.getLongName().startsWith("is")) {
+							getterPrefix = "";
+						} else {
+							getterPrefix = "is";
+						}
+					} else {
+						getterPrefix = "get";
+					}
+					String getterMethodName = getterPrefix + mJavaTool.fieldNameToClassStyle(field.getLongName());
+					getterMethodName = StringUtils.uncapitalize(getterMethodName);
+
+					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(getterMethodName)
 					                                             .returns(typeName)
 					                                             .addModifiers(Modifier.PUBLIC);
 
-					boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
 					if (convertToBoolean) {
 						getterBuilder.addStatement("return $T.convertToBoolean($N)",
 						                           CLASS_NAME_BOOLEAN_UTIL,
