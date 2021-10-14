@@ -420,7 +420,11 @@ public class JavaGenerator implements Callable<Void> {
 
 	@NotNull
 	private String convertToEnumConstantStyle(String longName) {
-		return longName.toUpperCase().replace('-', '_');
+		if (longName.matches("_-")) {
+			return longName.toUpperCase().replace('-', '_');
+		} else {
+			return CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, longName);
+		}
 	}
 
 	private void writeFormattedClassFile(String packageName, TypeSpec.Builder builder) {

@@ -49,6 +49,8 @@ dependencies {
     compile 'com.google.guava:guava:22.0'
     compile 'org.jetbrains:annotations:13.0'
 
+    implementation("com.google.guava:guava:31.0.1-jre")
+
     compile 'com.squareup:javapoet:1.13.0'
     compile 'com.google.googlejavaformat:google-java-format:1.8'
 // https://mvnrepository.com/artifact/org.eclipse.jdt/org.eclipse.jdt.core
