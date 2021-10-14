@@ -21,6 +21,7 @@ import com.giffardtechnologies.restdocs.domain.type.KeyType;
 import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.giffardtechnologies.restdocs.gson.GsonFactory;
 import com.giffardtechnologies.restdocs.mappers.JavaFieldMapper;
+import com.google.common.base.CaseFormat;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
@@ -396,8 +397,12 @@ public class JavaGenerator implements Callable<Void> {
 		}
 
 		for (EnumConstant enumConstant : namedEnumeration.getValues()) {
+			String enumConstantValue = enumConstant.getValue();
+			if (namedEnumeration.getKey() == KeyType.STRING) {
+				enumConstantValue = "\"" + enumConstantValue + "\"";
+			}
 			builder.addEnumConstant(convertToEnumConstantStyle(enumConstant.getLongName()),
-			                        TypeSpec.anonymousClassBuilder("$L", enumConstant.getValue()).build());
+			                        TypeSpec.anonymousClassBuilder("$L", enumConstantValue).build());
 		}
 
 		FieldSpec.Builder idFieldBuilder = FieldSpec.builder(int.class, "id")
