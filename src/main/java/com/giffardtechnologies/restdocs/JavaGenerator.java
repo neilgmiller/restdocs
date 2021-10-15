@@ -65,6 +65,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -375,8 +376,10 @@ public class JavaGenerator implements Callable<Void> {
 		ClassName futureProofAnnotation = ClassName.get(FutureProof.class);
 		ClassName futureProofUnknownAnnotation = ClassName.get(Unknown.class);
 
+		Class<?> enumKeyTypeClass = null;
 		switch (namedEnumeration.getKey()) {
 			case INT:
+				enumKeyTypeClass = int.class;
 				builder.addSuperinterface(ClassName.get(IntId.class));
 				if (useFutureProofEnum) {
 					builder.addAnnotation(futureProofAnnotation);
@@ -387,14 +390,17 @@ public class JavaGenerator implements Callable<Void> {
 				}
 				break;
 			case LONG:
+				enumKeyTypeClass = long.class;
 				builder.addSuperinterface(ClassName.get(LongId.class));
 				break;
 			case STRING:
+				enumKeyTypeClass = String.class;
 				builder.addSuperinterface(ClassName.get(StringId.class));
 				break;
 			case ENUM:
-				break;
+				throw new IllegalStateException(String.format("Cannot use enum as key to an enum: %s", enumClassName));
 		}
+		Objects.requireNonNull(enumKeyTypeClass, "Error in JavaGenerator enumKeyTypeClass is null");
 
 		for (EnumConstant enumConstant : namedEnumeration.getValues()) {
 			String enumConstantValue = enumConstant.getValue();
@@ -405,17 +411,17 @@ public class JavaGenerator implements Callable<Void> {
 			                        TypeSpec.anonymousClassBuilder("$L", enumConstantValue).build());
 		}
 
-		FieldSpec.Builder idFieldBuilder = FieldSpec.builder(int.class, "id")
+		FieldSpec.Builder idFieldBuilder = FieldSpec.builder(enumKeyTypeClass, "id")
 		                                            .addModifiers(Modifier.PRIVATE, Modifier.FINAL);
 		builder.addField(idFieldBuilder.build());
 
 		builder.addMethod(MethodSpec.constructorBuilder()
-		                            .addParameter(int.class, "id")
+		                            .addParameter(enumKeyTypeClass, "id")
 		                            .addStatement("$N = $N", "this.id", "id")
 		                            .build());
 
 		builder.addMethod(MethodSpec.methodBuilder("getId")
-		                            .returns(int.class)
+		                            .returns(enumKeyTypeClass)
 		                            .addModifiers(Modifier.PUBLIC)
 		                            .addStatement("return $N", "id")
 		                            .build());
