@@ -49,6 +49,8 @@ public class PlainTextTool {
 				case ARRAY:
 					// pass required false, since we can't use primitives
 					return "array of " + getTypeString(typeSpec.getItems(), false);
+				case BITSET:
+					return "bitset in a " + typeSpec.getFlagType().getType().toString().toLowerCase(Locale.US);
 			}
 		} else if (typeSpec.getTypeRef() != null) {
 			return typeSpec.getTypeRef();

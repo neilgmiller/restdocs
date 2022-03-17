@@ -4,6 +4,9 @@
 #macro( enumheaders )
 <tr><th style="width: 20%">enum name</th><th style="width: 15%">key</th><th>description</th></tr>
 #end
+#macro( bitsetheaders )
+<tr><th style="width: 20%">flag name</th><th style="width: 15%">key</th><th>description</th></tr>
+#end
 #macro( parameterheaders )
 <tr><th style="width: 15%">parameter</th><th style="width: 20%">long name</th><th style="width: 20%">type</th><th>description</th></tr>
 #end
@@ -73,6 +76,17 @@
                         <td colspan=4 style="padding: 0.25em 0 0 2em">
                             <table>
                     			#enumheaders
+        			#foreach( $constant in $field.values )
+                    			#enumConstantRow( $constant )
+        			#end
+                			</table>
+                        </td>
+                    </tr>
+                #elseif ($field.type.name() == "BITSET")
+                    <tr>
+                        <td colspan=4 style="padding: 0.25em 0 0 2em">
+                            <table>
+                    			#bitsetheaders
         			#foreach( $constant in $field.values )
                     			#enumConstantRow( $constant )
         			#end

@@ -13,6 +13,7 @@ public class TypeSpec {
 	@SerializedName("typeref")
 	private String typeRef;
 	private KeyType key;
+	private FlagType flagType;
 	private TypeSpec items;
 	private ArrayList<Restriction> restrictions;
 	@SerializedName("fields")
@@ -58,6 +59,14 @@ public class TypeSpec {
 
 	public void setKey(KeyType key) {
 		this.key = key;
+	}
+
+	public FlagType getFlagType() {
+		return flagType;
+	}
+
+	public void setFlagType(FlagType flagType) {
+		this.flagType = flagType;
 	}
 
 	public ArrayList<Restriction> getRestrictions() {

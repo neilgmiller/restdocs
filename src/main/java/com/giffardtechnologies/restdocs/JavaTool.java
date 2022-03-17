@@ -92,6 +92,13 @@ public class JavaTool {
 				case ARRAY:
 					// pass required false, since we can't use primitives
 					return "List<" + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
+				case BITSET:
+					switch (typeSpec.getFlagType()) {
+						case INT:
+							return required ? "int" : "Integer";
+						case LONG:
+							return required ? "long" : "Long";
+					}
 			}
 		} else if (typeSpec.getTypeRef() != null) {
 			DataObject dataObject = mDocument.getDataObjectByName(typeSpec.getTypeRef());

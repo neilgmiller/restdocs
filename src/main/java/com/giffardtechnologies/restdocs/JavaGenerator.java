@@ -758,6 +758,18 @@ public class JavaGenerator implements Callable<Void> {
 						                                             convertIntBoolean,
 						                                             futureProofEnum,
 						                                             objectTypeName));
+					case BITSET:
+						TypeName bitsetName;
+						if (objectTypeName != null) {
+							bitsetName = objectTypeName;
+						} else if (typeSpec instanceof Field) {
+							Field field = (Field) typeSpec;
+							bitsetName = ClassName.get(getSubObjectPackage(),
+							                         mJavaTool.fieldToClassStyle(field));
+						} else {
+							throw new IllegalStateException("Raw bitflag type specified, cannot generate name.");
+						}
+						return getBasicTypeName(typeSpec.getFlagType().getType(), required);
 				}
 			} else if (typeSpec.getTypeRef() != null) {
 				NamedType namedType = mDocument.getTypeByName(typeSpec.getTypeRef());
