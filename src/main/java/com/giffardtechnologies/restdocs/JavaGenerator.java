@@ -99,6 +99,8 @@ public class JavaGenerator implements Callable<Void> {
 	private Document mDocument;
 	private JavaTool mJavaTool;
 
+	private boolean mUsePathAnnotation;
+
 	public static void main(String[] args) {
 //		for (String arg : args) {
 //			System.out.print(arg);
@@ -136,6 +138,8 @@ public class JavaGenerator implements Callable<Void> {
 			localProperties.load(propsInStream);
 			propsInStream.close();
 		}
+
+		mUsePathAnnotation = Boolean.parseBoolean(mProperties.getProperty("usePathAnnotation"));
 
 		setSourceFile(new File(mPropertiesFile.getParentFile(), localProperties.getProperty("sourceFile")));
 
@@ -1224,7 +1228,6 @@ public class JavaGenerator implements Callable<Void> {
 			AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
 			                                                .addMember("id", "$L", method.getId())
 			                                                .build();
-
 			ClassName paramsClassName = method.getParameters().isEmpty() ? ClassName.get(Void.class) : ClassName.get(
 					mObjectPackage + "." + requestClassNameStr,
 					"Params");
@@ -1239,6 +1242,14 @@ public class JavaGenerator implements Callable<Void> {
 			                                               .superclass(superClassParamed)
 			                                               .addAnnotation(methodAnnotation)
 			                                               .addModifiers(Modifier.PUBLIC);
+
+			if (mUsePathAnnotation) {
+				ClassName pathAnnotationCN = ClassName.get("javax.ws.rs", "Path");
+				AnnotationSpec pathAnnotation = AnnotationSpec.builder(pathAnnotationCN)
+				                                              .addMember("value", "\"/$L\"", method.getPath())
+				                                              .build();
+				requestClassBuilder.addAnnotation(pathAnnotation);
+			}
 
 			if (method.getParameters().isEmpty()) {
 				addMinimalConstructor(method, requestClassBuilder);

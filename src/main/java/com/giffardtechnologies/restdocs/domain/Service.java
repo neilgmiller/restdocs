@@ -4,9 +4,12 @@ import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Service {
 	private String description;
+	@SerializedName("base path")
+	private String basePath;
 	private Common common;
 	private ArrayList<Method> methods;
 	private Document mParentDocument;
@@ -26,7 +29,7 @@ public class Service {
 		private ArrayList<Field> headers;
 		private ArrayList<Field> parameters;
 		@SerializedName("response objects")
-		private ArrayList<DataObject> responseDataObjects;
+		private ArrayList<DataObject> responseDataObjects = new ArrayList<>();
 
 		public boolean hasHeaders() {
 			return headers != null && !headers.isEmpty();
@@ -84,7 +87,15 @@ public class Service {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	
+
+	public String getBasePath() {
+		return basePath;
+	}
+
+	public void setBasePath(String basePath) {
+		this.basePath = basePath;
+	}
+
 	public boolean hasCommon() {
 		return common != null;
 	}

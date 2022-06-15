@@ -18,6 +18,7 @@ public class Method {
 	}
 	
 	private HTTPMethod method;
+	private String path;
 	@SerializedName("protocols allowed")
 	private ArrayList<String> protocolsAllowed = new ArrayList<>();
 	private int id;
@@ -74,7 +75,15 @@ public class Method {
 	public void setMethod(HTTPMethod method) {
 		this.method = method;
 	}
-	
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
 	public ArrayList<String> getProtocolsAllowed() {
 		return protocolsAllowed;
 	}
