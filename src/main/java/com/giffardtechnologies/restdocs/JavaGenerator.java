@@ -27,6 +27,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -73,6 +74,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("CommentedOutCode")
 @Command(description = "Generates java code based for a given API descriptor", name = "java_generator", mixinStandardHelpOptions = true, version = "1.0")
 public class JavaGenerator implements Callable<Void> {
 	private static final Logger sLogger = LoggerFactory.getLogger(JavaGenerator.class);
@@ -100,6 +102,9 @@ public class JavaGenerator implements Callable<Void> {
 	private JavaTool mJavaTool;
 
 	private boolean mUsePathAnnotation;
+	private String mMethodIDStyleRequestClass;
+	private String mAuthenticatedMethodIDStyleRequestClass;
+	private String mPathAndBodyStyleRequestClass;
 
 	public static void main(String[] args) {
 //		for (String arg : args) {
@@ -109,7 +114,7 @@ public class JavaGenerator implements Callable<Void> {
 //		System.out.println();
 		JavaGenerator docGenerator = new JavaGenerator();
 
-		CommandLine.call(docGenerator, args);
+		new CommandLine(docGenerator).execute(args);
 	}
 
 	@Override
@@ -140,6 +145,10 @@ public class JavaGenerator implements Callable<Void> {
 		}
 
 		mUsePathAnnotation = Boolean.parseBoolean(mProperties.getProperty("usePathAnnotation"));
+		mMethodIDStyleRequestClass = mProperties.getProperty("altMethodIDStyleRequestClass", "AllegoRequest");
+		mAuthenticatedMethodIDStyleRequestClass = mProperties.getProperty("altAuthenticatedMethodIDStyleRequestClass",
+		                                                                  "AuthenticatedAllegoRequest");
+		mPathAndBodyStyleRequestClass = mProperties.getProperty("altPathAndBodyStyleRequestClass");
 
 		setSourceFile(new File(mPropertiesFile.getParentFile(), localProperties.getProperty("sourceFile")));
 
@@ -491,6 +500,7 @@ public class JavaGenerator implements Callable<Void> {
 		}
 	}
 
+	@SuppressWarnings({"SameParameterValue", "unused", "UnnecessaryLocalVariable"})
 	private class FieldAndTypeProcessor {
 
 		protected final String mObjectPackage;
@@ -1178,6 +1188,7 @@ public class JavaGenerator implements Callable<Void> {
 		private final String mResponsePackage;
 		private final ClassName mAuthenticatedAllegoRequestClassName;
 		private final ClassName mAllegoRequestClassName;
+		private final ClassName mAllegoPathAndBodyRequestClassName;
 
 		private MethodProcessor(String objectPackage,
 		                        String paramsObjectPackage,
@@ -1187,9 +1198,11 @@ public class JavaGenerator implements Callable<Void> {
 			super(objectPackage, paramsObjectPackage, typeRefPackage);
 			mResponsePackage = responsePackage;
 			mAuthenticatedAllegoRequestClassName = ClassName.get(mObjectPackage + ".support",
-			                                                     "AuthenticatedAllegoRequest");
+			                                                     mAuthenticatedMethodIDStyleRequestClass);
 			mAllegoRequestClassName = ClassName.get(mObjectPackage + ".support",
-			                                        "AllegoRequest");
+			                                        mMethodIDStyleRequestClass);
+			mAllegoPathAndBodyRequestClassName = ClassName.get(mObjectPackage + ".support",
+			                                        mPathAndBodyStyleRequestClass);
 		}
 
 		private void processMethod(Method method) {
@@ -1198,10 +1211,16 @@ public class JavaGenerator implements Callable<Void> {
 			String methodName = StringUtils.capitalize(method.getName());
 
 			String responseClassName = null;
+			TypeName responseTypeName = null;
 			Response response = method.getResponse();
 			if (response != null) {
 				if (response.isTypeRef()) {
 					responseClassName = response.getTypeRef();
+					try {
+						responseTypeName = getTypeName(response, true, false);
+					} catch (Exception e) {
+						// nothing it's just not found
+					}
 				} else if (response.getType() == DataType.OBJECT) {
 					responseClassName = methodName + "Response";
 
@@ -1221,41 +1240,55 @@ public class JavaGenerator implements Callable<Void> {
 			if (method.isAuthenticationRequired()) {
 				baseClassName = mAuthenticatedAllegoRequestClassName;
 			} else {
-				baseClassName = mAllegoRequestClassName;
+				if (mUsePathAnnotation && method.getId() == null) {
+					baseClassName = mAllegoPathAndBodyRequestClassName;
+				} else {
+					baseClassName = mAllegoRequestClassName;
+				}
 			}
 
 			ClassName methodIDAnnotation = ClassName.get("com.allego.api.client2.requests.support", "MethodID");
-			AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
-			                                                .addMember("id", "$L", method.getId())
-			                                                .build();
 			ClassName paramsClassName = method.getParameters().isEmpty() ? ClassName.get(Void.class) : ClassName.get(
 					mObjectPackage + "." + requestClassNameStr,
 					"Params");
-			TypeName responseTypeName = responseClassName == null ? TypeName.get(Void.class) : ClassName.get(
-					mResponsePackage,
-					responseClassName);
+			if (responseTypeName == null) {
+				responseTypeName = responseClassName == null ? TypeName.get(Void.class) : ClassName.get(mResponsePackage,
+				                                                                                        responseClassName);
+			}
 			ParameterizedTypeName superClassParamed = ParameterizedTypeName.get(baseClassName,
 			                                                                    paramsClassName,
 			                                                                    responseTypeName);
 
 			TypeSpec.Builder requestClassBuilder = TypeSpec.classBuilder(requestClassName)
 			                                               .superclass(superClassParamed)
-			                                               .addAnnotation(methodAnnotation)
 			                                               .addModifiers(Modifier.PUBLIC);
 
 			if (mUsePathAnnotation) {
+				if (method.getId() != null) {
+					AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
+					                                                .addMember("id", "$L", method.getId())
+					                                                .build();
+					requestClassBuilder.addAnnotation(methodAnnotation);
+				}
+
 				ClassName pathAnnotationCN = ClassName.get("javax.ws.rs", "Path");
 				AnnotationSpec pathAnnotation = AnnotationSpec.builder(pathAnnotationCN)
 				                                              .addMember("value", "\"/$L\"", method.getPath())
 				                                              .build();
 				requestClassBuilder.addAnnotation(pathAnnotation);
+			} else {
+				Objects.requireNonNull(method.getId(), "Method must have an ID");
+				AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
+				                                                .addMember("id", "$L", method.getId())
+				                                                .build();
+				requestClassBuilder.addAnnotation(methodAnnotation);
 			}
 
 			if (method.getParameters().isEmpty()) {
-				addMinimalConstructor(method, requestClassBuilder);
+				addMinimalConstructor(method, requestClassName, requestClassBuilder);
 			} else {
 				if (method.getParameters().size() < 3) {
-					addMinimalConstructor(method, requestClassBuilder);
+					addMinimalConstructor(method, requestClassName, requestClassBuilder);
 				}
 
 				// make the constructor that the builder will use
@@ -1298,12 +1331,16 @@ public class JavaGenerator implements Callable<Void> {
 				ClassName requestBuilderBaseClassName;
 				if (method.isAuthenticationRequired()) {
 					requestBuilderBaseClassName = ClassName.get(
-							"com.allego.api.client2.requests.support.AuthenticatedAllegoRequest",
+							mAuthenticatedAllegoRequestClassName.canonicalName(),
 							"AuthenticatedRequestBuilder");
 				} else {
-					requestBuilderBaseClassName = ClassName.get(
-							"com.allego.api.client2.requests.support.AllegoRequest",
-							"RequestBuilder");
+					if (mUsePathAnnotation) {
+						requestBuilderBaseClassName = ClassName.get(mAllegoPathAndBodyRequestClassName.canonicalName(),
+						                                            "RequestBuilder");
+					} else {
+						requestBuilderBaseClassName = ClassName.get(mAllegoRequestClassName.canonicalName(),
+						                                            "RequestBuilder");
+					}
 				}
 				ParameterizedTypeName builderSuperClass = ParameterizedTypeName.get(requestBuilderBaseClassName,
 				                                                                    requestClassName,
@@ -1473,19 +1510,40 @@ public class JavaGenerator implements Callable<Void> {
 
 		}
 
-		private void addMinimalConstructor(Method method, TypeSpec.Builder requestClassBuilder) {
+		private void addMinimalConstructor(Method method, ClassName requestClassName, TypeSpec.Builder requestClassBuilder) {
 			MethodSpec.Builder builder = MethodSpec.constructorBuilder()
 			                                       .addModifiers(Modifier.PUBLIC);
-			if (method.isAuthenticationRequired()) {
-				builder.addParameter(String.class, "accessKey").addStatement("super($N, null)", "accessKey");
-//			                            .addJavadoc(CodeBlock.builder()
-//			                                                 .add("Creates a request that " +
-//					                                                      method.getDescription())
-//			                                                 .add(" @param accessKey the access key to use for the request")
-//			                                                 .build())
-			} else {
-				builder.addStatement("super(null)");
-			}
+
+			String description = StringUtils.uncapitalize(method.getDescription());
+
+//			if (method.getParameters().isEmpty()) {
+				if (method.isAuthenticationRequired()) {
+					builder.addParameter(String.class, "accessKey")
+					       .addStatement("super($N, null)", "accessKey")
+					       .addJavadoc(CodeBlock.builder()
+					                            .add("Creates a request that " + description)
+					                            .add(" @param accessKey the access key to use for the request")
+					                            .build());
+				} else {
+					builder.addStatement("super(null)")
+					       .addJavadoc(CodeBlock.builder().add("Creates a request that " + description).build());
+
+				}
+//			} else {
+//				if (method.isAuthenticationRequired()) {
+//					builder.addParameter(String.class, "accessKey")
+//					       .addStatement("super($N, null)", "accessKey")
+//					       .addJavadoc(CodeBlock.builder()
+//					                            .add("Creates a request that " + description)
+//					                            .add(" @param accessKey the access key to use for the request")
+//					                            .build());
+//				} else {
+//					builder.addStatement("super(null)")
+//					       .addJavadoc(CodeBlock.builder().add("Creates a request that " + description).build());
+//
+//				}
+//				processParamsForConstructor(method, requestClassName, builder);
+//			}
 
 			requestClassBuilder.addMethod(builder.build());
 		}
@@ -1663,6 +1721,110 @@ public class JavaGenerator implements Callable<Void> {
 				}
 			}
 		}
+
+//		private void processParamsForConstructor(Method method, ClassName requestClassName, MethodSpec.Builder builder) {
+//			boolean useFutureProofEnum = false;
+//
+//			ClassName booleanUtil = ClassName.get("com.allego.api.client2.helpers", "BooleanUtil");
+//			ClassName futureProofEnumAccessor = ClassName.get(FutureProofEnumAccessor.class);
+//
+//			for (Field field : method.getParameters()) {
+//				ClassName className = null;
+//				if (field.getType() == DataType.OBJECT) {
+//					className = requestClassName.nestedClass(getFieldClassName(field));
+//				} else if (field.getType() == DataType.ENUM) {
+//					className = requestClassName.nestedClass(getFieldClassName(field));
+//				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+//					className = requestClassName.nestedClass(getFieldClassName(field));
+//				}
+//
+//				try {
+//					FieldSpec fieldSpec = createFieldSpec(field, NULLABLE_ANNOTATION, useFutureProofEnum, className, false);
+//					paramsBuilder.addField(fieldSpec);
+//				} catch (Exception e) {
+//					throw new IllegalStateException(String.format("Error processing field %s in %s",
+//					                                              field.getLongName(),
+//					                                              method.getName()), e);
+//				}
+//
+//				DataType type = getEffectiveFieldType(field);
+//				if (type == DataType.ENUM && useFutureProofEnum) {
+//					TypeName typeName = getTypeName(field, field.isRequired(), true, false, className);
+//					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+//
+//					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
+//							                                             "get" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+//					                                             .returns(typeName)
+//					                                             .addModifiers(Modifier.PUBLIC);
+//					getterBuilder.addStatement("return $N.getEnumValue()", field.getLongName());
+//					if (!field.isRequired() && field.getDefaultValue() == null) {
+//						getterBuilder.addAnnotation(NULLABLE_ANNOTATION);
+//						setterParameter.addAnnotation(NULLABLE_ANNOTATION);
+//					}
+//					paramsBuilder.addMethod(getterBuilder.build());
+//
+//					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
+//							                                             "set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+//					                                             .addModifiers(Modifier.PUBLIC)
+//					                                             .addParameter(setterParameter.build());
+//					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
+//					paramsBuilder.addMethod(setterBuilder.build());
+//
+//					getterBuilder = MethodSpec.methodBuilder(
+//							                          "getFutureProof" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+//					                          .returns(ParameterizedTypeName.get(futureProofEnumAccessor, typeName))
+//					                          .addModifiers(Modifier.PUBLIC);
+//					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
+//					paramsBuilder.addMethod(getterBuilder.build());
+//				} else {
+//					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum, className);
+//					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+//
+//					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
+//							                                             "get" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+//					                                             .returns(typeName)
+//					                                             .addModifiers(Modifier.PUBLIC);
+//
+//					boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
+//					if (convertToBoolean) {
+//						getterBuilder.addStatement("return $T.convertToBoolean($N)", booleanUtil, field.getLongName());
+//					} else {
+//						getterBuilder.addStatement("return $N", field.getLongName());
+//					}
+//
+//					if (!field.isRequired() && field.getDefaultValue() == null) {
+//						getterBuilder.addAnnotation(NULLABLE_ANNOTATION);
+//						setterParameter.addAnnotation(NULLABLE_ANNOTATION);
+//					}
+//
+//					paramsBuilder.addMethod(getterBuilder.build());
+//
+//					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
+//							                                             "set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+//					                                             .addModifiers(Modifier.PUBLIC)
+//					                                             .addParameter(setterParameter.build());
+//
+//					if (convertToBoolean) {
+//						if (field.isRequired()) {
+//							setterBuilder.addStatement("this.$N = $T.convertToInt($N)",
+//							                           field.getLongName(),
+//							                           booleanUtil,
+//							                           field.getLongName());
+//						} else {
+//							setterBuilder.addStatement("this.$N = $T.convertToInteger($N)",
+//							                           field.getLongName(),
+//							                           booleanUtil,
+//							                           field.getLongName());
+//						}
+//					} else {
+//						setterBuilder.addStatement("this.$N = $N", field.getLongName(), field.getLongName());
+//					}
+//
+//					paramsBuilder.addMethod(setterBuilder.build());
+//				}
+//			}
+//		}
+
 	}
 
 	public static class JavaField extends Field {

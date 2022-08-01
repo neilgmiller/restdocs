@@ -21,7 +21,7 @@ public class Method {
 	private String path;
 	@SerializedName("protocols allowed")
 	private ArrayList<String> protocolsAllowed = new ArrayList<>();
-	private int id;
+	private Integer id;
 	private String name = "";
 	private String description = "";
 	@SerializedName("authentication required")
@@ -52,12 +52,16 @@ public class Method {
 		return method == null ? "null" : method.name();
 	}
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
+	}
+
+	public boolean getHasID() {
+		return id != null;
 	}
 
 	public String getName() {
