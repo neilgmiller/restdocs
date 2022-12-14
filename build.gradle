@@ -1,8 +1,13 @@
+// Apply the Kotlin plugin to add support for Kotlin
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.7.20'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.20'
+}
+apply plugin: 'application'
+//apply plugin: 'java'
+
 group 'org.giffardtechnologies'
 version '1.1-SNAPSHOT'
-
-apply plugin: 'application'
-apply plugin: 'java'
 
 sourceCompatibility = 11
 
@@ -32,38 +37,37 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
 
-    compile fileTree(includes: ['*.jar'], dir: 'manual-libs')
+    implementation fileTree(includes: ['*.jar'], dir: 'manual-libs')
     // https://mvnrepository.com/artifact/org.yaml/snakeyaml
-    compile group: 'org.yaml', name: 'snakeyaml', version: '1.23'
+    implementation group: 'org.yaml', name: 'snakeyaml', version: '1.23'
     // https://mvnrepository.com/artifact/org.apache.velocity/velocity
-    compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
+    implementation group: 'org.apache.velocity', name: 'velocity', version: '1.7'
     // https://mvnrepository.com/artifact/org.apache.velocity/velocity-tools
-    compile group: 'org.apache.velocity', name: 'velocity-tools', version: '2.0'
+    implementation group: 'org.apache.velocity', name: 'velocity-tools', version: '2.0'
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
-    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.1'
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.1'
     // https://github.com/remkop/picocli
-    compile 'info.picocli:picocli:4.6.3'
-    compile 'com.google.code.findbugs:jsr305:3.0.2'
-//    compile 'com.google.guava:guava:23.0'
-    compile 'org.jetbrains:annotations:23.0.0'
+    implementation 'info.picocli:picocli:4.7.0'
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    compileOnly 'org.jetbrains:annotations:23.0.0'
 
     implementation 'commons-io:commons-io:2.11.0'
 
-    implementation("com.google.guava:guava:31.0.1-jre")
+    implementation('com.google.guava:guava:31.1-jre')
 
-    compile 'com.squareup:javapoet:1.13.0'
-    compile 'com.google.googlejavaformat:google-java-format:1.15.0'
+    implementation 'com.squareup:javapoet:1.13.0'
+    implementation 'com.google.googlejavaformat:google-java-format:1.15.0'
 // https://mvnrepository.com/artifact/org.eclipse.jdt/org.eclipse.jdt.core
-    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.29.0'
+    implementation group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.29.0'
     // temporarily force this for missing dependency at 3.10
-    compile('org.eclipse.platform:org.eclipse.equinox.preferences:3.9.100'){
+    implementation('org.eclipse.platform:org.eclipse.equinox.preferences:3.10.1'){
         force = true
     }
-    compile "com.allego.common:futureproofenum:1.0-SNAPSHOT"
+    implementation "com.allego.common:futureproofenum:1.0-SNAPSHOT"
 
-    def mapstruct_version = "1.5.1.Final"
+    def mapstruct_version = "1.5.3.Final"
     implementation "org.mapstruct:mapstruct:$mapstruct_version"
     annotationProcessor "org.mapstruct:mapstruct-processor:$mapstruct_version"
 }
