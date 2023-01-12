@@ -9,7 +9,7 @@ apply plugin: 'application'
 group 'org.giffardtechnologies'
 version '1.1-SNAPSHOT'
 
-sourceCompatibility = 11
+sourceCompatibility = 18
 
 def homePath = System.properties['user.home']
 

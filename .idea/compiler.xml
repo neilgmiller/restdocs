@@ -10,7 +10,7 @@
         <module name="restdocs.main" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="11">
+    <bytecodeTargetLevel target="18">
       <module name="restdocs_main" target="1.8" />
       <module name="restdocs_test" target="1.8" />
     </bytecodeTargetLevel>
