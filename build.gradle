@@ -13,12 +13,12 @@ sourceCompatibility = 18
 
 def homePath = System.properties['user.home']
 
-def installDir = '/Users/ngm/Dev/API-Docs/restdocs'
+def installDir
 def locPropertiesFile = project.rootProject.file('local.properties')
 if (locPropertiesFile.exists()) {
     Properties locProperties = new Properties()
     locProperties.load(locPropertiesFile.newDataInputStream())
-    installDir = locProperties.getProperty('installDir', installDir)
+    installDir = locProperties.getProperty('installDir')
 }
 
 repositories {
