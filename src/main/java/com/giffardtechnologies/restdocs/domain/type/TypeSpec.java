@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 public class TypeSpec {
 	private DataType type;
+	private BasicType interpretedAs;
 	@SerializedName("typeref")
 	private String typeRef;
 	private KeyType key;
@@ -26,6 +27,14 @@ public class TypeSpec {
 
 	public void setType(DataType type) {
 		this.type = type;
+	}
+
+	public BasicType getInterpretedAs() {
+		return interpretedAs;
+	}
+
+	public void setInterpretedAs(BasicType interpretedAs) {
+		this.interpretedAs = interpretedAs;
 	}
 
 	public String getTypeRef() {

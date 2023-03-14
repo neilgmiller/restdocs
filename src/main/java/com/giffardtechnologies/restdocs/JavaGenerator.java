@@ -671,7 +671,7 @@ public class JavaGenerator implements Callable<Void> {
 			if (field.isTypeRef()) {
 				return mDocument.getTypeByName(field.getTypeRef()).getType();
 			} else {
-				return field.getType();
+				return field.getInterpretedAs() == null ? field.getType() : field.getInterpretedAs().asDataType();
 			}
 		}
 
@@ -709,7 +709,7 @@ public class JavaGenerator implements Callable<Void> {
 		                               boolean futureProofEnum,
 		                               @Nullable TypeName objectTypeName)
 		{
-			DataType type = typeSpec.getType();
+			DataType type = typeSpec.getInterpretedAs() == null ? typeSpec.getType() : typeSpec.getInterpretedAs().asDataType();
 			if (type != null) {
 				switch (type) {
 					case INT:
