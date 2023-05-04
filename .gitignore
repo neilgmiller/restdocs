@@ -16,3 +16,4 @@
 /docs/html/reference.html
 /.idea/jarRepositories.xml
 /local.properties
+.idea/libraries/**
