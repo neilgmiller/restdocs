@@ -9,6 +9,8 @@ open class Field(
     val description: String? = null,
     @JsonProperty("default")
     val defaultValue: String? = null,
+    @JsonProperty("clientDefault")
+    val defaultValueToSendFromClient: String? = null,
     @JsonProperty("required")
     val isRequired: Boolean = true,
     val sampleValues: List<String>? = null,
