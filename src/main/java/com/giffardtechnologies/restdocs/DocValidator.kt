@@ -35,7 +35,7 @@ class DocValidator(
             val responseTypeNames = document.service?.common?.responseDataObjects?.map { it.name } ?: emptyList()
             val referencableTypes = VavrHashSet.ofAll(dataObjectNames + enumerationNames + responseTypeNames)
 
-            val contextMapper = createMapper(FullContext(referencableTypes))
+            val contextMapper = createMapper(FullContext(referencableTypes, document))
             contextMapper.readValue(
                 BufferedInputStream(FileInputStream(sourceFile)),
                 DocumentStorageModel::class.java
@@ -51,6 +51,6 @@ class DocValidator(
         val referencableTypes: MutableSet<String> = HashSet()
     }
 
-    data class FullContext(val referencableTypes: VavrSet<String>)
+    data class FullContext(val referencableTypes: VavrSet<String>, val document: DocumentStorageModel)
 
 }
