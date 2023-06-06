@@ -206,6 +206,18 @@ data objects:
             type: array
             items:
                 type: string
+    - name: FieldInclude
+      description: Include fields from another type, can be used anywhere 'Field' is used.
+      fields:
+          - name: include
+            description: The type whose fields should be included inline in this location, referencing a named type.
+            required: yes
+            type: string
+          - name: excluding
+            description: The fields from the referenced types to exclude, by their 'longName', e.g. "contentId"
+            type: array
+            items:
+                type: string
     - name: TypeSpec
       description: A description of a type
       fields:
