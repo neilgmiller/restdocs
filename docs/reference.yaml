@@ -1,5 +1,21 @@
 title: API Documentation Reference
 enumerations:
+    - name:          BasicType
+      description:   An enumeration of basic data types.
+      key:           string
+      values:
+          - value: int
+            description: a signed 32-bit integer
+          - value: long
+            description: a signed 64-bit integer
+          - value: float
+            description: a floating point number
+          - value: double
+            description: a double-precision floating point number
+          - value: string
+            description: a character string
+          - value: boolean
+            description: a boolean value
     - name:          DataType
       description:   An enumeration of data types.
       key:           string
@@ -197,6 +213,11 @@ data objects:
             description: The type being described, either this or 'typeref' must be present
             required: no
             typeref: DataType
+          - name: interpretedAs
+            description: How to interpret type being described, for example the 'type' might be string but should be
+                         treated as a long.
+            required: no
+            typeref: BasicType
           - name: typeref
             description: The type being described as a reference to a named type. Either this or 'type' must be present.
             required: no
