@@ -57,6 +57,9 @@ dependencies {
 
     implementation('com.google.guava:guava:31.1-jre')
 
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.0'
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0"
+
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.google.googlejavaformat:google-java-format:1.15.0'
 // https://mvnrepository.com/artifact/org.eclipse.jdt/org.eclipse.jdt.core
