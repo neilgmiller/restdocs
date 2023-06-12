@@ -20,7 +20,7 @@ import java.io.IOException
  *
  * @since 2.1
  */
-class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>) : StdDeserializer<Any?>(
+class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>, private val validationContext: Any?) : StdDeserializer<Any?>(
     _delegatee.handledType()
 ), ContextualDeserializer, ResolvableDeserializer {
 
@@ -49,7 +49,7 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>) : StdD
         return if (del === _delegatee) {
             this
         } else {
-            ValidatingDeserializer(del)
+            ValidatingDeserializer(del, validationContext)
         }
     }
 
@@ -57,7 +57,7 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>) : StdD
         return if (delegatee === _delegatee) {
             this
         } else {
-            ValidatingDeserializer(delegatee)
+            ValidatingDeserializer(delegatee, validationContext)
         }
     }
 
@@ -74,7 +74,7 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>) : StdD
         val deserializedObject: Any = _delegatee.deserialize(p, ctxt) ?: return null
         if (deserializedObject is Validatable) {
             try {
-                deserializedObject.validate()
+                deserializedObject.validate(validationContext)
             } catch (e: Exception) {
                 throw JsonMappingException(ctxt.parser, e.message, e)
             }

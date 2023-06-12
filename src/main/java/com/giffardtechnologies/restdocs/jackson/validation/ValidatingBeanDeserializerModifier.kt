@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier
 import com.fasterxml.jackson.databind.type.*
 import java.io.IOException
 
-class ValidatingBeanDeserializerModifier : BeanDeserializerModifier() {
+class ValidatingBeanDeserializerModifier(private val validationContext: Any?) : BeanDeserializerModifier() {
     override fun modifyDeserializer(
         config: DeserializationConfig,
         beanDesc: BeanDescription,
@@ -87,7 +87,7 @@ class ValidatingBeanDeserializerModifier : BeanDeserializerModifier() {
             override fun deserializeKey(key: String, ctxt: DeserializationContext): Any {
                 val deserializedKey = deserializer.deserializeKey(key, ctxt)
                 if (deserializedKey is Validatable) {
-                    deserializedKey.validate()
+                    deserializedKey.validate(validationContext)
                 }
                 return deserializedKey
             }
@@ -95,6 +95,6 @@ class ValidatingBeanDeserializerModifier : BeanDeserializerModifier() {
     }
 
     private fun createDelegate(type: JavaType, target: JsonDeserializer<*>): JsonDeserializer<*> {
-        return ValidatingDeserializer(target)
+        return ValidatingDeserializer(target, validationContext)
     }
 }
