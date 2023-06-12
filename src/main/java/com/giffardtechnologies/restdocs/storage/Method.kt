@@ -1,6 +1,8 @@
 package com.giffardtechnologies.restdocs.storage
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.giffardtechnologies.restdocs.jackson.validation.Validatable
+import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.type.Field
 import com.giffardtechnologies.restdocs.storage.type.FieldListElement
 
@@ -27,4 +29,10 @@ data class Method(
     val successCodes: ArrayList<String> = ArrayList(),
     @JsonProperty("failure codes")
     val failureCodes: ArrayList<String> = ArrayList(),
-)
+) : Validatable {
+    override fun validate(validationContext: Any?) {
+        if (path == null && id == null) {
+            throw ValidationException("Method must have at least one of 'id' and 'path'")
+        }
+    }
+}
