@@ -20,6 +20,7 @@ public class TypeSpec {
 	@SerializedName("fields")
 	private FieldElementList fieldElementList = new FieldElementList();
 	private ArrayList<EnumConstant> values;
+	private Document mParentDocument;
 
 	public DataType getType() {
 		return type;
@@ -131,10 +132,15 @@ public class TypeSpec {
 	}
 
 	public void setParentDocument(Document parentDocument) {
-		fieldElementList.setParentDocument(parentDocument);
+		mParentDocument = parentDocument;
+		fieldElementList.setParentDocument(mParentDocument);
 		if (items != null) {
 			items.setParentDocument(parentDocument);
 		}
+	}
+
+	public Document getParentDocument() {
+		return mParentDocument;
 	}
 
 	public boolean hasEnumValues() {

@@ -16,6 +16,7 @@ public class Service {
 
 	public void setParentDocument(Document parentDocument) {
 		mParentDocument = parentDocument;
+		common.setParentDocument(parentDocument);
 		for (Method method : methods) {
 			method.setParent(this);
 		}
@@ -77,6 +78,12 @@ public class Service {
 
 		public void setResponseDataObjects(ArrayList<DataObject> responseDataObjects) {
 			this.responseDataObjects = responseDataObjects;
+		}
+
+		public void setParentDocument(Document parentDocument) {
+			if (headers != null) headers.forEach(field -> field.setParentDocument(parentDocument));
+			parameters.forEach(field -> field.setParentDocument(parentDocument));
+			responseDataObjects.forEach(dataObject -> dataObject.setParent(parentDocument));
 		}
 	}
 	
