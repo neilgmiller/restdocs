@@ -21,7 +21,7 @@ import java.util.stream.Stream
 sealed interface FieldListElement
 
 /**
- * A class for including the fields of data object inline with the a list of fields
+ * A class for including the fields of data object inline with a list of fields
  */
 class FieldListIncludeElement(
     /**
