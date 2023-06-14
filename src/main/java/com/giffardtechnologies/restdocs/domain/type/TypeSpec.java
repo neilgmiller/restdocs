@@ -29,6 +29,10 @@ public class TypeSpec {
 		this.type = type;
 	}
 
+	public boolean getHasInterpretedAs() {
+		return interpretedAs != null;
+	}
+
 	public BasicType getInterpretedAs() {
 		return interpretedAs;
 	}

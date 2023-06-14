@@ -1,6 +1,7 @@
 package com.giffardtechnologies.restdocs;
 
 import com.giffardtechnologies.restdocs.domain.*;
+import com.giffardtechnologies.restdocs.domain.type.BasicType;
 import com.giffardtechnologies.restdocs.domain.type.DataType;
 import com.giffardtechnologies.restdocs.domain.type.Field;
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec;
@@ -27,6 +28,10 @@ public class PlainTextTool {
 		Objects.requireNonNull(field, "A field is required");
 		String typeStr = getTypeString(field, field.isRequired());
 		return typeStr;
+	}
+
+	public String stringFor(BasicType type) {
+		return type.toString().toLowerCase(Locale.US);
 	}
 
 	private String getTypeString(TypeSpec typeSpec, boolean required) {
