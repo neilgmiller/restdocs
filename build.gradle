@@ -93,7 +93,7 @@ startScripts {
             })
 }
 
-task createJavaStartScript(type: Copy) {
+tasks.register('createJavaStartScript', Copy) {
     from file("$buildDir/scripts/doc_generator")
     rename { String filename -> return 'java_generator' }
     filter { String line -> line.replaceAll("(.*)DocGenerator(.*)", '$1JavaGenerator$2') }
@@ -105,7 +105,7 @@ installDist {
     into installDir
 }
 
-task getDeps(type: Copy) {
+tasks.register('getDeps', Copy) {
     from sourceSets.main.runtimeClasspath
     into 'runtime-libs/'
 }
