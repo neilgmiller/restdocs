@@ -43,6 +43,9 @@ public class DocGenerator implements LogChute, Callable<Void> {
 	@Option(names = {"-c", "--code"}, description = "Flag indicating that the command should generate Java code.")
 	private boolean mGenCode = false;
 
+	@Option(names = {"-v", "--verbose"}, description = "Turn on verbose output")
+	private boolean mVerbose = false;
+
 	private File mSourceFile;
 	private File mOutputFile;
 
@@ -97,6 +100,11 @@ public class DocGenerator implements LogChute, Callable<Void> {
 				setTemplateDir(parentFile.getAbsoluteFile());
 			}
 			setTemplateFileName(templateFile.getName());
+		}
+
+		if (mVerbose) {
+			File file = new File(mTemplateDir, mTemplateFileName);
+			System.out.println("Template file is: " + file.getAbsolutePath());
 		}
 
 		setSourceFile(new File(mPropertiesFile.getParentFile(), mProperties.getProperty("sourceFile")));
