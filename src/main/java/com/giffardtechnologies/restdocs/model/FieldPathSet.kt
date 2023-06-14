@@ -2,17 +2,16 @@ package com.giffardtechnologies.restdocs.model
 
 import io.vavr.collection.HashMap
 import io.vavr.collection.Map
-import java.util.Collections.sort
 
 class FieldPathSet private constructor(private val childPathElements: Map<String, FieldPathNode>) : Iterable<FieldPathNode> {
 
     companion object  {
 
-        fun ofAll(branches: List<FieldPath>): FieldPathSet {
+        fun ofAll(branches: Collection<FieldPath>): FieldPathSet {
             val pathSet = mutableMapOf<String, FieldPathBuilderNode>()
 
-            sort(branches)
-            branches.forEach { pathSet.addExcludePath(it) }
+            val sortedBranches = branches.sortedWith(Comparator.naturalOrder())
+            sortedBranches.forEach { pathSet.addExcludePath(it) }
 
             return FieldPathSet(HashMap.ofAll(pathSet).mapValues { it.build() } )
         }
@@ -75,6 +74,10 @@ class FieldPathSet private constructor(private val childPathElements: Map<String
 
     override fun iterator(): Iterator<FieldPathNode> {
         return childPathElements.values().iterator()
+    }
+
+    operator fun get(fieldName: String): FieldPathNode? {
+        return childPathElements[fieldName].orNull
     }
 
 
