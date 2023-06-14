@@ -101,6 +101,14 @@ tasks.register('createJavaStartScript', Copy) {
 }
 startScripts.finalizedBy createJavaStartScript
 
+tasks.register('createValidatorStartScript', Copy) {
+    from file("$buildDir/scripts/doc_generator")
+    rename { String filename -> return 'doc_validator' }
+    filter { String line -> line.replaceAll("(.*)DocGenerator(.*)", '$1DocValidatorCommand$2') }
+    into file("$buildDir/scripts")
+}
+startScripts.finalizedBy createValidatorStartScript
+
 installDist {
     into installDir
 }
