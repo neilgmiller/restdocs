@@ -167,6 +167,8 @@ public class JavaTool {
 		if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
 			if (name.endsWith("List")) {
 				name = name.substring(0, name.length() - 4);
+			} else if (name.endsWith("ies")) {
+				name = name.replaceAll("ies$", "y");
 			} else if (name.endsWith("s") && !name.endsWith("ss")) {
 				name = name.substring(0, name.length() - 1);
 			}
