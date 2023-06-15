@@ -21,7 +21,7 @@ class FieldElementList {
     private var fields: ArrayList<Field>? = null
 
     @Transient
-    private lateinit var parentDocument: Document
+    private var parentDocument: Document? = null
 
     @Transient
     private var parentType: NamedType? = null
@@ -33,7 +33,7 @@ class FieldElementList {
                 if (fieldListElement is Field) {
                     newFields.add(fieldListElement)
                 } else if (fieldListElement is FieldListIncludeElement) {
-                    val includedObject = parentDocument.getDataObjectByName(fieldListElement.include)
+                    val includedObject = parentDocument!!.getDataObjectByName(fieldListElement.include)
                         ?: throw IllegalStateException("Cannot find '" + fieldListElement.include)
                     if (fieldListElement.excluding.isEmpty()) {
                         newFields.addAll(includedObject.fields)
@@ -90,11 +90,11 @@ class FieldElementList {
                     subField.parent = field.parent
                     subField.parentDocument = parentDocument
                     if (field.typeRef != null) {
-                        val dataObject = parentDocument.getDataObjectByName(field.typeRef)
+                        val dataObject = parentDocument!!.getDataObjectByName(field.typeRef)
                         subField.type = DataType.OBJECT
                         subField.fields = getIncludedFields(dataObject.fields, node.childPathElements, newPath)
                     } else if (field.type == DataType.ARRAY && field.items!!.typeRef != null) {
-                        val dataObject = parentDocument.getDataObjectByName(field.items.typeRef)
+                        val dataObject = parentDocument!!.getDataObjectByName(field.items.typeRef)
                         subField.type = DataType.ARRAY
                         subField.items = TypeSpec()
                         subField.items.parentDocument = parentDocument
@@ -160,7 +160,7 @@ class FieldElementList {
         }
     }
 
-    fun setParentDocument(parentDocument: Document) {
+    fun setParentDocument(parentDocument: Document?) {
         this.parentDocument = parentDocument
     }
 
