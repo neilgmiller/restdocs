@@ -15,6 +15,8 @@ import com.google.common.base.CaseFormat;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class JavaTool {
@@ -147,7 +149,16 @@ public class JavaTool {
 
 	public String toConstantStyle(String input) {
 		input = input.replaceAll("ID", "Id");
-		return CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, input);
+		String upperCase = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, input);
+		// fix all-caps named items, e.g: URL or ID, which would otherwise become U_R_L and I_D
+		Pattern pattern = Pattern.compile("(?<start>^|_)(?<replace>([A-Z])((_)([A-Z]))+)(?<end>_|$)");
+		Matcher matcher = pattern.matcher(upperCase);
+		upperCase = matcher.replaceAll(matchResult -> {
+			// give me access to names groups
+			Matcher wink = (Matcher) matchResult;
+			return wink.group("start") + wink.group("replace").replace("_", "") + wink.group("end");
+		});
+		return upperCase;
 	}
 
 	public String fieldNameToClassStyle(String input) {

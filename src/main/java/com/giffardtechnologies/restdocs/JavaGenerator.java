@@ -447,7 +447,7 @@ public class JavaGenerator implements Callable<Void> {
 		if (longName.matches("_-")) {
 			return longName.toUpperCase().replace('-', '_');
 		} else {
-			return CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, longName);
+			return mJavaTool.toConstantStyle(longName);
 		}
 	}
 
