@@ -14,6 +14,7 @@ import com.giffardtechnologies.restdocs.domain.FieldReference;
 import com.giffardtechnologies.restdocs.domain.Method;
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
 import com.giffardtechnologies.restdocs.domain.Response;
+import com.giffardtechnologies.restdocs.domain.type.BasicType;
 import com.giffardtechnologies.restdocs.domain.type.DataType;
 import com.giffardtechnologies.restdocs.domain.type.EnumConstant;
 import com.giffardtechnologies.restdocs.domain.type.Field;
@@ -21,7 +22,6 @@ import com.giffardtechnologies.restdocs.domain.type.KeyType;
 import com.giffardtechnologies.restdocs.domain.type.NamedType;
 import com.giffardtechnologies.restdocs.gson.GsonFactory;
 import com.giffardtechnologies.restdocs.mappers.JavaFieldMapper;
-import com.google.common.base.CaseFormat;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
@@ -709,11 +709,11 @@ public class JavaGenerator implements Callable<Void> {
 		                               boolean futureProofEnum,
 		                               @Nullable TypeName objectTypeName)
 		{
-			DataType type = typeSpec.getInterpretedAs() == null ? typeSpec.getType() : typeSpec.getInterpretedAs().asDataType();
+			DataType type = typeSpec.getType();
 			if (type != null) {
 				switch (type) {
 					case INT:
-						if (convertIntBoolean && hasBooleanRestriction(typeSpec)) {
+						if (convertIntBoolean && interpretedAsBoolean(typeSpec)) {
 							return getBasicTypeName(DataType.BOOLEAN, required);
 						}
 						return getBasicTypeName(DataType.INT, required);
@@ -732,7 +732,7 @@ public class JavaGenerator implements Callable<Void> {
 							return ClassName.get(Object.class);
 						}
 					case STRING:
-						if (hasBooleanRestriction(typeSpec)) {
+						if (interpretedAsBoolean(typeSpec)) {
 							return getBasicTypeName(DataType.BOOLEAN, required);
 						}
 						return ClassName.get(String.class);
@@ -848,6 +848,12 @@ public class JavaGenerator implements Callable<Void> {
 		protected boolean hasBooleanRestriction(com.giffardtechnologies.restdocs.domain.type.TypeSpec typeSpec) {
 			return mJavaTool.hasBooleanRestriction(typeSpec);
 		}
+
+
+		protected boolean interpretedAsBoolean(com.giffardtechnologies.restdocs.domain.type.TypeSpec typeSpec) {
+			return hasBooleanRestriction(typeSpec) || typeSpec.getInterpretedAs() == BasicType.BOOLEAN;
+		}
+
 	}
 
 	private class DataObjectProcessor extends FieldAndTypeProcessor {
@@ -1004,7 +1010,7 @@ public class JavaGenerator implements Callable<Void> {
 						TypeName typeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
 						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
-						boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
+						boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
 
 						if (!field.isRequired() && field.getDefaultValue() == null &&
 								!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION))
@@ -1077,7 +1083,7 @@ public class JavaGenerator implements Callable<Void> {
 					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
 					dataObjectClassBuilder.addMethod(getterBuilder.build());
 				} else {
-					boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
+					boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
 
 					TypeName typeName = getTypeName(field, !isOptionalWithDefault, true, field.getTypeName());
 					TypeName setterTypeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
@@ -1585,7 +1591,7 @@ public class JavaGenerator implements Callable<Void> {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum, className);
 					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
 
-					boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
+					boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
 
 					if (!field.isRequired() && field.getDefaultValue() == null) {
 						setterParameter.addAnnotation(NULLABLE_ANNOTATION);
@@ -1682,7 +1688,7 @@ public class JavaGenerator implements Callable<Void> {
 					                                             .returns(typeName)
 					                                             .addModifiers(Modifier.PUBLIC);
 
-					boolean convertToBoolean = field.getType() == DataType.INT && hasBooleanRestriction(field);
+					boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
 					if (convertToBoolean) {
 						getterBuilder.addStatement("return $T.convertToBoolean($N)", booleanUtil, field.getLongName());
 					} else {
