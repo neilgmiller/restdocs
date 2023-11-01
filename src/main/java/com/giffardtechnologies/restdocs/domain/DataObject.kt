@@ -32,7 +32,7 @@ class DataObject : NamedType {
 
     @Transient
     private var parent: Document? = null
-    override val type: DataType?
+    override val type: DataType
         get() = DataType.OBJECT
     val fields: ArrayList<Field>?
         get() = fieldElementList.getFields()

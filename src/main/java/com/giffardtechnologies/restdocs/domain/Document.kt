@@ -2,11 +2,52 @@ package com.giffardtechnologies.restdocs.domain
 
 import com.giffardtechnologies.restdocs.domain.type.NamedType
 import com.google.gson.annotations.SerializedName
+import io.vavr.Tuple2
+import io.vavr.collection.Array
+import io.vavr.collection.Map
 import java.util.stream.Collectors
 
 // Most of these methods are used by velocity
 @Suppress("unused")
 class Document {
+
+    companion object {
+        fun createDocument(title: String, configure: DocumentConfiguration.() -> Unit) : Document {
+            val alterTable = DocumentBuilder(title)
+            alterTable.configure()
+            return alterTable.build()
+
+        }
+    }
+
+    open class DocumentConfiguration {
+
+        private val enumerations: ArrayList<NamedEnumeration> = ArrayList()
+        private val dataObjects: ArrayList<DataObject> = ArrayList()
+
+        private var mDataObjectNames: MutableMap<String, DataObject> = LinkedHashMap()
+        private var mEnumerationNames: MutableMap<String, NamedEnumeration> = LinkedHashMap()
+
+        var service: Service? = null
+
+        fun addNamedEnumeration() {
+
+        }
+
+        fun addDataObject() {
+
+        }
+
+    }
+
+    class DocumentBuilder(val title: String) : DocumentConfiguration() {
+
+        fun build(): Document {
+            return Document()
+        }
+
+    }
+
     var title: String? = null
     @JvmField
     val enumerations: ArrayList<NamedEnumeration>? = ArrayList()

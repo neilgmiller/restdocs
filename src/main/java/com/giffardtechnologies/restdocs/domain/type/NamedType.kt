@@ -9,14 +9,12 @@ interface NamedType {
      *
      * @return the human-readable type name
      */
-    @JvmField
-    val typeName: String?
+    val typeName: String
 
     /**
-     * Returns the data type of this type, this will be [DataType.ENUM] or [DataType.OBJECT]
+     * Returns the [TypeSpec] for this type
      *
      * @return the data type
      */
-    @JvmField
-    val type: DataType?
+    val type: TypeSpec.Nameable
 }

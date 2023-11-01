@@ -50,7 +50,7 @@ class Method {
 
     fun setParent(service: Service) {
         if (response != null) {
-            response.setParentDocument(service.parentDocument)
+            response!!.parentDocument = service.parentDocument
         }
         parameters.setParentDocument(service.parentDocument)
     }

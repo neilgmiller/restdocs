@@ -12,7 +12,7 @@ import io.vavr.collection.Array
 import io.vavr.collection.HashSet
 
 /**
- * A class that manages a list of fields whether a straight list or a include
+ * A class that manages a list of fields whether a straight list or an include-reference
  */
 class FieldElementList {
     private var fieldListElements: ArrayList<FieldListElement>? = ArrayList()

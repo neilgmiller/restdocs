@@ -980,8 +980,7 @@ public class JavaGenerator implements Callable<Void> {
 					FieldSpec fieldSpec = createFieldSpec(field, nullableAnnotation);
 					dataObjectClassBuilder.addField(fieldSpec);
 				} catch (Exception e) {
-					throw new IllegalStateException(String.format("Error processing field %s in %s",
-					                                              field.longName,
+					throw new IllegalStateException(String.format("Error processing field %s in %s", field.longName,
 					                                              dataObject.name), e);
 				}
 			}
@@ -1034,8 +1033,7 @@ public class JavaGenerator implements Callable<Void> {
 						}
 					}
 				} catch (Exception e) {
-					throw new IllegalStateException(String.format("Error processing field %s in %s",
-					                                              field.longName,
+					throw new IllegalStateException(String.format("Error processing field %s in %s", field.longName,
 					                                              dataObject.name), e);
 				}
 			}
@@ -1625,8 +1623,7 @@ public class JavaGenerator implements Callable<Void> {
 					FieldSpec fieldSpec = createFieldSpec(field, NULLABLE_ANNOTATION, useFutureProofEnum, className, false);
 					paramsBuilder.addField(fieldSpec);
 				} catch (Exception e) {
-					throw new IllegalStateException(String.format("Error processing field %s in %s",
-					                                              field.longName,
+					throw new IllegalStateException(String.format("Error processing field %s in %s", field.longName,
 					                                              method.name), e);
 				}
 
