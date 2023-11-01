@@ -1,22 +1,15 @@
 package com.giffardtechnologies.restdocs.domain
 
-import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.domain.type.NamedType
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 
-class NamedEnumeration : TypeSpec(), NamedType {
-    @JvmField
-    var name: String? = null
-    var description: String? = null
-
-    init {
-        type = DataType.ENUM
-    }
+class NamedEnumeration(
+    override val typeName: String,
+    val description: String,
+    override val type: TypeSpec.EnumSpec<*>
+) : NamedType<TypeSpec.EnumSpec<*>> {
 
     override fun toString(): String {
-        return "Enumeration: $name"
+        return "Enumeration: $typeName"
     }
-
-    override val typeName: String?
-        get() = name
 }

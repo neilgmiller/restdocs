@@ -3,11 +3,10 @@ package com.giffardtechnologies.restdocs.domain
 import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.domain.type.Field
 import com.giffardtechnologies.restdocs.domain.type.NamedType
+import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.google.gson.annotations.SerializedName
 
-class DataObject : NamedType {
-    @JvmField
-    var name: String? = null
+class DataObject(override val typeName: String) : NamedType<TypeSpec.ObjectSpec> {
     var isHidden = false
     var description: String? = null
 
@@ -32,8 +31,6 @@ class DataObject : NamedType {
 
     @Transient
     private var parent: Document? = null
-    override val type: DataType?
-        get() = DataType.OBJECT
     val fields: ArrayList<Field>?
         get() = fieldElementList.getFields()
 
@@ -64,9 +61,6 @@ class DataObject : NamedType {
     override fun toString(): String {
         return name!!
     }
-
-    override val typeName: String?
-        get() = name
 
     fun setParent(parent: Document?) {
         this.parent = parent
