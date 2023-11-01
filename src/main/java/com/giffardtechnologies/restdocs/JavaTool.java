@@ -39,9 +39,9 @@ public class JavaTool {
 
 	public String fieldInitializer(Field field) {
 		Objects.requireNonNull(field, "A field is required");
-		if (field.getType() == DataType.ARRAY) {
+		if (field.type == DataType.ARRAY) {
 			return " = new ArrayList<>()";
-		} else if (field.getType() == DataType.ENUM) {
+		} else if (field.type == DataType.ENUM) {
 			return " = new FutureProofEnumContainer<>("+ fieldToClassStyle(field) + ".class)";
 		}
 		return "";
@@ -52,7 +52,7 @@ public class JavaTool {
 	}
 
 	public String getTypeString(TypeSpec typeSpec, boolean required, boolean convertIntBoolean) {
-		DataType type = typeSpec.getType();
+		DataType type = typeSpec.type;
 		if (type != null) {
 			switch (type) {
 				case INT:
@@ -83,7 +83,7 @@ public class JavaTool {
 				case DATE:
 					return "LocalDate";
 				case COLLECTION:
-					return "Map<" + getKeyTypeString(typeSpec.getKey()) + ", " + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
+					return "Map<" + getKeyTypeString(typeSpec.key) + ", " + getTypeString(typeSpec.items, false, convertIntBoolean) + ">";
 				case ENUM:
 					if (typeSpec instanceof Field) {
 						Field field = (Field) typeSpec;
@@ -93,28 +93,28 @@ public class JavaTool {
 					}
 				case ARRAY:
 					// pass required false, since we can't use primitives
-					return "List<" + getTypeString(typeSpec.getItems(), false, convertIntBoolean) + ">";
+					return "List<" + getTypeString(typeSpec.items, false, convertIntBoolean) + ">";
 				case BITSET:
-					switch (typeSpec.getFlagType()) {
+					switch (typeSpec.flagType) {
 						case INT:
 							return required ? "int" : "Integer";
 						case LONG:
 							return required ? "long" : "Long";
 					}
 			}
-		} else if (typeSpec.getTypeRef() != null) {
-			DataObject dataObject = mDocument.getDataObjectByName(typeSpec.getTypeRef());
-			NamedEnumeration enumeration = mDocument.getEnumerationByName(typeSpec.getTypeRef());
+		} else if (typeSpec.typeRef != null) {
+			DataObject dataObject = mDocument.getDataObjectByName(typeSpec.typeRef);
+			NamedEnumeration enumeration = mDocument.getEnumerationByName(typeSpec.typeRef);
 			if (dataObject == null && enumeration == null) {
-				throw new IllegalStateException("Type reference to undefined type: " + typeSpec.getTypeRef() + ".");
+				throw new IllegalStateException("Type reference to undefined type: " + typeSpec.typeRef + ".");
 			}
-			return typeSpec.getTypeRef();
+			return typeSpec.typeRef;
 		}
 		return null;
 	}
 
 	public String getKeyTypeString(KeyType key) {
-		switch (key.getType()) {
+		switch (key.type) {
 			case INT:
 				return "Integer";
 			case LONG:
@@ -133,9 +133,9 @@ public class JavaTool {
 	}
 
 	public boolean hasBooleanRestriction(TypeSpec typeSpec) {
-		if (typeSpec.getRestrictions() != null) {
-			for (Restriction restriction : typeSpec.getRestrictions()) {
-				if (restriction.getRestriction().equalsIgnoreCase("boolean")) {
+		if (typeSpec.restrictions != null) {
+			for (Restriction restriction : typeSpec.restrictions) {
+				if (restriction.restriction.equalsIgnoreCase("boolean")) {
 					return true;
 				}
 			}
@@ -174,8 +174,8 @@ public class JavaTool {
 
 	public String fieldToClassStyle(Field field, boolean asInner) {
 		NamedType parent = field.getParent();
-		String name = field.getLongName();
-		if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+		String name = field.longName;
+		if (field.type == DataType.ARRAY && field.items.type == DataType.OBJECT) {
 			if (name.endsWith("List")) {
 				name = name.substring(0, name.length() - 4);
 			} else if (name.endsWith("ies")) {
@@ -185,8 +185,8 @@ public class JavaTool {
 			}
 		}
 		String className = fieldNameToClassStyle(name);
-		if (parent != null && !className.startsWith(parent.getTypeName()) && !asInner) {
-			return parent.getTypeName() + className;
+		if (parent != null && !className.startsWith(parent.typeName) && !asInner) {
+			return parent.typeName + className;
 		} else {
 			return className;
 		}
@@ -197,7 +197,7 @@ public class JavaTool {
 		if (response == null) {
 			return null;
 		} else {
-			DataType type = response.getType();
+			DataType type = response.type;
 			if (type != null) {
 				if (type == DataType.OBJECT) {
 					return requestClassName.replaceAll("Request$", "Response");
@@ -205,8 +205,8 @@ public class JavaTool {
 					// pass required false, since we can't use primitives
 					return getTypeString(response, false);
 				}
-			} else if (response.getTypeRef() != null) {
-				return response.getTypeRef();
+			} else if (response.typeRef != null) {
+				return response.typeRef;
 			}
 		}
 		return null;

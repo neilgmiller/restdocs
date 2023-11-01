@@ -77,18 +77,18 @@ public class YAMLCleaner implements Callable<Void> {
 			Document typeDoc = gsonForPrinting.fromJson(json2, Document.class);
 			ArrayList<DataObject> typedDataObjects = typeDoc.getDataObjects();
 			for (DataObject dataObject : doc.getDataObjects()) {
-				DataObject typedObject = findDataObject(dataObject.getName(), typedDataObjects);
+				DataObject typedObject = findDataObject(dataObject.name, typedDataObjects);
 				if (typedObject != null) {
 					typedDataObjects.remove(typedObject);
 					ArrayList<Field> typedObjectFields = typedObject.getFields();
 					for (Field field : dataObject.getFields()) {
-						Field typedField = findField(field.getName(), typedObjectFields);
+						Field typedField = findField(field.name, typedObjectFields);
 						if (typedField != null) {
 							typedObjectFields.remove(typedField);
-							field.setLongName(typedField.getLongName());
-							field.setType(typedField.getType());
-							if (typedField.getItems() != null) {
-								field.setItems(typedField.getItems());
+							field.longName = typedField.longName;
+							field.type = typedField.type;
+							if (typedField.items != null) {
+								field.items = typedField.items;
 							}
 						}
 					}
@@ -103,16 +103,16 @@ public class YAMLCleaner implements Callable<Void> {
 				doc.getDataObjects().add(dataObject);
 			}
 
-			for (Method method : doc.getService().getMethods()) {
-				Method typedMethod = findMethod(method.getId(), typeDoc);
+			for (Method method : doc.service.getMethods()) {
+				Method typedMethod = findMethod(method.id, typeDoc);
 				if (typedMethod != null) {
 					for (Field parameter : method.getParameters()) {
-						Field typedField = findField(parameter.getName(), typedMethod.getParameters());
+						Field typedField = findField(parameter.name, typedMethod.getParameters());
 						if (typedField != null) {
-							parameter.setLongName(typedField.getLongName());
-							parameter.setType(typedField.getType());
-							if (typedField.getItems() != null) {
-								parameter.setItems(typedField.getItems());
+							parameter.longName = typedField.longName;
+							parameter.type = typedField.type;
+							if (typedField.items != null) {
+								parameter.items = typedField.items;
 							}
 						}
 					}
@@ -127,8 +127,8 @@ public class YAMLCleaner implements Callable<Void> {
 	}
 
 	private Method findMethod(int id, Document typeDoc) {
-		for (Method method : typeDoc.getService().getMethods()) {
-			if (method.getId() == id) {
+		for (Method method : typeDoc.service.getMethods()) {
+			if (method.id == id) {
 				return method;
 			}
 		}
@@ -141,7 +141,7 @@ public class YAMLCleaner implements Callable<Void> {
 
 	private Field findField(String name, ArrayList<Field> fields) {
 		for (Field field : fields) {
-			if (field.getName().equalsIgnoreCase(name)) {
+			if (field.name.equalsIgnoreCase(name)) {
 				return field;
 			}
 		}
@@ -155,7 +155,7 @@ public class YAMLCleaner implements Callable<Void> {
 
 	private DataObject findDataObject(String name, ArrayList<DataObject> dataObjects) {
 		for (DataObject dataObject : dataObjects) {
-			if (dataObject.getName().equalsIgnoreCase(name)) {
+			if (dataObject.name.equalsIgnoreCase(name)) {
 				return dataObject;
 			}
 		}

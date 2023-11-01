@@ -22,17 +22,17 @@ public class LinkTool {
 		mDocument = document;
 		
 		ArrayList<DataObject> dataObjects = mDocument.getDataObjects();
-		ArrayList<NamedEnumeration> enumerations = mDocument.getEnumerations();
+		ArrayList<NamedEnumeration> enumerations = mDocument.enumerations;
 		mDataObjectNames = new HashSet<String>((dataObjects.size() + enumerations.size()) * 2);
 		for (DataObject dataObject : dataObjects) {
-			mDataObjectNames.add(dataObject.getName());
+			mDataObjectNames.add(dataObject.name);
 		}
 		for (NamedEnumeration enumeration : enumerations) {
-			mDataObjectNames.add(enumeration.getName());
+			mDataObjectNames.add(enumeration.name);
 		}
-		if (mDocument.getService() != null && mDocument.getService().hasCommon()) {
-			for (DataObject dataObject : mDocument.getService().getCommon().getResponseDataObjects()) {
-				mDataObjectNames.add(dataObject.getName());
+		if (mDocument.service != null && mDocument.service.hasCommon()) {
+			for (DataObject dataObject : mDocument.service.common.responseDataObjects) {
+				mDataObjectNames.add(dataObject.name);
 			}
 		}
 	}

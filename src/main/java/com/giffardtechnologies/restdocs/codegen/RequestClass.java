@@ -15,19 +15,19 @@ public class RequestClass {
 
 
 	public int getId() {
-		return mMethod.getId();
+		return mMethod.id;
 	}
 
 	public void setId(int id) {
-		mMethod.setId(id);
+		mMethod.id = id;
 	}
 
 	public String getName() {
-		return mMethod.getName();
+		return mMethod.name;
 	}
 
 	public void setName(String name) {
-		mMethod.setName(name);
+		mMethod.name = name;
 	}
 
 	public boolean getHasDescription() {
@@ -35,11 +35,11 @@ public class RequestClass {
 	}
 
 	public String getDescription() {
-		return mMethod.getDescription();
+		return mMethod.description;
 	}
 
 	public void setDescription(String description) {
-		mMethod.setDescription(description);
+		mMethod.description = description;
 	}
 
 	public boolean getHasParameters() {

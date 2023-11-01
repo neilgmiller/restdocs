@@ -233,28 +233,28 @@ public class DocGenerator implements Callable<Void> {
 		context.put("destinationPackage", dtoPackage);
 		for (DataObject dataObject : doc.getDataObjects()) {
 			for (Field field : dataObject.getFields()) {
-				if (field.getLongName().equalsIgnoreCase(dataObject.getName() + "id")) {
-					field.setLongName("id");
+				if (field.longName.equalsIgnoreCase(dataObject.name + "id")) {
+					field.longName = "id";
 				}
-				if (field.getType() == DataType.OBJECT) {
+				if (field.type == DataType.OBJECT) {
 					DataObject fieldDataObject = new DataObject();
 					fieldDataObject.setFields(field.getFields());
-					fieldDataObject.setName(javaTool.fieldToClassStyle(field));
+					fieldDataObject.name = javaTool.fieldToClassStyle(field);
 
 					context.put("dataObject", fieldDataObject);
 
-					FileWriter fileWriter = new FileWriter(new File(dtoDir, fieldDataObject.getName() + ".java"));
+					FileWriter fileWriter = new FileWriter(new File(dtoDir, fieldDataObject.name + ".java"));
 					t.merge(context, fileWriter);
 					fileWriter.close();
 				}
-				if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+				if (field.type == DataType.ARRAY && field.items.type == DataType.OBJECT) {
 					DataObject fieldDataObject = new DataObject();
-					fieldDataObject.setFields(field.getItems().getFields());
-					fieldDataObject.setName(javaTool.fieldToClassStyle(field));
+					fieldDataObject.setFields(field.items.getFields());
+					fieldDataObject.name = javaTool.fieldToClassStyle(field);
 
 					context.put("dataObject", fieldDataObject);
 
-					FileWriter fileWriter = new FileWriter(new File(dtoDir, fieldDataObject.getName() + ".java"));
+					FileWriter fileWriter = new FileWriter(new File(dtoDir, fieldDataObject.name + ".java"));
 					t.merge(context, fileWriter);
 					fileWriter.close();
 				}
@@ -262,7 +262,7 @@ public class DocGenerator implements Callable<Void> {
 
 			context.put("dataObject", dataObject);
 
-			FileWriter fileWriter = new FileWriter(new File(dtoDir, dataObject.getName() + ".java"));
+			FileWriter fileWriter = new FileWriter(new File(dtoDir, dataObject.name + ".java"));
 			t.merge(context, fileWriter);
 			fileWriter.close();
 		}
@@ -270,10 +270,10 @@ public class DocGenerator implements Callable<Void> {
 		String enumTemplateFileName = mProperties.getProperty("enumTemplateFile", "rest_api_enum.vm");
 		t = ve.getTemplate(enumTemplateFileName);
 
-		for (NamedEnumeration namedEnumeration : doc.getEnumerations()) {
+		for (NamedEnumeration namedEnumeration : doc.enumerations) {
 			context.put("enumeration", namedEnumeration);
 
-			FileWriter fileWriter = new FileWriter(new File(dtoDir, namedEnumeration.getName() + ".java"));
+			FileWriter fileWriter = new FileWriter(new File(dtoDir, namedEnumeration.name + ".java"));
 			t.merge(context, fileWriter);
 			fileWriter.close();
 		}
@@ -291,15 +291,15 @@ public class DocGenerator implements Callable<Void> {
 		responseDir.mkdirs();
 
 		context.put("destinationPackage", responsePackage);
-		for (Method method : doc.getService().getMethods()) {
-			if (method.getResponse() != null) {
-				if (method.getResponse().getType() == DataType.OBJECT) {
-					String responseClassName = method.getName().substring(0, 1).toUpperCase() + method.getName().substring(1) + "Response";
+		for (Method method : doc.service.getMethods()) {
+			if (method.response != null) {
+				if (method.response.type == DataType.OBJECT) {
+					String responseClassName = method.name.substring(0, 1).toUpperCase() + method.name.substring(1) + "Response";
 
 					// setup a temp DataObject
 					DataObject dataObject = new DataObject();
-					dataObject.setName(responseClassName);
-					dataObject.setFields(method.getResponse().getFields());
+					dataObject.name = responseClassName;
+					dataObject.setFields(method.response.getFields());
 
 					context.put("dataObject", dataObject);
 
@@ -320,10 +320,10 @@ public class DocGenerator implements Callable<Void> {
 		requestDir.mkdirs();
 
 		context.put("destinationPackage", requestPackage);
-		for (Method method : doc.getService().getMethods()) {
+		for (Method method : doc.service.getMethods()) {
 			context.put("method", method);
 
-			FileWriter fileWriter = new FileWriter(new File(requestDir, method.getName().substring(0, 1).toUpperCase() + method.getName().substring(1) + "Request.java"));
+			FileWriter fileWriter = new FileWriter(new File(requestDir, method.name.substring(0, 1).toUpperCase() + method.name.substring(1) + "Request.java"));
 			t.merge(context, fileWriter);
 			fileWriter.close();
 		}

@@ -20,7 +20,7 @@ public class PlainTextTool {
 		ArrayList<DataObject> dataObjects = mDocument.getDataObjects();
 		mDataObjectNames = new HashSet<String>(dataObjects.size() * 2);
 		for (DataObject dataObject : dataObjects) {
-			mDataObjectNames.add(dataObject.getName());
+			mDataObjectNames.add(dataObject.name);
 		}
 	}
 	
@@ -35,7 +35,7 @@ public class PlainTextTool {
 	}
 
 	private String getTypeString(TypeSpec typeSpec, boolean required) {
-		DataType type = typeSpec.getType();
+		DataType type = typeSpec.type;
 		if (type != null) {
 			switch (type) {
 				case INT:
@@ -48,17 +48,18 @@ public class PlainTextTool {
 				case DATE:
 					return type.toString().toLowerCase(Locale.US);
 				case COLLECTION:
-					return "collection of " + typeSpec.getKey().getType().toString().toLowerCase(Locale.US) + " to " + getTypeString(typeSpec.getItems(), false);
+					return "collection of " + typeSpec.key.type.toString().toLowerCase(Locale.US) + " to " + getTypeString(
+							typeSpec.items, false);
 				case ENUM:
-					return "enum keyed on " + typeSpec.getKey().getType().toString().toLowerCase(Locale.US);
+					return "enum keyed on " + typeSpec.key.type.toString().toLowerCase(Locale.US);
 				case ARRAY:
 					// pass required false, since we can't use primitives
-					return "array of " + getTypeString(typeSpec.getItems(), false);
+					return "array of " + getTypeString(typeSpec.items, false);
 				case BITSET:
-					return "bitset in a " + typeSpec.getFlagType().getType().toString().toLowerCase(Locale.US);
+					return "bitset in a " + typeSpec.flagType.type.toString().toLowerCase(Locale.US);
 			}
-		} else if (typeSpec.getTypeRef() != null) {
-			return typeSpec.getTypeRef();
+		} else if (typeSpec.typeRef != null) {
+			return typeSpec.typeRef;
 		}
 		return null;
 	}

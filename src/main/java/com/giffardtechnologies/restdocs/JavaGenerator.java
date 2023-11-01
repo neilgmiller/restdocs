@@ -177,7 +177,7 @@ public class JavaGenerator implements Callable<Void> {
 			Set<String> includeDataObjects = getSetProperty("javagen.includeDataObjects", s -> s);
 			dataObjects = mDocument.getDataObjects()
 			                       .stream()
-			                       .filter(dataObject -> includeDataObjects.contains(dataObject.getName()))
+			                       .filter(dataObject -> includeDataObjects.contains(dataObject.name))
 			                       .collect(Collectors.toList());
 		} else {
 			dataObjects = mDocument.getDataObjects();
@@ -205,18 +205,18 @@ public class JavaGenerator implements Callable<Void> {
 		List<NamedEnumeration> enumerations;
 		if (mProperties.containsKey("javagen.includeEnums")) {
 			Set<String> includeDataObjects = getSetProperty("javagen.includeEnums", s -> s);
-			enumerations = mDocument.getEnumerations()
+			enumerations = mDocument.enumerations
 			                        .stream()
-			                        .filter(namedEnumeration -> includeDataObjects.contains(namedEnumeration.getName()))
+			                        .filter(namedEnumeration -> includeDataObjects.contains(namedEnumeration.name))
 			                        .collect(Collectors.toList());
 		} else {
-			enumerations = mDocument.getEnumerations();
+			enumerations = mDocument.enumerations;
 		}
 		for (NamedEnumeration namedEnumeration : enumerations) {
 			processEnum(namedEnumeration, dtoPackage);
 		}
 
-		if (mDocument.getService() != null) {
+		if (mDocument.service != null) {
 			// create the requests & responses
 			String responsePackage = mProperties.getProperty("responsePackage");
 			String requestPackage = mProperties.getProperty("requestPackage");
@@ -224,14 +224,12 @@ public class JavaGenerator implements Callable<Void> {
 			List<DataObject> responseObjects;
 			if (mProperties.containsKey("javagen.includeResponseObjects")) {
 				Set<String> includeDataObjects = getSetProperty("javagen.includeResponseObjects", s -> s);
-				responseObjects = mDocument.getService()
-				                           .getCommon()
-				                           .getResponseDataObjects()
+				responseObjects = mDocument.service.common.responseDataObjects
 				                           .stream()
-				                           .filter(dataObject -> includeDataObjects.contains(dataObject.getName()))
+				                           .filter(dataObject -> includeDataObjects.contains(dataObject.name))
 				                           .collect(Collectors.toList());
 			} else {
-				responseObjects = mDocument.getService().getCommon().getResponseDataObjects();
+				responseObjects = mDocument.service.common.responseDataObjects;
 			}
 
 			dataObjectProcessor = new DataObjectProcessor(responsePackage, dtoPackage, forceTopLevel);
@@ -243,13 +241,13 @@ public class JavaGenerator implements Callable<Void> {
 			List<Method> methods;
 			if (mProperties.containsKey("javagen.includeMethodIDs")) {
 				Set<Integer> includeDataObjects = getSetProperty("javagen.includeMethodIDs", Integer::parseInt);
-				methods = mDocument.getService()
+				methods = mDocument.service
 				                   .getMethods()
 				                   .stream()
-				                   .filter(method -> includeDataObjects.contains(method.getId()))
+				                   .filter(method -> includeDataObjects.contains(method.id))
 				                   .collect(Collectors.toList());
 			} else {
-				methods = mDocument.getService().getMethods();
+				methods = mDocument.service.getMethods();
 			}
 
 			MethodProcessor methodProcessor = new MethodProcessor(requestPackage,
@@ -277,12 +275,12 @@ public class JavaGenerator implements Callable<Void> {
 
 		ArrayList<Field> fields = dataObject.getFields()
 		                                    .stream()
-		                                    .filter(field -> !thisForceTopLevel.contains(field.getLongName()))
+		                                    .filter(field -> !thisForceTopLevel.contains(field.longName))
 		                                    .collect(Collectors.toCollection(ArrayList::new));
 		dataObject.setFields(fields);
 
 		for (Field field : fields) {
-			if (field.getType() == DataType.OBJECT) {
+			if (field.type == DataType.OBJECT) {
 				removeExcludedFields(JavaDataObject.fromField(field), scopedForceTopLevel);
 			}
 		}
@@ -374,7 +372,7 @@ public class JavaGenerator implements Callable<Void> {
 	                                       String enumPackage,
 	                                       boolean useFutureProofEnum)
 	{
-		ClassName enumClassName = ClassName.get(enumPackage, namedEnumeration.getName());
+		ClassName enumClassName = ClassName.get(enumPackage, namedEnumeration.name);
 
 		return processEnumToTypeSpec(namedEnumeration, enumClassName, useFutureProofEnum);
 	}
@@ -390,7 +388,7 @@ public class JavaGenerator implements Callable<Void> {
 		ClassName futureProofUnknownAnnotation = ClassName.get(Unknown.class);
 
 		Class<?> enumKeyTypeClass = null;
-		switch (namedEnumeration.getKey()) {
+		switch (namedEnumeration.key) {
 			case INT:
 				enumKeyTypeClass = int.class;
 				builder.addSuperinterface(ClassName.get(IntId.class));
@@ -415,9 +413,9 @@ public class JavaGenerator implements Callable<Void> {
 		}
 		Objects.requireNonNull(enumKeyTypeClass, "Error in JavaGenerator enumKeyTypeClass is null");
 
-		for (EnumConstant enumConstant : namedEnumeration.getValues()) {
-			String enumConstantValue = enumConstant.getValue();
-			if (namedEnumeration.getKey() == KeyType.STRING) {
+		for (EnumConstant enumConstant : namedEnumeration.values) {
+			String enumConstantValue = enumConstant.value;
+			if (namedEnumeration.key == KeyType.STRING) {
 				enumConstantValue = "\"" + enumConstantValue + "\"";
 			}
 			builder.addEnumConstant(convertToEnumConstantStyle(enumConstant.getLongName()),
@@ -566,31 +564,30 @@ public class JavaGenerator implements Callable<Void> {
 					objectClassName = (ClassName) javaField.getTypeName();
 				}
 			}
-			boolean isNullable = !field.isRequired() && field.getDefaultValue() == null;
+			boolean isNullable = !field.isRequired() && field.defaultValue == null;
 			FieldSpec.Builder fieldBuilder = FieldSpec.builder(getTypeName(field,
 			                                                               !isNullable,
 			                                                               false,
 			                                                               useFutureProofEnum,
-			                                                               objectClassName), field.getLongName())
+			                                                               objectClassName), field.longName)
 			                                          .addModifiers(Modifier.PRIVATE)
 			                                          .addAnnotation(AnnotationSpec.builder(SerializedName.class)
 			                                                                       .addMember("value",
-			                                                                                  "$S",
-			                                                                                  field.getName())
+			                                                                                  "$S", field.name)
 			                                                                       .build());
 
-			if (isNullable && !(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION)) {
+			if (isNullable && !(field.type == DataType.ARRAY || field.type == DataType.COLLECTION)) {
 				fieldBuilder.addAnnotation(nullableAnnotation);
 			}
 
 			// add initializers
 			DataType type = getEffectiveFieldType(field);
-			if (!field.isRequired() && (field.getDefaultValue() != null ||
+			if (!field.isRequired() && (field.defaultValue != null ||
 					(initializeCollections && (type == DataType.ARRAY || type == DataType.COLLECTION))))
 			{
 				switch (type) {
 					case STRING:
-						fieldBuilder.initializer("$S", field.getDefaultValue());
+						fieldBuilder.initializer("$S", field.defaultValue);
 						break;
 					case ENUM:
 						ClassName className;
@@ -606,10 +603,10 @@ public class JavaGenerator implements Callable<Void> {
 							                         JavaGenerator.CLASS_NAME_FUTURE_PROOF_ENUM_CONTAINER,
 							                         className,
 							                         className,
-							                         convertToEnumConstantStyle(field.getDefaultValue()));
+							                         convertToEnumConstantStyle(field.defaultValue));
 							fieldBuilder.addModifiers(Modifier.FINAL);
 						} else {
-							fieldBuilder.initializer("$T.$L", className, convertToEnumConstantStyle(field.getDefaultValue()));
+							fieldBuilder.initializer("$T.$L", className, convertToEnumConstantStyle(field.defaultValue));
 						}
 						break;
 					case ARRAY:
@@ -619,7 +616,7 @@ public class JavaGenerator implements Callable<Void> {
 						fieldBuilder.initializer("$T.emptyMap()", ClassName.get(Collections.class));
 						break;
 					default:
-						fieldBuilder.initializer("$L", field.getDefaultValue());
+						fieldBuilder.initializer("$L", field.defaultValue);
 						break;
 				}
 			} else if (type == DataType.ENUM && useFutureProofEnum) {
@@ -654,7 +651,7 @@ public class JavaGenerator implements Callable<Void> {
 
 		protected String getFieldClassName(Field field) {
 			if (field.isTypeRef()) {
-				return field.getTypeRef();
+				return field.typeRef;
 			}
 			return mJavaTool.fieldToClassStyle(field);
 		}
@@ -669,9 +666,9 @@ public class JavaGenerator implements Callable<Void> {
 
 		protected DataType getEffectiveFieldType(Field field) {
 			if (field.isTypeRef()) {
-				return mDocument.getTypeByName(field.getTypeRef()).getType();
+				return mDocument.getTypeByName(field.typeRef).type;
 			} else {
-				return field.getInterpretedAs() == null ? field.getType() : field.getInterpretedAs().asDataType();
+				return field.interpretedAs == null ? field.type : field.interpretedAs.asDataType();
 			}
 		}
 
@@ -709,7 +706,7 @@ public class JavaGenerator implements Callable<Void> {
 		                               boolean futureProofEnum,
 		                               @Nullable TypeName objectTypeName)
 		{
-			DataType type = typeSpec.getType();
+			DataType type = typeSpec.type;
 			if (type != null) {
 				switch (type) {
 					case INT:
@@ -740,8 +737,8 @@ public class JavaGenerator implements Callable<Void> {
 						return ClassName.get(LocalDate.class);
 					case COLLECTION:
 						return ParameterizedTypeName.get(ClassName.get(Map.class),
-						                                 getKeyTypeName(typeSpec.getKey()),
-						                                 getTypeName(typeSpec.getItems(),
+						                                 getKeyTypeName(typeSpec.key),
+						                                 getTypeName(typeSpec.items,
 						                                             false,
 						                                             convertIntBoolean,
 						                                             futureProofEnum,
@@ -767,7 +764,7 @@ public class JavaGenerator implements Callable<Void> {
 					case ARRAY:
 						// pass required false, since we can't use primitives
 						return ParameterizedTypeName.get(ClassName.get(List.class),
-						                                 getTypeName(typeSpec.getItems(),
+						                                 getTypeName(typeSpec.items,
 						                                             false,
 						                                             convertIntBoolean,
 						                                             futureProofEnum,
@@ -783,14 +780,14 @@ public class JavaGenerator implements Callable<Void> {
 						} else {
 							throw new IllegalStateException("Raw bitflag type specified, cannot generate name.");
 						}
-						return getBasicTypeName(typeSpec.getFlagType().getType(), required);
+						return getBasicTypeName(typeSpec.flagType.type, required);
 				}
-			} else if (typeSpec.getTypeRef() != null) {
-				NamedType namedType = mDocument.getTypeByName(typeSpec.getTypeRef());
+			} else if (typeSpec.typeRef != null) {
+				NamedType namedType = mDocument.getTypeByName(typeSpec.typeRef);
 				if (namedType instanceof DataObject) {
-					return ClassName.get(mTypeRefPackage, typeSpec.getTypeRef());
+					return ClassName.get(mTypeRefPackage, typeSpec.typeRef);
 				} else if (namedType instanceof NamedEnumeration) {
-					ClassName enumName = ClassName.get(mTypeRefPackage, typeSpec.getTypeRef());
+					ClassName enumName = ClassName.get(mTypeRefPackage, typeSpec.typeRef);
 					if (futureProofEnum) {
 						ClassName futureProofEnumContainer = ClassName.get(FUTURE_PROOF_ENUM_PACKAGE,
 						                                                   "FutureProofEnumContainer");
@@ -801,7 +798,7 @@ public class JavaGenerator implements Callable<Void> {
 				} else {
 					throw new UnsupportedOperationException(
 							"Unsupported named type class: " + namedType.getClass().getSimpleName() + " for " +
-									typeSpec.getTypeRef() + ".");
+									typeSpec.typeRef + ".");
 				}
 			}
 			throw new IllegalStateException("No type or type reference");
@@ -833,7 +830,7 @@ public class JavaGenerator implements Callable<Void> {
 		}
 
 		private TypeName getKeyTypeName(KeyType key) {
-			switch (key.getType()) {
+			switch (key.type) {
 				case INT:
 					return ClassName.get(Integer.class);
 				case LONG:
@@ -851,7 +848,7 @@ public class JavaGenerator implements Callable<Void> {
 
 
 		protected boolean interpretedAsBoolean(com.giffardtechnologies.restdocs.domain.type.TypeSpec typeSpec) {
-			return hasBooleanRestriction(typeSpec) || typeSpec.getInterpretedAs() == BasicType.BOOLEAN;
+			return hasBooleanRestriction(typeSpec) || typeSpec.interpretedAs == BasicType.BOOLEAN;
 		}
 
 	}
@@ -877,7 +874,7 @@ public class JavaGenerator implements Callable<Void> {
 
 			public DataObjectProcessor getSubObjectProcessor() {
 				if (mSubObjectProcessor == null) {
-					mSubObjectProcessor = new DataObjectProcessor(mObjectPackage + "." + mDataObject.getName(),
+					mSubObjectProcessor = new DataObjectProcessor(mObjectPackage + "." + mDataObject.name,
 					                                              mTypeRefPackage,
 					                                              mForceTopLevel);
 				}
@@ -903,7 +900,7 @@ public class JavaGenerator implements Callable<Void> {
 		public ClassName processDataObject(DataObject dataObject) {
 			TypeSpec typeSpec = processDataObjectToTypeSpec(dataObject);
 			writeFormattedClassFile(mObjectPackage, typeSpec);
-			return ClassName.get(mObjectPackage, dataObject.getName());
+			return ClassName.get(mObjectPackage, dataObject.name);
 		}
 
 		public TypeSpec processDataObjectToTypeSpec(DataObject dataObject) {
@@ -917,7 +914,7 @@ public class JavaGenerator implements Callable<Void> {
 		{
 			Set<FieldReference> scopedForceTopLevel = mForceTopLevel.stream()
 			                                                        .filter(fieldReference -> fieldReference.isNode(
-					                                                        dataObject.getName()))
+					                                                        dataObject.name))
 			                                                        .filter(Predicate.not(FieldReference::isLeafNode))
 			                                                        .map(FieldReference::getChild)
 			                                                        .collect(Collectors.toSet());
@@ -928,50 +925,49 @@ public class JavaGenerator implements Callable<Void> {
 
 			ProcessingContext processingContext = new ProcessingContext(dataObject, scopedForceTopLevel);
 
-			ClassName dtoClassName = ClassName.get(mObjectPackage, dataObject.getName());
+			ClassName dtoClassName = ClassName.get(mObjectPackage, dataObject.name);
 			TypeSpec.Builder dataObjectClassBuilder = TypeSpec.classBuilder(dtoClassName).addModifiers(Modifier.PUBLIC);
 
 			List<JavaField> javaFields = new ArrayList<>();
 			dataObject.getFields().stream().map(JavaFieldMapper.INSTANCE::dtoToJavaModel).map(field -> {
-				if (field.getLongName().equalsIgnoreCase(dataObject.getName() + "id")) {
-					field.setLongName("id");
+				if (field.longName.equalsIgnoreCase(dataObject.name + "id")) {
+					field.longName = "id";
 				} else {
-					field.setLongName(mJavaTool.toGetterStyle(field.getLongName()));
+					field.longName = mJavaTool.toGetterStyle(field.longName);
 				}
 
-				boolean forceTopLevel = thisForceTopLevel.contains(field.getLongName());
-				if (field.getType() == DataType.OBJECT) {
+				boolean forceTopLevel = thisForceTopLevel.contains(field.longName);
+				if (field.type == DataType.OBJECT) {
 					generateSubObject(processingContext,
 					                  dtoClassName,
 					                  dataObjectClassBuilder,
 					                  field,
 					                  forceTopLevel,
 					                  field.getFields());
-				} else if (field.getType() == DataType.ENUM) {
+				} else if (field.type == DataType.ENUM) {
 					NamedEnumeration fieldEnumeration = new NamedEnumeration();
-					fieldEnumeration.setValues(field.getValues());
-					fieldEnumeration.setKey(field.getKey());
+					fieldEnumeration.values = field.values;
+					fieldEnumeration.key = field.key;
 
 					if (forceTopLevel) {
-						fieldEnumeration.setName(getFieldClassName(field));
+						fieldEnumeration.name = getFieldClassName(field);
 						processEnum(fieldEnumeration, mObjectPackage);
-						field.setTypeName(ClassName.get(mObjectPackage,
-						                                fieldEnumeration.getName()));
+						field.setTypeName(ClassName.get(mObjectPackage, fieldEnumeration.name));
 					} else {
 						String fieldInnerClassName = getFieldInnerClassName(field);
-						fieldEnumeration.setName(fieldInnerClassName);
+						fieldEnumeration.name = fieldInnerClassName;
 						ClassName enumClassName = dtoClassName.nestedClass(fieldInnerClassName);
 						TypeSpec typeSpec = processEnumToTypeSpec(fieldEnumeration, enumClassName, true);
 						dataObjectClassBuilder.addType(typeSpec);
 						field.setTypeName(enumClassName);
 					}
-				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+				} else if (field.type == DataType.ARRAY && field.items.type == DataType.OBJECT) {
 					generateSubObject(processingContext,
 					                  dtoClassName,
 					                  dataObjectClassBuilder,
 					                  field,
 					                  forceTopLevel,
-					                  field.getItems().getFields());
+					                  field.items.getFields());
 				}
 
 				return field;
@@ -985,8 +981,8 @@ public class JavaGenerator implements Callable<Void> {
 					dataObjectClassBuilder.addField(fieldSpec);
 				} catch (Exception e) {
 					throw new IllegalStateException(String.format("Error processing field %s in %s",
-					                                              field.getLongName(),
-					                                              dataObject.getName()), e);
+					                                              field.longName,
+					                                              dataObject.name), e);
 				}
 			}
 
@@ -999,21 +995,21 @@ public class JavaGenerator implements Callable<Void> {
 				try {
 					if (type == DataType.ENUM) {
 						TypeName typeName = getTypeName(field, field.isRequired(), true, false, field.getTypeName());
-						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.longName);
 
-						if (!field.isRequired() && field.getDefaultValue() == null) {
+						if (!field.isRequired() && field.defaultValue == null) {
 							setterParameter.addAnnotation(nullableAnnotation);
 						}
 						constructorBuilder.addParameter(setterParameter.build());
-						constructorBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
+						constructorBuilder.addStatement("this.$N.setEnumValue($N)", field.longName, field.longName);
 					} else {
 						TypeName typeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
-						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+						ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.longName);
 
-						boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
+						boolean convertToBoolean = field.type == DataType.INT && interpretedAsBoolean(field);
 
-						if (!field.isRequired() && field.getDefaultValue() == null &&
-								!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION))
+						if (!field.isRequired() && field.defaultValue == null &&
+								!(field.type == DataType.ARRAY || field.type == DataType.COLLECTION))
 						{
 							setterParameter.addAnnotation(nullableAnnotation);
 						}
@@ -1021,30 +1017,26 @@ public class JavaGenerator implements Callable<Void> {
 						constructorBuilder.addParameter(setterParameter.build());
 						if (convertToBoolean) {
 							if (field.isRequired()) {
-								constructorBuilder.addStatement("this.$N = $T.convertToInt($N)",
-								                                field.getLongName(),
-								                                CLASS_NAME_BOOLEAN_UTIL,
-								                                field.getLongName());
+								constructorBuilder.addStatement("this.$N = $T.convertToInt($N)", field.longName,
+								                                CLASS_NAME_BOOLEAN_UTIL, field.longName);
 							} else if (field.hasDefaultValue()) {
 								constructorBuilder.addStatement("this.$N = $T.convertToInt($N, $L)",
-								                                field.getLongName(),
+								                                field.longName,
 								                                CLASS_NAME_BOOLEAN_UTIL,
-								                                field.getLongName(),
-								                                field.getDefaultValue());
+								                                field.longName,
+								                                field.defaultValue);
 							} else {
-								constructorBuilder.addStatement("this.$N = $T.convertToInteger($N)",
-								                                field.getLongName(),
-								                                CLASS_NAME_BOOLEAN_UTIL,
-								                                field.getLongName());
+								constructorBuilder.addStatement("this.$N = $T.convertToInteger($N)", field.longName,
+								                                CLASS_NAME_BOOLEAN_UTIL, field.longName);
 							}
 						} else {
-							constructorBuilder.addStatement("this.$N = $N", field.getLongName(), field.getLongName());
+							constructorBuilder.addStatement("this.$N = $N", field.longName, field.longName);
 						}
 					}
 				} catch (Exception e) {
 					throw new IllegalStateException(String.format("Error processing field %s in %s",
-					                                              field.getLongName(),
-					                                              dataObject.getName()), e);
+					                                              field.longName,
+					                                              dataObject.name), e);
 				}
 			}
 			dataObjectClassBuilder.addMethod(constructorBuilder.build());
@@ -1054,44 +1046,44 @@ public class JavaGenerator implements Callable<Void> {
 				boolean isOptionalWithDefault = !field.isRequired() && !field.hasDefaultValue();
 				if (type == DataType.ENUM) {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, false, field.getTypeName());
-					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.longName);
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
-							"get" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"get" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .returns(typeName)
 					                                             .addModifiers(Modifier.PUBLIC);
-					getterBuilder.addStatement("return $N.getEnumValue()", field.getLongName());
+					getterBuilder.addStatement("return $N.getEnumValue()", field.longName);
 
-					if (!field.isRequired() && field.getDefaultValue() == null) {
+					if (!field.isRequired() && field.defaultValue == null) {
 						getterBuilder.addAnnotation(nullableAnnotation);
 						setterParameter.addAnnotation(nullableAnnotation);
 					}
 					dataObjectClassBuilder.addMethod(getterBuilder.build());
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
-							"set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"set" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .addModifiers(Modifier.PUBLIC)
 					                                             .addParameter(setterParameter.build());
-					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
+					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.longName, field.longName);
 					dataObjectClassBuilder.addMethod(setterBuilder.build());
 
 					getterBuilder = MethodSpec.methodBuilder(
-							"getFutureProof" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"getFutureProof" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                          .returns(ParameterizedTypeName.get(CLASS_NAME_FUTURE_PROOF_ENUM_ACCESSOR,
 					                                                             typeName))
 					                          .addModifiers(Modifier.PUBLIC);
-					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
+					getterBuilder.addStatement("return $N.asReadOnly()", field.longName);
 					dataObjectClassBuilder.addMethod(getterBuilder.build());
 				} else {
-					boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
+					boolean convertToBoolean = field.type == DataType.INT && interpretedAsBoolean(field);
 
 					TypeName typeName = getTypeName(field, !isOptionalWithDefault, true, field.getTypeName());
 					TypeName setterTypeName = getTypeName(field, field.isRequired(), true, field.getTypeName());
-					ParameterSpec.Builder setterParameter = ParameterSpec.builder(setterTypeName, field.getLongName());
+					ParameterSpec.Builder setterParameter = ParameterSpec.builder(setterTypeName, field.longName);
 
 					String getterPrefix;
-					if (convertToBoolean || field.getType() == DataType.BOOLEAN) {
-						if (field.getLongName().startsWith("is")) {
+					if (convertToBoolean || field.type == DataType.BOOLEAN) {
+						if (field.longName.startsWith("is")) {
 							getterPrefix = "";
 						} else {
 							getterPrefix = "is";
@@ -1099,7 +1091,7 @@ public class JavaGenerator implements Callable<Void> {
 					} else {
 						getterPrefix = "get";
 					}
-					String getterMethodName = getterPrefix + mJavaTool.fieldNameToClassStyle(field.getLongName());
+					String getterMethodName = getterPrefix + mJavaTool.fieldNameToClassStyle(field.longName);
 					getterMethodName = StringUtils.uncapitalize(getterMethodName);
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(getterMethodName)
@@ -1108,14 +1100,13 @@ public class JavaGenerator implements Callable<Void> {
 
 					if (convertToBoolean) {
 						getterBuilder.addStatement("return $T.convertToBoolean($N)",
-						                           CLASS_NAME_BOOLEAN_UTIL,
-						                           field.getLongName());
+						                           CLASS_NAME_BOOLEAN_UTIL, field.longName);
 					} else {
-						getterBuilder.addStatement("return $N", field.getLongName());
+						getterBuilder.addStatement("return $N", field.longName);
 					}
 
-					if (!field.isRequired() && (field.getDefaultValue() == null || convertToBoolean) &&
-							!(field.getType() == DataType.ARRAY || field.getType() == DataType.COLLECTION))
+					if (!field.isRequired() && (field.defaultValue == null || convertToBoolean) &&
+							!(field.type == DataType.ARRAY || field.type == DataType.COLLECTION))
 					{
 						if (!field.hasDefaultValue()) {
 							getterBuilder.addAnnotation(nullableAnnotation);
@@ -1126,30 +1117,23 @@ public class JavaGenerator implements Callable<Void> {
 					dataObjectClassBuilder.addMethod(getterBuilder.build());
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
-							"set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"set" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .addModifiers(Modifier.PUBLIC)
 					                                             .addParameter(setterParameter.build());
 
 					if (convertToBoolean) {
 						if (field.isRequired()) {
-							setterBuilder.addStatement("this.$N = $T.convertToInt($N)",
-							                           field.getLongName(),
-							                           CLASS_NAME_BOOLEAN_UTIL,
-							                           field.getLongName());
+							setterBuilder.addStatement("this.$N = $T.convertToInt($N)", field.longName,
+							                           CLASS_NAME_BOOLEAN_UTIL, field.longName);
 						} else if (field.hasDefaultValue()) {
-							setterBuilder.addStatement("this.$N = $T.convertToInt($N, $L)",
-							                           field.getLongName(),
-							                           CLASS_NAME_BOOLEAN_UTIL,
-							                           field.getLongName(),
-							                           field.getDefaultValue());
+							setterBuilder.addStatement("this.$N = $T.convertToInt($N, $L)", field.longName,
+							                           CLASS_NAME_BOOLEAN_UTIL, field.longName, field.defaultValue);
 						} else {
-							setterBuilder.addStatement("this.$N = $T.convertToInteger($N)",
-							                           field.getLongName(),
-							                           CLASS_NAME_BOOLEAN_UTIL,
-							                           field.getLongName());
+							setterBuilder.addStatement("this.$N = $T.convertToInteger($N)", field.longName,
+							                           CLASS_NAME_BOOLEAN_UTIL, field.longName);
 						}
 					} else {
-						setterBuilder.addStatement("this.$N = $N", field.getLongName(), field.getLongName());
+						setterBuilder.addStatement("this.$N = $N", field.longName, field.longName);
 					}
 
 					dataObjectClassBuilder.addMethod(setterBuilder.build());
@@ -1176,7 +1160,7 @@ public class JavaGenerator implements Callable<Void> {
 
 			DataObject fieldDataObject = new DataObject();
 			fieldDataObject.setFields(fields);
-			fieldDataObject.setName(fieldClassName);
+			fieldDataObject.name = fieldClassName;
 
 			if (forceTopLevel) {
 				processingContext.getTopLevelSubObjectProcessor().processDataObject(fieldDataObject);
@@ -1214,25 +1198,25 @@ public class JavaGenerator implements Callable<Void> {
 		private void processMethod(Method method) {
 			DataObjectProcessor dataObjectProcessor = new DataObjectProcessor(mResponsePackage, mTypeRefPackage,
 			                                                                  Collections.emptySet());
-			String methodName = StringUtils.capitalize(method.getName());
+			String methodName = StringUtils.capitalize(method.name);
 
 			String responseClassName = null;
 			TypeName responseTypeName = null;
-			Response response = method.getResponse();
+			Response response = method.response;
 			if (response != null) {
 				if (response.isTypeRef()) {
-					responseClassName = response.getTypeRef();
+					responseClassName = response.typeRef;
 					try {
 						responseTypeName = getTypeName(response, true, false);
 					} catch (Exception e) {
 						// nothing it's just not found
 					}
-				} else if (response.getType() == DataType.OBJECT) {
+				} else if (response.type == DataType.OBJECT) {
 					responseClassName = methodName + "Response";
 
 					// setup a temp DataObject
 					DataObject dataObject = new DataObject();
-					dataObject.setName(responseClassName);
+					dataObject.name = responseClassName;
 					dataObject.setFields(response.getFields());
 
 					// TODO this need to handle imports for type refs
@@ -1246,7 +1230,7 @@ public class JavaGenerator implements Callable<Void> {
 			if (method.isAuthenticationRequired()) {
 				baseClassName = mAuthenticatedAllegoRequestClassName;
 			} else {
-				if (mUsePathAnnotation && method.getId() == null) {
+				if (mUsePathAnnotation && method.id == null) {
 					baseClassName = mAllegoPathAndBodyRequestClassName;
 				} else {
 					baseClassName = mAllegoRequestClassName;
@@ -1270,22 +1254,22 @@ public class JavaGenerator implements Callable<Void> {
 			                                               .addModifiers(Modifier.PUBLIC);
 
 			if (mUsePathAnnotation) {
-				if (method.getId() != null) {
+				if (method.id != null) {
 					AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
-					                                                .addMember("id", "$L", method.getId())
+					                                                .addMember("id", "$L", method.id)
 					                                                .build();
 					requestClassBuilder.addAnnotation(methodAnnotation);
 				}
 
 				ClassName pathAnnotationCN = ClassName.get("javax.ws.rs", "Path");
 				AnnotationSpec pathAnnotation = AnnotationSpec.builder(pathAnnotationCN)
-				                                              .addMember("value", "\"/$L\"", method.getPath())
+				                                              .addMember("value", "\"/$L\"", method.path)
 				                                              .build();
 				requestClassBuilder.addAnnotation(pathAnnotation);
 			} else {
-				Objects.requireNonNull(method.getId(), "Method must have an ID");
+				Objects.requireNonNull(method.id, "Method must have an ID");
 				AnnotationSpec methodAnnotation = AnnotationSpec.builder(methodIDAnnotation)
-				                                                .addMember("id", "$L", method.getId())
+				                                                .addMember("id", "$L", method.id)
 				                                                .build();
 				requestClassBuilder.addAnnotation(methodAnnotation);
 			}
@@ -1319,8 +1303,8 @@ public class JavaGenerator implements Callable<Void> {
 				                                                                        Collections.emptySet());
 
 				for (Field field : method.getParameters()) {
-					if (field.getLongName().equalsIgnoreCase(method.getName() + "id")) {
-						field.setLongName("id");
+					if (field.longName.equalsIgnoreCase(method.name + "id")) {
+						field.longName = "id";
 					}
 				}
 
@@ -1376,25 +1360,25 @@ public class JavaGenerator implements Callable<Void> {
 
 				for (Field field : method.getParameters()) {
 					TypeSpec typeSpec = null;
-					if (field.getType() == DataType.OBJECT) {
+					if (field.type == DataType.OBJECT) {
 						DataObject fieldDataObject = new DataObject();
 						fieldDataObject.setFields(field.getFields());
-						fieldDataObject.setName(getFieldClassName(field));
+						fieldDataObject.name = getFieldClassName(field);
 						typeSpec = paramsDataObjectProcessor.processDataObjectToBuilder(fieldDataObject)
 						                                    .addModifiers(Modifier.STATIC)
 						                                    .build();
 					}
-					if (field.getType() == DataType.ENUM) {
+					if (field.type == DataType.ENUM) {
 						NamedEnumeration fieldEnumeration = new NamedEnumeration();
-						fieldEnumeration.setValues(field.getValues());
-						fieldEnumeration.setKey(field.getKey());
-						fieldEnumeration.setName(getFieldClassName(field));
+						fieldEnumeration.values = field.values;
+						fieldEnumeration.key = field.key;
+						fieldEnumeration.name = getFieldClassName(field);
 						typeSpec = processEnumToTypeSpec(fieldEnumeration, paramsObjectPackage, false);
 					}
-					if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+					if (field.type == DataType.ARRAY && field.items.type == DataType.OBJECT) {
 						DataObject fieldDataObject = new DataObject();
-						fieldDataObject.setFields(field.getItems().getFields());
-						fieldDataObject.setName(getFieldClassName(field));
+						fieldDataObject.setFields(field.items.getFields());
+						fieldDataObject.name = getFieldClassName(field);
 						typeSpec = paramsDataObjectProcessor.processDataObjectToBuilder(fieldDataObject)
 						                                    .addModifiers(Modifier.STATIC)
 						                                    .build();
@@ -1520,7 +1504,7 @@ public class JavaGenerator implements Callable<Void> {
 			MethodSpec.Builder builder = MethodSpec.constructorBuilder()
 			                                       .addModifiers(Modifier.PUBLIC);
 
-			String description = StringUtils.uncapitalize(method.getDescription());
+			String description = StringUtils.uncapitalize(method.description);
 
 //			if (method.getParameters().isEmpty()) {
 				if (method.isAuthenticationRequired()) {
@@ -1563,60 +1547,56 @@ public class JavaGenerator implements Callable<Void> {
 
 			for (Field field : method.getParameters()) {
 				ClassName className = null;
-				if (field.getType() == DataType.OBJECT) {
+				if (field.type == DataType.OBJECT) {
 					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
-				} else if (field.getType() == DataType.ENUM) {
+				} else if (field.type == DataType.ENUM) {
 					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
-				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+				} else if (field.type == DataType.ARRAY && field.items.type == DataType.OBJECT) {
 					className = ClassName.get(mObjectPackage, requestClassName.simpleName(), getFieldClassName(field));
 				}
 
 				DataType type = getEffectiveFieldType(field);
 				if (type == DataType.ENUM && useFutureProofEnum) {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, false);
-					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.longName);
 
-					if (!field.isRequired() && field.getDefaultValue() == null) {
+					if (!field.isRequired() && field.defaultValue == null) {
 						setterParameter.addAnnotation(NULLABLE_ANNOTATION);
 					}
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
-							"set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"set" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .addModifiers(Modifier.PUBLIC)
 					                                             .addParameter(setterParameter.build());
-					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
+					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.longName, field.longName);
 					setterBuilder.addStatement("return this;");
 					builderClassBuilder.addMethod(setterBuilder.build());
 				} else {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum, className);
-					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.longName);
 
-					boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
+					boolean convertToBoolean = field.type == DataType.INT && interpretedAsBoolean(field);
 
-					if (!field.isRequired() && field.getDefaultValue() == null) {
+					if (!field.isRequired() && field.defaultValue == null) {
 						setterParameter.addAnnotation(NULLABLE_ANNOTATION);
 					}
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(StringUtils.uncapitalize(mJavaTool.fieldNameToClassStyle(
-							field.getLongName())))
+							                                             field.longName)))
 					                                             .addModifiers(Modifier.PUBLIC)
 					                                             .returns(builderClassName)
 					                                             .addParameter(setterParameter.build());
 
 					if (convertToBoolean) {
 						if (field.isRequired()) {
-							setterBuilder.addStatement("this.params.$N = $T.convertToInt($N)",
-							                           field.getLongName(),
-							                           booleanUtil,
-							                           field.getLongName());
+							setterBuilder.addStatement("this.params.$N = $T.convertToInt($N)", field.longName,
+							                           booleanUtil, field.longName);
 						} else {
-							setterBuilder.addStatement("this.params.$N = $T.convertToInteger($N)",
-							                           field.getLongName(),
-							                           booleanUtil,
-							                           field.getLongName());
+							setterBuilder.addStatement("this.params.$N = $T.convertToInteger($N)", field.longName,
+							                           booleanUtil, field.longName);
 						}
 					} else {
-						setterBuilder.addStatement("this.params.$N = $N", field.getLongName(), field.getLongName());
+						setterBuilder.addStatement("this.params.$N = $N", field.longName, field.longName);
 					}
 					setterBuilder.addStatement("return this");
 
@@ -1633,11 +1613,11 @@ public class JavaGenerator implements Callable<Void> {
 
 			for (Field field : method.getParameters()) {
 				ClassName className = null;
-				if (field.getType() == DataType.OBJECT) {
+				if (field.type == DataType.OBJECT) {
 					className = requestClassName.nestedClass(getFieldClassName(field));
-				} else if (field.getType() == DataType.ENUM) {
+				} else if (field.type == DataType.ENUM) {
 					className = requestClassName.nestedClass(getFieldClassName(field));
-				} else if (field.getType() == DataType.ARRAY && field.getItems().getType() == DataType.OBJECT) {
+				} else if (field.type == DataType.ARRAY && field.items.type == DataType.OBJECT) {
 					className = requestClassName.nestedClass(getFieldClassName(field));
 				}
 
@@ -1646,56 +1626,56 @@ public class JavaGenerator implements Callable<Void> {
 					paramsBuilder.addField(fieldSpec);
 				} catch (Exception e) {
 					throw new IllegalStateException(String.format("Error processing field %s in %s",
-					                                              field.getLongName(),
-					                                              method.getName()), e);
+					                                              field.longName,
+					                                              method.name), e);
 				}
 
 				DataType type = getEffectiveFieldType(field);
 				if (type == DataType.ENUM && useFutureProofEnum) {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, false, className);
-					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.longName);
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
-							"get" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"get" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .returns(typeName)
 					                                             .addModifiers(Modifier.PUBLIC);
-					getterBuilder.addStatement("return $N.getEnumValue()", field.getLongName());
-					if (!field.isRequired() && field.getDefaultValue() == null) {
+					getterBuilder.addStatement("return $N.getEnumValue()", field.longName);
+					if (!field.isRequired() && field.defaultValue == null) {
 						getterBuilder.addAnnotation(NULLABLE_ANNOTATION);
 						setterParameter.addAnnotation(NULLABLE_ANNOTATION);
 					}
 					paramsBuilder.addMethod(getterBuilder.build());
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
-							"set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"set" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .addModifiers(Modifier.PUBLIC)
 					                                             .addParameter(setterParameter.build());
-					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.getLongName(), field.getLongName());
+					setterBuilder.addStatement("this.$N.setEnumValue($N)", field.longName, field.longName);
 					paramsBuilder.addMethod(setterBuilder.build());
 
 					getterBuilder = MethodSpec.methodBuilder(
-							"getFutureProof" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"getFutureProof" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                          .returns(ParameterizedTypeName.get(futureProofEnumAccessor, typeName))
 					                          .addModifiers(Modifier.PUBLIC);
-					getterBuilder.addStatement("return $N.asReadOnly()", field.getLongName());
+					getterBuilder.addStatement("return $N.asReadOnly()", field.longName);
 					paramsBuilder.addMethod(getterBuilder.build());
 				} else {
 					TypeName typeName = getTypeName(field, field.isRequired(), true, useFutureProofEnum, className);
-					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.getLongName());
+					ParameterSpec.Builder setterParameter = ParameterSpec.builder(typeName, field.longName);
 
 					MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder(
-							"get" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"get" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .returns(typeName)
 					                                             .addModifiers(Modifier.PUBLIC);
 
-					boolean convertToBoolean = field.getType() == DataType.INT && interpretedAsBoolean(field);
+					boolean convertToBoolean = field.type == DataType.INT && interpretedAsBoolean(field);
 					if (convertToBoolean) {
-						getterBuilder.addStatement("return $T.convertToBoolean($N)", booleanUtil, field.getLongName());
+						getterBuilder.addStatement("return $T.convertToBoolean($N)", booleanUtil, field.longName);
 					} else {
-						getterBuilder.addStatement("return $N", field.getLongName());
+						getterBuilder.addStatement("return $N", field.longName);
 					}
 
-					if (!field.isRequired() && field.getDefaultValue() == null) {
+					if (!field.isRequired() && field.defaultValue == null) {
 						getterBuilder.addAnnotation(NULLABLE_ANNOTATION);
 						setterParameter.addAnnotation(NULLABLE_ANNOTATION);
 					}
@@ -1703,24 +1683,20 @@ public class JavaGenerator implements Callable<Void> {
 					paramsBuilder.addMethod(getterBuilder.build());
 
 					MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(
-							"set" + mJavaTool.fieldNameToClassStyle(field.getLongName()))
+							"set" + mJavaTool.fieldNameToClassStyle(field.longName))
 					                                             .addModifiers(Modifier.PUBLIC)
 					                                             .addParameter(setterParameter.build());
 
 					if (convertToBoolean) {
 						if (field.isRequired()) {
-							setterBuilder.addStatement("this.$N = $T.convertToInt($N)",
-							                           field.getLongName(),
-							                           booleanUtil,
-							                           field.getLongName());
+							setterBuilder.addStatement("this.$N = $T.convertToInt($N)", field.longName,
+							                           booleanUtil, field.longName);
 						} else {
-							setterBuilder.addStatement("this.$N = $T.convertToInteger($N)",
-							                           field.getLongName(),
-							                           booleanUtil,
-							                           field.getLongName());
+							setterBuilder.addStatement("this.$N = $T.convertToInteger($N)", field.longName,
+							                           booleanUtil, field.longName);
 						}
 					} else {
-						setterBuilder.addStatement("this.$N = $N", field.getLongName(), field.getLongName());
+						setterBuilder.addStatement("this.$N = $N", field.longName, field.longName);
 					}
 
 					paramsBuilder.addMethod(setterBuilder.build());

@@ -13,14 +13,14 @@ public class JavaDataObject {
 	private FieldElementList fieldElementList = new FieldElementList();
 
 	public static JavaDataObject fromDataObject(DataObject dataObject) {
-		return new JavaDataObject(dataObject.getName(), dataObject.getFieldElementList());
+		return new JavaDataObject(dataObject.name, dataObject.fieldElementList);
 	}
 
 	public static JavaDataObject fromField(Field field) {
-		if (field.getType() != DataType.OBJECT) {
-			throw new IllegalArgumentException(String.format("Field '%s' is not an Object", field.getLongName()));
+		if (field.type != DataType.OBJECT) {
+			throw new IllegalArgumentException(String.format("Field '%s' is not an Object", field.longName));
 		}
-		return new JavaDataObject(field.getLongName(), field.getFieldElementList());
+		return new JavaDataObject(field.longName, field.fieldElementList);
 	}
 
 	public JavaDataObject() {
