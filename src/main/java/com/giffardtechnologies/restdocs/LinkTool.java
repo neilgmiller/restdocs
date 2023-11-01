@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 import com.giffardtechnologies.restdocs.domain.DataObject;
 import com.giffardtechnologies.restdocs.domain.Document;
@@ -41,7 +41,7 @@ public class LinkTool {
 		if (string == null) {
 			return null;
 		}
-		final String escapeHtml = StringEscapeUtils.escapeHtml(String.valueOf(string));
+		final String escapeHtml = StringEscapeUtils.escapeHtml4(string);
 		Pattern typeLinkPattern = Pattern.compile("&lt;.+?&gt;");
 		Matcher matcher = typeLinkPattern.matcher(escapeHtml);
 		StringBuffer builder = new StringBuffer();

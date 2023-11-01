@@ -13,7 +13,6 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.LogChute;
 import org.apache.velocity.tools.generic.EscapeTool;
 import org.yaml.snakeyaml.Yaml;
 import picocli.CommandLine;
@@ -32,7 +31,7 @@ import java.util.concurrent.Callable;
 
 @Command(description = "Generates documents or code based for a given API descriptor",
 		name = "doc_generator", mixinStandardHelpOptions = true, version = "DocGenerator 1.0")
-public class DocGenerator implements LogChute, Callable<Void> {
+public class DocGenerator implements Callable<Void> {
 
 	//	@Parameters(index = "0", hidden = true, description = "The executable directory, passed by the wrapper script.")
 	private File mExecutableDir;
@@ -160,13 +159,6 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		VelocityEngine ve = new VelocityEngine();
 
 		/*
-		 *  configure the engine.  In this case, we are using
-		 *  ourselves as a logger (see logging examples..)
-		 */
-
-		ve.setProperty(VelocityEngine.RUNTIME_LOG_LOGSYSTEM, this);
-
-		/*
 		 *  initialize the engine
 		 */
 
@@ -207,13 +199,6 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		 *  create a new instance of the engine
 		 */
 		VelocityEngine ve = new VelocityEngine();
-
-		/*
-		 *  configure the engine.  In this case, we are using
-		 *  ourselves as a logger (see logging examples..)
-		 */
-
-		ve.setProperty(VelocityEngine.RUNTIME_LOG_LOGSYSTEM, this);
 
 		/*
 		 *  initialize the engine
@@ -370,27 +355,4 @@ public class DocGenerator implements LogChute, Callable<Void> {
 		return document;
 	}
 
-	@Override
-	public void init(RuntimeServices rsvc) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public boolean isLevelEnabled(int level) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void log(int level, String message) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void log(int level, String message, Throwable t) {
-		// TODO Auto-generated method stub
-
-	}
 }

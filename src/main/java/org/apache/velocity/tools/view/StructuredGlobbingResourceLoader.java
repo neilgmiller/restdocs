@@ -1,7 +1,6 @@
 package org.apache.velocity.tools.view;
 
 import org.apache.velocity.runtime.resource.loader.FileResourceLoader;
-import org.apache.velocity.tools.view.WebappResourceLoader;
 
 import java.io.FilterInputStream;
 import java.io.InputStream;
@@ -124,10 +123,6 @@ public class StructuredGlobbingResourceLoader extends FileResourceLoader {
 		public boolean markSupported() {
 			return false;
 		}
-	}
-
-	public synchronized InputStream getResourceStream(String name) {
-		return new VTLIndentationGlobber(super.getResourceStream(name));
 	}
 
 	// test
