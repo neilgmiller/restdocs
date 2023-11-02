@@ -40,7 +40,7 @@ class DocValidatorCommand : Callable<Unit> {
         propsInStream.close()
         val sourceFile = File(propertiesFile.parentFile, properties.getProperty("sourceFile"))
 
-        DocValidator(sourceFile).validate()
+        DocValidator().validate(sourceFile)
     }
 
 }
