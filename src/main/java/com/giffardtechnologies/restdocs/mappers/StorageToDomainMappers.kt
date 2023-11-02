@@ -19,12 +19,11 @@ import com.giffardtechnologies.restdocs.storage.type.Field as FieldStorageModel
 
 // StorageModel
 fun DocumentStorageModel.mapToModel(): Document {
-    return Document(
-        title,
-        service.mapToModel(),
-        enumerations.stream().map { it.mapToModel() }.collect(Array.collector()),
-        dataObjects.stream().map { it.mapToModel() }.collect(Array.collector()),
-    )
+    return Document.createDocument(title) {
+        enumerations.map { it.mapToModel() }.forEach { addNamedEnumeration(it) }
+        dataObjects.map { it.mapToModel() }.forEach { addDataObject(it) }
+        service = this@mapToModel.service.mapToModel()
+    }
 }
 
 private fun <U, V, T: List<U>> T?.mapList(mapper: (U) -> V): Array<V> {
