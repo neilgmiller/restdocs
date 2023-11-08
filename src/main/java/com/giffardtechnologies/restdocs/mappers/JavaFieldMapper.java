@@ -1,6 +1,5 @@
 package com.giffardtechnologies.restdocs.mappers;
 
-import com.giffardtechnologies.restdocs.JavaGenerator;
 import com.giffardtechnologies.restdocs.domain.type.Field;
 import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
@@ -13,11 +12,11 @@ import org.mapstruct.factory.Mappers;
 public interface JavaFieldMapper {
     JavaFieldMapper INSTANCE = Mappers.getMapper(JavaFieldMapper.class);
 
-    @Mappings({@Mapping(target = "typeName", ignore = true),
-               @Mapping(target = "parentDocument", ignore = true)})
-    JavaGenerator.JavaField dtoToJavaModel(Field field);
-
-    @InheritConfiguration
-    void updateJavaModel(Field fieldDTO, @MappingTarget JavaGenerator.JavaField javaField);
+//    @Mappings({@Mapping(target = "typeName", ignore = true),
+//               @Mapping(target = "parentDocument", ignore = true)})
+//    JavaGenerator.JavaField dtoToJavaModel(Field field);
+//
+//    @InheritConfiguration
+//    void updateJavaModel(Field fieldDTO, @MappingTarget JavaGenerator.JavaField javaField);
 
 }
