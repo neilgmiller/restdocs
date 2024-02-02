@@ -1233,6 +1233,7 @@ public class JavaGenerator implements Callable<Void> {
 					// setup a temp DataObject
 					DataObject dataObject = new DataObject();
 					dataObject.setName(responseClassName);
+					dataObject.setParent(response.getParentDocument());
 					dataObject.setFields(response.getFields());
 
 					// TODO this need to handle imports for type refs

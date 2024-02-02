@@ -33,8 +33,11 @@ class FieldElementList {
                 if (fieldListElement is Field) {
                     newFields.add(fieldListElement)
                 } else if (fieldListElement is FieldListIncludeElement) {
-                    val includedObject = parentDocument!!.getDataObjectByName(fieldListElement.include)
-                        ?: throw IllegalStateException("Cannot find '" + fieldListElement.include)
+                    val includedObject = if (parentDocument == null) {
+                        throw IllegalStateException("Cannot find '" + fieldListElement.include)
+                    } else {
+                        parentDocument!!.getDataObjectByName(fieldListElement.include)
+                    }
                     if (fieldListElement.excluding.isEmpty()) {
                         newFields.addAll(includedObject.fields)
                     } else {
@@ -162,6 +165,11 @@ class FieldElementList {
 
     fun setParentDocument(parentDocument: Document?) {
         this.parentDocument = parentDocument
+        fieldListElements?.forEach {
+            when(it) {
+                is Field -> it.parentDocument = parentDocument
+            }
+        }
     }
 
     fun setParentType(parentType: NamedType?) {
