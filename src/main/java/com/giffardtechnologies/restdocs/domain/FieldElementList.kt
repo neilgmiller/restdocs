@@ -45,9 +45,6 @@ class FieldElementList(
                         throw IllegalStateException("Unsupported element type: " + fieldListElement.javaClass.name)
                     }
                 }
-                .map {
-                    it.copy(parent = parentType)
-                }
 
             _fields = newFields
             newFields
@@ -86,7 +83,6 @@ class FieldElementList(
                         description = field.description,
                         defaultValue = field.defaultValue,
                         isRequired = field.isRequired,
-                        parent = parentType,
                         sampleValues = field.sampleValues,
                     )
                 }
@@ -118,6 +114,7 @@ class FieldElementList(
             }
             is TypeSpec.BitSetSpec<*>,
             is TypeSpec.DataSpec,
+            is TypeSpec.BooleanSpec,
             is TypeSpec.MapSpec<*>,
             is TypeSpec.EnumSpec<*> -> {
                 throw IllegalStateException(
