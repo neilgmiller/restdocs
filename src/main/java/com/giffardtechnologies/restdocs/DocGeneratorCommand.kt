@@ -30,12 +30,6 @@ import java.util.concurrent.Callable
     )
     private var mPropertiesFile: File? = null
 
-    @CommandLine.Option(
-        names = ["-c", "--code"],
-        description = ["Flag indicating that the command should generate Java code."]
-    )
-    private var mGenCode = false
-
     @CommandLine.Option(names = ["-v", "--verbose"], description = ["Turn on verbose output"])
     private var mVerbose = false
 
@@ -63,7 +57,7 @@ import java.util.concurrent.Callable
             templateFile
         }
 
-        DocGenerator().generate(sourceFile, templateFile, outputFile, DocGenerator.Options(mGenCode, mVerbose))
+        DocGenerator().generate(sourceFile, templateFile, outputFile, DocGenerator.Options(mVerbose))
     }
 
 }
