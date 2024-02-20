@@ -89,7 +89,7 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:$mapstruct_version"
 }
 
-mainClassName = 'com.giffardtechnologies.restdocs.DocGenerator'
+mainClassName = 'com.giffardtechnologies.restdocs.DocGeneratorCommand'
 
 startScripts {
     applicationName = 'doc_generator'
