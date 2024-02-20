@@ -1,7 +1,8 @@
 package com.giffardtechnologies.restdocs.storage.type
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.giffardtechnologies.restdocs.DocValidator
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.giffardtechnologies.restdocs.jackson.TrueOnNullBooleanDeserializer
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.Restriction
@@ -15,6 +16,7 @@ open class Field(
     @JsonProperty("clientDefault")
     val defaultValueToSendFromClient: String? = null,
     @JsonProperty("required")
+    @JsonDeserialize(using = TrueOnNullBooleanDeserializer::class)
     val isRequired: Boolean = true,
     val sampleValues: List<String>? = null,
     type: DataType? = null,
