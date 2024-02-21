@@ -2,6 +2,8 @@ package com.giffardtechnologies.restdocs
 
 import com.giffardtechnologies.restdocs.domain.Document
 import com.giffardtechnologies.restdocs.gson.GsonFactory
+import com.giffardtechnologies.restdocs.htmlgen.LinkTool
+import com.giffardtechnologies.restdocs.htmlgen.PlainTextTool
 import org.apache.velocity.Template
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine

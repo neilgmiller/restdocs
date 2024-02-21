@@ -1,4 +1,4 @@
-package com.giffardtechnologies.restdocs
+package com.giffardtechnologies.restdocs.htmlgen
 
 import com.giffardtechnologies.restdocs.domain.Document
 import com.giffardtechnologies.restdocs.domain.type.BasicType
