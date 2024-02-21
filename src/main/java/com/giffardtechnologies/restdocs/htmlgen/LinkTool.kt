@@ -1,25 +1,26 @@
 package com.giffardtechnologies.restdocs.htmlgen
 
-import com.giffardtechnologies.restdocs.domain.Document
+import com.giffardtechnologies.restdocs.storage.Document
 import org.apache.commons.text.StringEscapeUtils
 import java.util.regex.Pattern
 
-class LinkTool(private val mDocument: Document) {
-    private val mDataObjectNames: MutableSet<String>
+@Suppress("unused")
+class LinkTool(document: Document) {
+    private val dataObjectNames: MutableSet<String>
 
     init {
-        val dataObjects = mDocument.dataObjects
-        val enumerations = mDocument.enumerations
-        mDataObjectNames = HashSet((dataObjects.size + enumerations.size) * 2)
+        val dataObjects = document.dataObjects
+        val enumerations = document.enumerations
+        dataObjectNames = HashSet((dataObjects.size + enumerations.size) * 2)
         for (dataObject in dataObjects) {
-            mDataObjectNames.add(dataObject.name)
+            dataObjectNames.add(dataObject.name)
         }
         for (enumeration in enumerations) {
-            mDataObjectNames.add(enumeration.name)
+            dataObjectNames.add(enumeration.name)
         }
-        if (mDocument.service != null && mDocument.service.hasCommon()) {
-            for (dataObject in mDocument.service.common.responseDataObjects) {
-                mDataObjectNames.add(dataObject.name)
+        if (document.service?.common != null) {
+            for (dataObject in document.service.common.responseDataObjects) {
+                dataObjectNames.add(dataObject.name)
             }
         }
     }
@@ -35,7 +36,7 @@ class LinkTool(private val mDocument: Document) {
         while (matcher.find()) {
             val typeLink = matcher.group()
             val typeName = typeLink.substring(4, typeLink.length - 4)
-            if (mDataObjectNames.contains(typeName)) {
+            if (dataObjectNames.contains(typeName)) {
                 matcher.appendReplacement(builder, "<a href=\"#$typeName\">$typeName</a>")
             } else {
                 matcher.appendReplacement(builder, typeLink)
@@ -49,7 +50,7 @@ class LinkTool(private val mDocument: Document) {
         if (typeName == null) {
             return null
         }
-        return if (mDataObjectNames.contains(typeName)) {
+        return if (dataObjectNames.contains(typeName)) {
             "<a href=\"#$typeName\">$typeName</a>"
         } else {
             typeName
