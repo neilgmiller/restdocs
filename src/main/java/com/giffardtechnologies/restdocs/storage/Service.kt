@@ -13,6 +13,7 @@ data class Service(
 class Common(
     val headers: ArrayList<Field>? = null,
     val parameters: ArrayList<Field>? = null,
-    @JsonProperty("response objects") val responseDataObjects: ArrayList<DataObject>? = ArrayList(),
+    @JsonProperty("response objects")
+    val responseDataObjects: ArrayList<DataObject> = ArrayList(),
     val enums: ArrayList<NamedEnumeration>? = null,
 )
