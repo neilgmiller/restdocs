@@ -1,9 +1,24 @@
 package com.giffardtechnologies.restdocs.domain
 
 import com.giffardtechnologies.restdocs.domain.type.Field
-import com.google.gson.annotations.SerializedName
+import com.giffardtechnologies.restdocs.vavr.isNotEmpty
+import io.vavr.collection.Array
 
-class Method {
+class Method(
+    val method: HTTPMethod,
+    val path: String? = null,
+    val protocolsAllowed: Array<String> = Array.of("HTTP"),
+    val id: Int? = null,
+    val name: String,
+    val isAuthenticationRequired: Boolean,
+    val parameters: FieldElementList,
+    var failureCodes: Array<String> = Array.empty(),
+    var successCodes: Array<String> = Array.empty(),
+    var response: Response? = null,
+    var requestBody: RequestBody? = null,
+    val headers: Array<Field> = Array.empty(),
+    val description: String? = null
+) {
     enum class HTTPMethod {
         GET,
         PUT,
@@ -15,72 +30,23 @@ class Method {
         CONNECT
     }
 
-    var method: HTTPMethod? = null
-    @JvmField
-    var path: String? = null
 
-    @SerializedName("protocols allowed")
-    var protocolsAllowed = ArrayList<String>()
-    @JvmField
-    var id: Int? = null
-    @JvmField
-    var name = ""
-    @JvmField
-    var description: String? = ""
-
-    @SerializedName("authentication required")
-    var isAuthenticationRequired = true
-    var headers: ArrayList<Field>? = ArrayList()
-    private val parameters = FieldElementList()
-
-    @SerializedName("request body")
-    var requestBody: RequestBody? = null
-    @JvmField
-    var response: Response? = null
-
-    @SerializedName("successful codes")
-    var successCodes = ArrayList<String>()
-
-    @SerializedName("failure codes")
-    var failureCodes = ArrayList<String>()
-
-    init {
-        protocolsAllowed.add("HTTP")
-    }
-
-    fun setParent(service: Service) {
-        if (response != null) {
-            response!!.parentDocument = service.parentDocument
-        }
-        parameters.setParentDocument(service.parentDocument)
-    }
-
-    val methodString: String
-        get() = if (method == null) "null" else method!!.name
     val hasID: Boolean
         get() = id != null
     val hasDescription: Boolean
-        get() = description != null && !description!!.isEmpty()
+        get() = !description.isNullOrEmpty()
 
     fun getIsAuthenticationRequired(): Boolean {
         return isAuthenticationRequired
     }
 
-    fun hasHeaders(): Boolean {
-        return headers != null && !headers!!.isEmpty()
-    }
-
     val hasHeaders: Boolean
-        get() = hasHeaders()
+        get() = headers.isNotEmpty()
     val hasParameters: Boolean
-        get() = parameters.hasFields
+        get() = parameters.fields.isNotEmpty()
 
-    fun getParameters(): ArrayList<Field>? {
-        return parameters.getFields()
-    }
-
-    fun setParameters(parameters: ArrayList<Field?>?) {
-        this.parameters.setFields(parameters)
+    fun getParameters(): Array<Field> {
+        return parameters.fields
     }
 
     val hasRequestBody: Boolean

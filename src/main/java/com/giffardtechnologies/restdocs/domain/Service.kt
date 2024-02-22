@@ -1,75 +1,34 @@
 package com.giffardtechnologies.restdocs.domain
 
 import com.giffardtechnologies.restdocs.domain.type.Field
-import com.google.gson.annotations.SerializedName
-import java.util.function.Consumer
+import com.giffardtechnologies.restdocs.vavr.isNotEmpty
+import io.vavr.collection.Array
 
-class Service {
-    var description: String? = null
+class Service(
+    val description: String? = null,
+    val basePath: String? = null,
+    val common: Common? = null,
+    private var methods: Array<Method> = Array.empty()
+) {
 
-    @SerializedName("base path")
-    var basePath: String? = null
-    @JvmField
-    var common: Common? = null
-    private var methods: ArrayList<Method>? = null
-    private var mParentDocument: Document? = null
-    var parentDocument: Document?
-        get() = mParentDocument
-        set(parentDocument) {
-            mParentDocument = parentDocument
-            common!!.setParentDocument(parentDocument)
-            for (method in methods!!) {
-                method.setParent(this)
-            }
-        }
-
-    class Common {
-        var headers: ArrayList<Field>? = null
-        var parameters: ArrayList<Field>? = null
-
-        @JvmField
-        @SerializedName("response objects")
-        var responseDataObjects: ArrayList<DataObject>? = ArrayList()
-        fun hasHeaders(): Boolean {
-            return headers != null && !headers!!.isEmpty()
-        }
+    class Common(
+        val headers: Array<Field> = Array.empty(),
+        val parameters: Array<Field> = Array.empty(),
+        var responseDataObjects: Array<DataObject> = Array.empty()
+    ) {
 
         val hasHeaders: Boolean
-            get() = hasHeaders()
-
-        fun hasParameters(): Boolean {
-            return parameters != null && !parameters!!.isEmpty()
-        }
+            get() = headers.isNotEmpty()
 
         val hasParameters: Boolean
-            get() = hasParameters()
-
-        fun hasResponseDataObjects(): Boolean {
-            return responseDataObjects != null && !responseDataObjects!!.isEmpty()
-        }
+            get() = parameters.isNotEmpty()
 
         val hasResponseDataObjects: Boolean
-            get() = hasResponseDataObjects()
+            get() = responseDataObjects.isNotEmpty()
 
-        fun setParentDocument(parentDocument: Document?) {
-            if (headers != null) headers!!.forEach(Consumer { field: Field -> field.parentDocument = parentDocument })
-            parameters!!.forEach(Consumer { field: Field -> field.parentDocument = parentDocument })
-            responseDataObjects!!.forEach(Consumer { dataObject: DataObject -> dataObject.setParent(parentDocument) })
-        }
-    }
-
-    fun hasCommon(): Boolean {
-        return common != null
     }
 
     val hasCommon: Boolean
-        get() = hasCommon()
+        get() = common != null
 
-    fun getMethods(): ArrayList<Method> {
-        return if (methods == null) ArrayList(0) else methods!!
-    }
-
-    fun setMethods(methods: ArrayList<Method>?) {
-        this.methods = methods
-    }
 }

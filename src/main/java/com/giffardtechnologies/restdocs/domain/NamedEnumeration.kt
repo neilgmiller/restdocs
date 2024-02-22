@@ -5,7 +5,7 @@ import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 
 class NamedEnumeration(
     override val typeName: String,
-    val description: String,
+    val description: String?,
     override val type: TypeSpec.EnumSpec<*>
 ) : NamedType<TypeSpec.EnumSpec<*>> {
 

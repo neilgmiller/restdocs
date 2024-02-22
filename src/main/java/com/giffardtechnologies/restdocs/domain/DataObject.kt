@@ -6,50 +6,17 @@ import com.giffardtechnologies.restdocs.domain.type.NamedType
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.google.gson.annotations.SerializedName
 
-class DataObject(override val typeName: String) : NamedType<TypeSpec.ObjectSpec> {
-    var isHidden = false
-    var description: String? = null
+class DataObject(
+    override val typeName: String,
+    override val type: TypeSpec.ObjectSpec,
+    val description: String? = null,
+    val isHidden: Boolean = false,
+) : NamedType<TypeSpec.ObjectSpec> {
 
-    /**
-     * Used for translating objects, general case should use the list getters.
-     *
-     * @return the FieldElementList object for this object
-     *
-     * @see .getFieldListElements
-     * @see .getFields
-     */
-    @JvmField
-    @SerializedName("fields")
-    val fieldElementList = FieldElementList()
+    // future feature support
     var discriminator: Field? = null
-
-    @SerializedName("child types")
     var childTypes: ArrayList<DataObject>? = null
-
-    @SerializedName("discriminator value")
     var discriminatorValue: String? = null
-
-    @Transient
-    private var parent: Document? = null
-    val fields: ArrayList<Field>?
-        get() = fieldElementList.getFields()
-
-    fun setFields(fields: ArrayList<Field?>?) {
-        fieldElementList.setFields(fields)
-    }
-
-    fun hasFields(): Boolean {
-        return fieldElementList.hasFields()
-    }
-
-    val hasFields: Boolean
-        get() = fieldElementList.hasFields
-    val fieldListElements: ArrayList<FieldListElement>?
-        get() = fieldElementList.getFieldListElements()
-
-    fun setFieldListElements(fieldListElements: ArrayList<FieldListElement?>?) {
-        fieldElementList.setFieldListElements(fieldListElements)
-    }
 
     fun hasChildren(): Boolean {
         return childTypes != null && !childTypes!!.isEmpty() && discriminator != null
@@ -59,12 +26,6 @@ class DataObject(override val typeName: String) : NamedType<TypeSpec.ObjectSpec>
         get() = childTypes != null && !childTypes!!.isEmpty() && discriminator != null
 
     override fun toString(): String {
-        return name!!
-    }
-
-    fun setParent(parent: Document?) {
-        this.parent = parent
-        fieldElementList.setParentDocument(parent)
-        fieldElementList.setParentType(this)
+        return typeName
     }
 }

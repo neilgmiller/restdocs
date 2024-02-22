@@ -4,16 +4,31 @@ import com.giffardtechnologies.restdocs.domain.type.NamedType
 import io.vavr.collection.Array
 import io.vavr.collection.HashMap
 
+interface Context {
+    fun getTypeByName(name: String) : NamedType<*>?
+}
+
+class DummyContext : Context {
+    override fun getTypeByName(name: String): NamedType<*>? {
+        throw UnsupportedOperationException("DummyContext does not support lookup.")
+    }
+}
+class DelegatingContext(var context: Context = DummyContext()) : Context {
+    override fun getTypeByName(name: String): NamedType<*>? {
+        return context.getTypeByName(name)
+    }
+}
+
 // Most of these methods are used by velocity
 @Suppress("unused")
-class Document private constructor(
+class Document(
     var title: String,
     val enumerations: Array<NamedEnumeration>,
     val dataObjects: Array<DataObject>,
     private var mDataObjectNames: HashMap<String, DataObject>,
     private var mEnumerationNames: HashMap<String, NamedEnumeration>,
     val service: Service? = null,
-) {
+) : Context {
 
     companion object {
         fun createDocument(title: String, configure: DocumentConfiguration.() -> Unit): Document {
@@ -89,7 +104,7 @@ class Document private constructor(
         return mEnumerationNames[name].orNull
     }
 
-    fun getTypeByName(name: String): NamedType<*>? {
+    override fun getTypeByName(name: String): NamedType<*>? {
         val dataObject = mDataObjectNames[name].orNull
         val namedEnumeration = mEnumerationNames[name].orNull
         check(!(dataObject == null && namedEnumeration == null)) { "Type reference to undefined type: $name." }
