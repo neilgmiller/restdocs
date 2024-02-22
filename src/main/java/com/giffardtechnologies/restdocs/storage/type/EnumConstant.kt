@@ -9,6 +9,6 @@ package com.giffardtechnologies.restdocs.storage.type
  */
 data class EnumConstant(
     val value: String,
-    val longName: String? = null,
+    val longName: String,
     val description: String? = null
 )
