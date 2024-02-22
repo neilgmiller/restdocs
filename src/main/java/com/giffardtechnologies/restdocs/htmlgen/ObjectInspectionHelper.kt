@@ -1,16 +1,18 @@
 package com.giffardtechnologies.restdocs.htmlgen
 
-import com.giffardtechnologies.restdocs.storage.Common
-import com.giffardtechnologies.restdocs.storage.DataObject
-import com.giffardtechnologies.restdocs.storage.Document
-import com.giffardtechnologies.restdocs.storage.Method
-import com.giffardtechnologies.restdocs.storage.NamedEnumeration
-import com.giffardtechnologies.restdocs.storage.Response
-import com.giffardtechnologies.restdocs.storage.Restriction
-import com.giffardtechnologies.restdocs.storage.Service
-import com.giffardtechnologies.restdocs.storage.type.EnumConstant
-import com.giffardtechnologies.restdocs.storage.type.Field
-import com.giffardtechnologies.restdocs.storage.type.TypeSpec
+import com.giffardtechnologies.restdocs.domain.Service.Common
+import com.giffardtechnologies.restdocs.domain.DataObject
+import com.giffardtechnologies.restdocs.domain.Document
+import com.giffardtechnologies.restdocs.domain.Method
+import com.giffardtechnologies.restdocs.domain.NamedEnumeration
+import com.giffardtechnologies.restdocs.domain.Response
+import com.giffardtechnologies.restdocs.domain.Restriction
+import com.giffardtechnologies.restdocs.domain.Service
+import com.giffardtechnologies.restdocs.domain.type.BooleanRepresentation
+import com.giffardtechnologies.restdocs.domain.type.Field
+import com.giffardtechnologies.restdocs.domain.type.TypeSpec
+import com.giffardtechnologies.restdocs.vavr.isNotEmpty
+import io.vavr.collection.Array
 
 class ObjectInspectionHelper(val document: Document) {
 
@@ -22,12 +24,12 @@ class ObjectInspectionHelper(val document: Document) {
         return document.dataObjects.any { !it.isHidden }
     }
 
-    fun getVisibleDataObjects(document: Document): List<DataObject> {
+    fun getVisibleDataObjects(document: Document): Array<DataObject> {
         return document.dataObjects.filter { !it.isHidden }
     }
 
     fun hasEnumValues(enumeration: NamedEnumeration): Boolean {
-        return !enumeration.values.isNullOrEmpty()
+        return enumeration.type.values.isNotEmpty()
     }
 
     fun getLongName(enumConstant: EnumConstant): String {
@@ -39,7 +41,7 @@ class ObjectInspectionHelper(val document: Document) {
     }
 
     fun hasFields(dataObject: DataObject) : Boolean {
-        return dataObject.fields.isNotEmpty()
+        return dataObject.type.fields.isNotEmpty()
     }
 
     fun getFields(dataObject: DataObject) : ArrayList<Field> {
@@ -51,7 +53,7 @@ class ObjectInspectionHelper(val document: Document) {
     }
 
     fun hasFields(typeSpec: TypeSpec) : Boolean {
-        return !typeSpec.fields.isNullOrEmpty()
+        return if (typeSpec is TypeSpec.ObjectSpec) typeSpec.fields.isNotEmpty() else false
     }
 
     fun getFields(typeSpec: TypeSpec) : ArrayList<Field> {
@@ -59,7 +61,7 @@ class ObjectInspectionHelper(val document: Document) {
     }
 
     fun getEffectiveFields(typeSpec: TypeSpec) : Boolean {
-        return !typeSpec.fields.isNullOrEmpty()
+        return if (typeSpec is TypeSpec.ObjectSpec) typeSpec.fields.isNotEmpty() else false
     }
 
     fun isTypeRef(typeSpec: TypeSpec?): Boolean {
@@ -71,11 +73,11 @@ class ObjectInspectionHelper(val document: Document) {
     }
 
     fun hasInterpretedAs(field: Field): Boolean {
-        return field.interpretedAs != null
+        return field.type is TypeSpec.BooleanSpec && field.type.representedAs != BooleanRepresentation.AsInteger
     }
 
     fun hasRestrictions(field: Field): Boolean {
-        return !field.restrictions.isNullOrEmpty()
+        return field.type is TypeSpec.DataSpec && field.type.restrictions.isNotEmpty()
     }
 
     fun hasMultipleValues(restriction: Restriction): Boolean {
@@ -91,11 +93,11 @@ class ObjectInspectionHelper(val document: Document) {
     }
 
     fun hasHeaders(common: Common): Boolean {
-        return !common.headers.isNullOrEmpty()
+        return common.headers.isNotEmpty()
     }
 
     fun hasParameters(common: Common): Boolean {
-        return !common.parameters.isNullOrEmpty()
+        return common.parameters.isNotEmpty()
     }
 
     fun hasResponseDataObjects(common: Common): Boolean {
@@ -107,7 +109,7 @@ class ObjectInspectionHelper(val document: Document) {
     }
 
     fun hasParameters(method: Method): Boolean {
-        return !method.parameters.isNullOrEmpty()
+        return method.parameters.fields.isNotEmpty()
     }
 
     fun getParameters(typeSpec: Method) : ArrayList<Field> {
