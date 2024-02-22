@@ -73,7 +73,7 @@ private fun <T> mapEnumOfType(
     values.forEach {
         value(
             value = keyType.parse(it.value),
-            longName = it.longName,
+            longName = if (keyType is DataType.StringType) it.longName ?: it.value else requireNotNull(it.longName) { "'longName' must not be blank for numeric key enums" },
             description = it.description
         )
     }
@@ -236,7 +236,7 @@ private fun <T> mapEnumOfType(
     values.forEach {
         value(
             value = keyType.parse(it.value),
-            longName = it.longName,
+            longName = if (keyType is DataType.StringType) it.longName ?: it.value else requireNotNull(it.longName) { "'longName' must not be blank for numeric key enums" },
             description = it.description
         )
     }

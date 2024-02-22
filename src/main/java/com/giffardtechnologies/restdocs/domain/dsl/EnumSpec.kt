@@ -17,6 +17,7 @@ open class EnumSpecConfiguration<T> protected constructor() {
     private val valuesByKey: MutableMap<T, EnumConstant<T>> = LinkedHashMap()
     private val valuesByName: MutableMap<String, EnumConstant<T>> = LinkedHashMap()
 
+    // TODO duplicate code
     fun value(value: T, longName: String, description: String? = null) {
         val existingEnumConstantByKey = valuesByKey[value]
         val existingEnumConstantByName = valuesByName[longName]
