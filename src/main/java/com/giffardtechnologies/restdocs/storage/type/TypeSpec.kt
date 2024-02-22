@@ -52,6 +52,9 @@ open class TypeSpec(
                     }
                 }
                 DataType.ENUM -> {
+                    if (key == KeyType.ENUM) {
+                        throw ValidationException("$classString of 'enum' type cannot have a 'key' of type 'enum'")
+                    }
                     if (values == null) {
                         throw ValidationException("$classString of 'enum' type must define 'values'")
                     }
