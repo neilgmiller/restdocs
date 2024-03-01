@@ -20,6 +20,23 @@ import java.util.stream.Stream
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
 sealed interface FieldListElement
 
+fun List<FieldListElement>.validateHasNoDuplicates() {
+    val duplicates = this.filterIsInstance(Field::class.java).groupingBy { it.name }.eachCount().filter { it.value > 1 }
+    if (duplicates.isNotEmpty()) {
+        throw ValidationException("Object has duplicate field names: $duplicates")
+    }
+    val duplicateLongNames = this.filterIsInstance(Field::class.java).groupingBy { it.longName }.eachCount().filter { it.value > 1 }
+    if (duplicateLongNames.isNotEmpty()) {
+        throw ValidationException("Object has duplicate field long names: $duplicateLongNames")
+    }
+//    groupingBy {
+//        when (it) {
+//            is Field -> it.longName
+//            is FieldListIncludeElement -> TODO()
+//        }
+}
+
+
 /**
  * A class for including the fields of data object inline with a list of fields
  */

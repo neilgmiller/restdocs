@@ -42,6 +42,7 @@ open class TypeSpec(
                     if (fields == null) {
                         throw ValidationException("$classString of 'object' type must define 'fields'")
                     }
+                    fields.validateHasNoDuplicates()
                 }
                 DataType.COLLECTION -> {
                     if (key == null) {

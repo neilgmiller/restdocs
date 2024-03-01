@@ -6,6 +6,7 @@ import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.type.Field
 import com.giffardtechnologies.restdocs.storage.type.FieldListElement
+import com.giffardtechnologies.restdocs.storage.type.validateHasNoDuplicates
 
 class DataObject(
     val name: String,
@@ -24,6 +25,7 @@ class DataObject(
             if (validationContext.referencableTypes.contains(name)) {
                 throw ValidationException("An data object or enumeration already exists with the name: \"$name\"")
             } else {
+                fields.validateHasNoDuplicates()
                 validationContext.referencableTypes.add(name)
             }
         }
