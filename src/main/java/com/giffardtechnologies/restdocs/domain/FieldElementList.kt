@@ -97,7 +97,7 @@ class FieldElementList(
     ): TypeSpec {
         return when (typeSpec) {
             is TypeSpec.TypeRefSpec -> {
-                getIncludedFieldTypeSpec(typeSpec.typeRef.type, childPathElements, newPath)
+                getIncludedFieldTypeSpec(typeSpec.typeRef.value.type, childPathElements, newPath)
             }
             is TypeSpec.ObjectSpec -> {
                 TypeSpec.ObjectSpec(

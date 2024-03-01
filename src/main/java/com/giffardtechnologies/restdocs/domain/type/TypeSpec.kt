@@ -62,7 +62,7 @@ sealed interface TypeSpec {
     }
     data class EnumSpec<T>(val key: DataType.BasicKey<T>, val values: Array<EnumConstant<T>>) : Nameable
     data class TypeRefSpec(val referenceName: String, val context: Context) : TypeSpec {
-        val typeRef: NamedType<*> = checkNotNull(context.getTypeByName(referenceName)) { "'$referenceName' does not match any type in context" }
+        val typeRef: Lazy<NamedType<*>> = lazy { checkNotNull(context.getTypeByName(referenceName)) { "'$referenceName' does not match any type in context" } }
     }
     sealed interface CollectionSpec: TypeSpec
     data class ArraySpec(val items: TypeSpec) : CollectionSpec
