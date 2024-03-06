@@ -1,11 +1,7 @@
 package com.giffardtechnologies.restdocs.codegen
 
-import com.giffardtechnologies.restdocs.domain.DataObject
 import com.giffardtechnologies.restdocs.domain.Document
-import com.giffardtechnologies.restdocs.domain.Response
-import com.giffardtechnologies.restdocs.domain.type.DataType
-import com.giffardtechnologies.restdocs.domain.type.Field
-import com.giffardtechnologies.restdocs.domain.type.NamedType
+import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.google.common.base.CaseFormat
 import java.util.*
@@ -13,7 +9,7 @@ import java.util.regex.MatchResult
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-fun Field.toClassName(parent: DataObject?, asInner: Boolean = false): String {
+fun Field.toClassName(asInner: Boolean = false): String {
     var name = longName
     if (type is TypeSpec.ArraySpec && type.items is TypeSpec.ObjectSpec) {
         if (name.endsWith("List")) {
@@ -25,8 +21,8 @@ fun Field.toClassName(parent: DataObject?, asInner: Boolean = false): String {
         }
     }
     val className = fieldNameToClassStyle(name)
-    return if (parent != null && !className.startsWith(parent.typeName) && !asInner) {
-        parent.typeName + className
+    return if (parentName != null && !className.startsWith(parentName) && !asInner) {
+        parentName + className
     } else {
         className
     }
@@ -41,6 +37,25 @@ fun fieldNameToClassStyle(input: String): String {
     }
     classStyle = classStyle.replace("Id(s)?([A-Z].*)?$".toRegex(), "ID$1$2")
     return classStyle
+}
+
+fun fieldToClassStyle(field: Field, parentName: String? = null, asInner: Boolean = false): String {
+    var name = field.longName
+    if (field.type is TypeSpec.ArraySpec && field.type.items is TypeSpec.ObjectSpec) {
+        if (name.endsWith("List")) {
+            name = name.substring(0, name.length - 4)
+        } else if (name.endsWith("ies")) {
+            name = name.replace("ies$".toRegex(), "y")
+        } else if (name.endsWith("s") && !name.endsWith("ss")) {
+            name = name.substring(0, name.length - 1)
+        }
+    }
+    val className = fieldNameToClassStyle(name)
+    return if (parentName != null && !className.startsWith(parentName) && !asInner) {
+        parentName + className
+    } else {
+        className
+    }
 }
 
 fun toConstantStyle(input: String): String {
@@ -159,25 +174,6 @@ class ModelExts(private val mDocument: Document) {
         return classStyle
     }
 
-//    fun fieldToClassStyle(field: Field, asInner: Boolean = false): String {
-//        val parent: NamedType<*> = field.getParent()
-//        var name = field.longName
-//        if (field.type === DataType.ARRAY && field.items.type === DataType.OBJECT) {
-//            if (name.endsWith("List")) {
-//                name = name.substring(0, name.length - 4)
-//            } else if (name.endsWith("ies")) {
-//                name = name.replace("ies$".toRegex(), "y")
-//            } else if (name.endsWith("s") && !name.endsWith("ss")) {
-//                name = name.substring(0, name.length - 1)
-//            }
-//        }
-//        val className = fieldNameToClassStyle(name)
-//        return if (parent != null && !className.startsWith(parent.typeName) && !asInner) {
-//            parent.typeName + className
-//        } else {
-//            className
-//        }
-//    }
 
 //    fun responseClass(requestClassName: String, response: Response?): String? {
 //        Objects.requireNonNull(requestClassName, "A requestClassName is required")
