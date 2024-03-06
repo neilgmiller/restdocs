@@ -7,9 +7,12 @@ import com.allego.util.futureproofenum.FutureProof
 import com.allego.util.futureproofenum.IntId
 import com.allego.util.futureproofenum.LongId
 import com.allego.util.futureproofenum.StringId
+import com.giffardtechnologies.restdocs.codegen.DataObjectProcessor
+import com.giffardtechnologies.restdocs.codegen.FieldAndTypeProcessor
+import com.giffardtechnologies.restdocs.codegen.MethodProcessor
+import com.giffardtechnologies.restdocs.codegen.ObjectProcessor
 import com.giffardtechnologies.restdocs.codegen.convertToEnumConstantStyle
 import com.giffardtechnologies.restdocs.codegen.fieldNameToClassStyle
-import com.giffardtechnologies.restdocs.codegen.toConstantStyle
 import com.giffardtechnologies.restdocs.domain.FieldReference
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration
 import com.giffardtechnologies.restdocs.domain.type.DataType
@@ -20,10 +23,8 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
 import java.io.File
-import java.util.*
 
 class KotlinGenerator {
 
@@ -66,14 +67,19 @@ class KotlinGenerator {
             processEnum(namedEnumeration, options.codeDirectory, options.dtoPackage)
         }
 
+        val fieldAndTypeProcessor = FieldAndTypeProcessor(options.dtoPackage, options.dtoPackage)
+        val objectProcessor = ObjectProcessor(options.codeDirectory, fieldAndTypeProcessor)
+        val dataObjectProcessor = DataObjectProcessor(options.dtoPackage, objectProcessor)
+
         document.dataObjects.filter { !it.isHidden }.forEach { dataObject ->
-
+            dataObjectProcessor.generateDataObjectClassFile(dataObject)
         }
 
-        for (namedEnumeration in document.enumerations) {
-            processEnum(namedEnumeration, options.codeDirectory, options.dtoPackage)
-        }
+        val methodProcessor = MethodProcessor(options.codeDirectory, options.dtoPackage + ".request", options.dtoPackage, fieldAndTypeProcessor)
 
+        document.service?.methods?.forEach {
+            methodProcessor.processMethod(it)
+        }
     }
 
     /**
@@ -190,6 +196,5 @@ class KotlinGenerator {
             return builder.build()
         }
     }
-
 
 }
