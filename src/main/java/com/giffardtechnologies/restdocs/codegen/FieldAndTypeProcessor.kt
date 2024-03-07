@@ -27,8 +27,20 @@ class FieldAndTypeProcessor(
     fun createPropertySpec(
         field: Field,
         useFutureProofEnum: Boolean = true,
-        objectClassName: ClassName? = null,
+        objectClassName: ClassName,
         initializeCollections: Boolean = true
+    ): PropertySpec {
+        return createPropertySpec(field, useFutureProofEnum, initializeCollections, objectClassName) { parentClassName, subField ->
+            parentClassName.nestedClass(subField.toObjectName())
+        }
+    }
+
+    fun createPropertySpec(
+        field: Field,
+        useFutureProofEnum: Boolean = true,
+        initializeCollections: Boolean = true,
+        objectClassName: ClassName,
+        subObjectClassNameFactory: (ClassName, Field) -> ClassName
     ): PropertySpec {
         val isNullable = (!field.isRequired && field.defaultValue == null) && !(field.type is ArraySpec || field.type is MapSpec<*>)
         val fieldBuilder = PropertySpec.builder(
@@ -38,7 +50,7 @@ class FieldAndTypeProcessor(
                 !isNullable,
                 false,
                 useFutureProofEnum,
-                objectClassName,
+                subObjectClassNameFactory = { field -> subObjectClassNameFactory(objectClassName, field) },
                 parentField = field,
             ),
         )
@@ -71,9 +83,9 @@ class FieldAndTypeProcessor(
                 is MapSpec<*> -> fieldBuilder.initializer("mapOf()")
                 is TypeSpec.EnumSpec<*> -> {
                     val className = if (field.type is TypeSpec.TypeRefSpec) {
-                        ClassName(typeRefPackage, getFieldClassName(field))
+                        ClassName(typeRefPackage, field.toObjectName())
                     } else {
-                        objectClassName ?: ClassName(subObjectPackage, getFieldClassName(field))
+                        subObjectClassNameFactory(objectClassName, field)
                     }
                     if (useFutureProofEnum) {
                         // TODO convert default to value
@@ -99,21 +111,11 @@ class FieldAndTypeProcessor(
         return fieldBuilder.build()
     }
 
-    fun getFieldClassName(field: Field): String {
-//        if (field.lazyContext.dummy != null) {
-//            val myTest: Int = field.lazyContext.dummy
-//        }
-        return if (field.type is TypeSpec.TypeRefSpec) {
-            field.type.referenceName
-        } else {
-            field.toClassName()
-        }
-    }
 
     fun getFieldInnerClassName(dataObject: DataObject, field: Field): String {
         require(field.type !is TypeSpec.TypeRefSpec) { "Passed fields cannot be a TypeRef" }
         // TODO: 2/10/21 figure out override for this variable (maybe, this is old)
-        return field.toClassName(asInner = true)
+        return field.toClassNameStyle(asInner = true)
     }
 
     fun getEffectiveFieldType(field: Field): TypeSpec {
@@ -164,8 +166,8 @@ class FieldAndTypeProcessor(
         required: Boolean,
         convertIntBoolean: Boolean = false,
         futureProofEnum: Boolean = true,
-        objectTypeName: TypeName? = null,
-        parentField: Field? = null, // TODO hierarchy!!
+        subObjectClassNameFactory: (Field) -> ClassName,
+        parentField: Field,
     ): TypeName {
         val typeName = when (typeSpec) {
             is TypeSpec.BitSetSpec<*> -> Int::class.asTypeName() // TODO()
@@ -174,26 +176,14 @@ class FieldAndTypeProcessor(
             is MapSpec<*> -> Int::class.asTypeName() // TODO()
             is TypeSpec.DataSpec -> getBasicTypeName(typeSpec.type)
             is TypeSpec.EnumSpec<*> -> {
-                objectTypeName ?: if (parentField != null) {
-                    ClassName(
-                        subObjectPackage,
-                        parentField.toClassName(asInner = true)
-                    )
-                } else {
-                    throw IllegalStateException("Raw enum type specified, cannot generate name.")
-                }
+                subObjectClassNameFactory(parentField)
             }
 
             is TypeSpec.ObjectSpec -> {
-                objectTypeName
-                    ?: if (parentField != null) {
-                        ClassName(subObjectPackage, parentField.toClassName())
-                    } else {
-                        Any::class.asClassName()
-                    }
+                subObjectClassNameFactory(parentField)
             }
 
-            is TypeSpec.TypeRefSpec -> Int::class.asTypeName() // TODO()
+            is TypeSpec.TypeRefSpec -> ClassName(typeRefPackage, typeSpec.referenceName)
 
 //            DATE -> return ClassName.get(LocalDate::class.java)
 //            COLLECTION -> return ParameterizedTypeName.get(
@@ -260,4 +250,5 @@ class FieldAndTypeProcessor(
             DataType.StringType -> String::class.asTypeName()
         }
     }
+
 }

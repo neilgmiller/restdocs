@@ -7,9 +7,12 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import org.apache.commons.lang3.StringUtils
 import java.io.File
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec as DomainTypeSpec
@@ -20,24 +23,27 @@ class MethodProcessor(
     private val requestsPackage: String,
     private val typeRefPackage: String,
     private val fieldAndTypeProcessor: FieldAndTypeProcessor,
+    enumProcessor: EnumProcessor,
     private val usePath: Boolean = false,
+    supportPackage: String = "$requestsPackage.support",
 ) {
 
     private val mAuthenticatedAllegoRequestClassName = ClassName(
-        "$requestsPackage.support",
+        supportPackage,
         "AllegoAuthenticatedRequest"
     )
 
     private val mAllegoRequestClassName = ClassName(
-        "$requestsPackage.support",
+        supportPackage,
         "AllegoOpenRequest"
     )
+
     private val mAllegoPathAndBodyRequestClassName: ClassName = ClassName(
-        "$requestsPackage.support",
+        supportPackage,
         "AllegoBodyStackRequest"
     )
 
-    private val objectProcessor: ObjectProcessor = ObjectProcessor(codeDirectory, fieldAndTypeProcessor)
+    private val objectProcessor: ObjectProcessor = ObjectProcessor(codeDirectory, fieldAndTypeProcessor, enumProcessor)
 
     private data class ResponseClassDefinition(val className: ClassName, val typeSpec: TypeSpec? = null)
 
@@ -67,47 +73,69 @@ class MethodProcessor(
             .addSuperclassConstructorParameter("%L", method.id!!)
             .addModifiers(KModifier.PUBLIC)
 
-        val paramsClassName = if (method.parameters.isEmpty) {
+        if (method.parameters.isEmpty) {
             requestClassBuilder.addSuperclassConstructorParameter("%N", "Unit")
             Unit::class.asClassName()
         } else {
-            ClassName(
+            val paramsClassName = ClassName(
                 requestsPackage,
                 requestClassNameStr,
                 "Params"
             )
-        }
 
-        if (!method.parameters.isEmpty) {
+            val paramsTypeSpec = objectProcessor.processObjectToTypeSpec(
+                paramsClassName,
+                method.parameters,
+                useFutureProofEnum = false,
+                completeConstructor = true,
+                subObjectClassNameFactory = { parentClassName, field ->
+                    if (parentClassName == paramsClassName) {
+                        requestClassName.nestedClass(fieldToClassStyle(field, parentClassName.simpleName, asInner = true))
+                    } else {
+                        parentClassName.nestedClass(fieldToClassStyle(field, parentClassName.simpleName, asInner = true))
+                    }
+                },
+                subObjectTypeSpecHandler = { classBuilder, subObjectClassName, subObjectTypeSpec ->
+                    if (subObjectClassName.enclosingClassName() == requestClassName) {
+                        requestClassBuilder.addType(subObjectTypeSpec)
+                    } else {
+                        classBuilder.addType(subObjectTypeSpec)
+                    }
+                }
+            )
+            requestClassBuilder.addType(paramsTypeSpec)
+
             // make the constructor that the builder will use
-            val constructorBuilder = FunSpec.constructorBuilder().addModifiers(KModifier.PRIVATE)
+            val constructorBuilder = FunSpec.constructorBuilder()
 
             val formatBuilder = StringBuilder("Params(")
             val parameterNames = ArrayList<String>()
 
-            constructorBuilder.addParameter("params", paramsClassName)
             method.parameters.forEach { field ->
                 // largely copied code from ObjectProcessor
-                val propertySpec = fieldAndTypeProcessor.createPropertySpec(field, false)
-                if (!propertySpec.type.isNullable) {
-                    constructorBuilder.addParameter(field.longName, propertySpec.type)
+                val propertySpec =
+                    fieldAndTypeProcessor.createPropertySpec(field, false, objectClassName = requestClassName)
+                if (propertySpec.type.isNullable) {
+                    constructorBuilder.addParameter(
+                        ParameterSpec.builder(field.longName, propertySpec.type).defaultValue("null").build()
+                    )
                 } else {
                     constructorBuilder.addParameter(field.longName, propertySpec.type)
                 }
-                formatBuilder.append("%N")
+                formatBuilder.append("%N,")
                 parameterNames.add(field.longName)
 
-                if (field.type is DomainTypeSpec.ObjectSpec) {
-                    val subObjectClassName = objectProcessor.getSubObjectClassName(requestClassName, field, false)
-                    val subObjectTypeSpec =
-                        objectProcessor.processObjectToTypeSpec(subObjectClassName, field.type, false)
-//                if (forceTopLevel) {
-//                    // TODO this could be more cleanly separated or parent method named - write vs process
-//                    writeClassToFile(subObjectClassName, subObjectTypeSpec)
-//                } else {
-                    requestClassBuilder.addType(subObjectTypeSpec)
+//                if (field.type is DomainTypeSpec.ObjectSpec) {
+//                    val subObjectClassName = objectProcessor.getSubObjectClassName(requestClassName, field, false)
+//                    val subObjectTypeSpec =
+//                        objectProcessor.processObjectToTypeSpec(subObjectClassName, field.type, false)
+////                if (forceTopLevel) {
+////                    // TODO this could be more cleanly separated or parent method named - write vs process
+////                    writeClassToFile(subObjectClassName, subObjectTypeSpec)
+////                } else {
+//                    requestClassBuilder.addType(subObjectTypeSpec)
+////                }
 //                }
-                }
             }
             formatBuilder.append(")")
 
@@ -116,75 +144,27 @@ class MethodProcessor(
             requestClassBuilder.primaryConstructor(constructorBuilder.build())
         }
 
-//        if (method.parameters.isEmpty) {
-//            addMinimalConstructor(method, requestClassName, requestClassBuilder)
-//        } else {
-//            if (method.parameters.size() < 3) {
-//                addMinimalConstructor(method, requestClassName, requestClassBuilder)
-//            }
-//
-//            // prepare the params data object
-//            val paramsObjectPackage = "$requestsPackage.$requestClassNameStr"
-////            for (field in method.getParameters()) {
-////                if (field.getLongName().equalsIgnoreCase(method.name + "id")) {
-////                    field.setLongName("id")
-////                }
-////            }
-//
-//            TypeSpec.interfaceBuilder(ClassName(requestClassName.packageName, requestClassName.simpleName, "RequestConfig"))
-//
-//            val groupedParameters = method.parameters.groupBy { it.isRequired }
-//            val requiredParameters = groupedParameters[true]
-//            val optionalParameters = groupedParameters[false]
-//
-//            val builder = FunSpec.builder("build")
-//
-//            TypeSpec.companionObjectBuilder()
-//                .addFunction(
-//                    builder.build()
-//                )
-//
-//            requestClassBuilder.addType()
+        requestClassBuilder.addFunction(
+            FunSpec.builder("deserializeResponse")
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter("jsonElement", JsonElement::class.asClassName())
+                .returns(responseClassDefinition.className)
+                .addCode("return %T.%T(jsonElement)", Json::class.asClassName(), ClassName("kotlinx.serialization.json", "decodeFromJsonElement"))
+                .build()
+        )
 
-//            // build the Params inner class
-//            val copyableClassName = ClassName.get("com.allego.api.client2.requests.support", "Copyable")
-//            val paramsSuperClass = ParameterizedTypeName.get(copyableClassName, paramsClassName)
-//            val paramsBuilder = TypeSpec.classBuilder(paramsClassName)
-//                .superclass(paramsSuperClass)
-//                .addSuperinterface(Cloneable::class.java)
-//                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-//            processParams(method, requestClassName, paramsBuilder)
-//            requestClassBuilder.addType(paramsBuilder.build())
-//            for (field in method.parameters) {
-//                var typeSpec: TypeSpec? = null
-//                if (field.getType() === DataType.OBJECT) {
-//                    val fieldDataObject = DataObject()
-//                    fieldDataObject.setFields(field.getFields())
-//                    fieldDataObject.setName(getFieldClassName(field))
-//                    typeSpec = paramsDataObjectProcessor.processDataObjectToBuilder(fieldDataObject)
-//                        .addModifiers(Modifier.STATIC)
-//                        .build()
-//                }
-//                if (field.getType() === DataType.ENUM) {
-//                    val fieldEnumeration = NamedEnumeration()
-//                    fieldEnumeration.setValues(field.getValues())
-//                    fieldEnumeration.setKey(field.getKey())
-//                    fieldEnumeration.setName(getFieldClassName(field))
-//                    typeSpec = processEnumToTypeSpec(fieldEnumeration, paramsObjectPackage, false)
-//                }
-//                if (field.getType() === DataType.ARRAY && field.getItems().getType() === DataType.OBJECT) {
-//                    val fieldDataObject = DataObject()
-//                    fieldDataObject.setFields(field.getItems().getFields())
-//                    fieldDataObject.setName(getFieldClassName(field))
-//                    typeSpec = paramsDataObjectProcessor.processDataObjectToBuilder(fieldDataObject)
-//                        .addModifiers(Modifier.STATIC)
-//                        .build()
-//                }
-//                if (typeSpec != null) {
-//                    requestClassBuilder.addType(typeSpec)
-//                }
-//            }
-//        }
+        TypeSpec.interfaceBuilder(ClassName(requestClassName.packageName, requestClassName.simpleName, "RequestConfig"))
+
+        val groupedParameters = method.parameters.groupBy { it.isRequired }
+        val requiredParameters = groupedParameters[true]
+        val optionalParameters = groupedParameters[false]
+
+        val builder = FunSpec.builder("build")
+
+        TypeSpec.companionObjectBuilder()
+            .addFunction(
+                builder.build()
+            )
 
         file(requestClassName) {
             addType(requestClassBuilder.build())

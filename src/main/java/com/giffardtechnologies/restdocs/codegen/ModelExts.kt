@@ -4,12 +4,13 @@ import com.giffardtechnologies.restdocs.domain.Document
 import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.google.common.base.CaseFormat
+import com.squareup.kotlinpoet.ClassName
 import java.util.*
 import java.util.regex.MatchResult
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-fun Field.toClassName(asInner: Boolean = false): String {
+fun Field.toClassNameStyle(asInner: Boolean = false): String {
     var name = longName
     if (type is TypeSpec.ArraySpec && type.items is TypeSpec.ObjectSpec) {
         if (name.endsWith("List")) {
@@ -80,6 +81,15 @@ fun convertToEnumConstantStyle(longName: String): String {
         toConstantStyle(longName)
     }
 }
+
+fun Field.toObjectName(): String { // TODO dtoPackage: String
+    return if (type is TypeSpec.TypeRefSpec) {
+        type.referenceName
+    } else {
+        toClassNameStyle()
+    }
+}
+
 @Suppress("unused")
 class ModelExts(private val mDocument: Document) {
 

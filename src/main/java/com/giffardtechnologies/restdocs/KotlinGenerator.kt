@@ -1,29 +1,12 @@
 package com.giffardtechnologies.restdocs
 
-import com.allego.api.client.futureproof.EnumID
-import com.allego.api.client.futureproof.ImmutableEnumID
-import com.allego.meter.file
-import com.allego.util.futureproofenum.FutureProof
-import com.allego.util.futureproofenum.IntId
-import com.allego.util.futureproofenum.LongId
-import com.allego.util.futureproofenum.StringId
 import com.giffardtechnologies.restdocs.codegen.DataObjectProcessor
+import com.giffardtechnologies.restdocs.codegen.EnumProcessor
 import com.giffardtechnologies.restdocs.codegen.FieldAndTypeProcessor
 import com.giffardtechnologies.restdocs.codegen.MethodProcessor
 import com.giffardtechnologies.restdocs.codegen.ObjectProcessor
-import com.giffardtechnologies.restdocs.codegen.convertToEnumConstantStyle
-import com.giffardtechnologies.restdocs.codegen.fieldNameToClassStyle
 import com.giffardtechnologies.restdocs.domain.FieldReference
-import com.giffardtechnologies.restdocs.domain.NamedEnumeration
-import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.mappers.mapToModel
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asClassName
 import java.io.File
 
 class KotlinGenerator {
@@ -63,137 +46,31 @@ class KotlinGenerator {
 //
 //        }
 
+        val enumProcessor = EnumProcessor(options.codeDirectory, options.dtoPackage)
+
         for (namedEnumeration in document.enumerations) {
-            processEnum(namedEnumeration, options.codeDirectory, options.dtoPackage)
+            enumProcessor.processEnum(namedEnumeration)
         }
 
         val fieldAndTypeProcessor = FieldAndTypeProcessor(options.dtoPackage, options.dtoPackage)
-        val objectProcessor = ObjectProcessor(options.codeDirectory, fieldAndTypeProcessor)
+        val objectProcessor = ObjectProcessor(options.codeDirectory, fieldAndTypeProcessor, enumProcessor)
         val dataObjectProcessor = DataObjectProcessor(options.dtoPackage, objectProcessor)
 
         document.dataObjects.filter { !it.isHidden }.forEach { dataObject ->
             dataObjectProcessor.generateDataObjectClassFile(dataObject)
         }
 
-        val methodProcessor = MethodProcessor(options.codeDirectory, options.dtoPackage + ".request", options.dtoPackage, fieldAndTypeProcessor)
+        val methodProcessor = MethodProcessor(
+            options.codeDirectory,
+            options.dtoPackage + ".request",
+            options.dtoPackage,
+            fieldAndTypeProcessor,
+            enumProcessor,
+            supportPackage = "com.allego.api.client.requests.support"
+        )
 
         document.service?.methods?.forEach {
             methodProcessor.processMethod(it)
-        }
-    }
-
-    /**
-     * @param namedEnumeration   the enumeration to process
-     * @param enumPackage        the package where teh enum should be placed
-     * @param useFutureProofEnum whether the enum should be generating using [FutureProof] annotations
-     */
-    private fun processEnum(
-        namedEnumeration: NamedEnumeration,
-        codeDirectory: File,
-        enumPackage: String,
-        useFutureProofEnum: Boolean = true
-    ) {
-        val typeSpec: TypeSpec = processEnumToTypeSpec(namedEnumeration, enumPackage, useFutureProofEnum)
-        val fileSpec = file(enumPackage, namedEnumeration.typeName) {
-            addType(typeSpec)
-        }
-
-//        val enumPackageDirectory = File(codeDirectory, enumPackage.replace('.', '/'))
-//        enumPackageDirectory.parentFile.mkdirs()
-        fileSpec.writeTo(codeDirectory)
-    }
-
-    private fun processEnumToTypeSpec(
-        namedEnumeration: NamedEnumeration,
-        enumPackage: String,
-        useFutureProofEnum: Boolean
-    ): TypeSpec {
-        val enumClassName = ClassName(enumPackage, namedEnumeration.typeName)
-        return processEnumToTypeSpec(namedEnumeration, enumClassName, useFutureProofEnum)
-    }
-
-    private fun processEnumToTypeSpec(
-        namedEnumeration: NamedEnumeration,
-        enumClassName: ClassName,
-        useFutureProofEnum: Boolean
-    ): TypeSpec {
-        return if (useFutureProofEnum) {
-            val enumKeyTypeClass = when (namedEnumeration.type.key) {
-                DataType.IntType -> {
-                    Int::class
-                }
-
-                DataType.LongType -> {
-                    Long::class
-                }
-
-                DataType.StringType -> {
-                    String::class
-                }
-            }
-            val builder = TypeSpec.classBuilder(enumClassName).addModifiers(KModifier.SEALED)
-                .primaryConstructor(FunSpec.constructorBuilder().addParameter("id", enumKeyTypeClass).build())
-                .addSuperinterface(
-                    superinterface = EnumID::class.asClassName().parameterizedBy(enumKeyTypeClass.asClassName()),
-                    delegate = CodeBlock.of("%T(id)", ImmutableEnumID::class.asClassName())
-                )
-            for (enumConstant in namedEnumeration.type.values) {
-                var enumConstantValue = enumConstant.value
-                if (namedEnumeration.type.key === DataType.StringType) {
-                    enumConstantValue = "\"" + enumConstantValue + "\""
-                }
-                val enumConstantClassName = fieldNameToClassStyle(enumConstant.longName)
-                builder.addType(
-                    TypeSpec.objectBuilder(enumConstantClassName).addModifiers(KModifier.DATA).superclass(enumClassName)
-                        .addSuperclassConstructorParameter(CodeBlock.of("%L", enumConstantValue)).build()
-                )
-            }
-            builder.build()
-        } else {
-            TODO("what approach")
-            val builder = TypeSpec.enumBuilder(enumClassName).addModifiers(KModifier.PUBLIC)
-            val enumKeyTypeClass = when (namedEnumeration.type.key) {
-                DataType.IntType -> {
-                    builder.addSuperinterface(IntId::class.asClassName())
-                    Int::class
-                }
-
-                DataType.LongType -> {
-                    builder.addSuperinterface(LongId::class.asClassName())
-                    Long::class
-                }
-
-                DataType.StringType -> {
-                    builder.addSuperinterface(StringId::class.asClassName())
-                    String::class
-                }
-            }
-            for (enumConstant in namedEnumeration.type.values) {
-                var enumConstantValue = enumConstant.value
-                if (namedEnumeration.type.key === DataType.StringType) {
-                    enumConstantValue = "\"" + enumConstantValue + "\""
-                }
-                builder.addEnumConstant(
-                    convertToEnumConstantStyle(enumConstant.longName)
-                )
-            }
-    //            val idFieldBuilder = FieldSpec.builder(enumKeyTypeClass, "id")
-    //                .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-    //            builder.addField(idFieldBuilder.build())
-    //            builder.addMethod(
-    //                MethodSpec.constructorBuilder()
-    //                    .addParameter(enumKeyTypeClass, "id")
-    //                    .addStatement("\$N = \$N", "this.id", "id")
-    //                    .build()
-    //            )
-    //            builder.addMethod(
-    //                MethodSpec.methodBuilder("getId")
-    //                    .returns(enumKeyTypeClass)
-    //                    .addModifiers(Modifier.PUBLIC)
-    //                    .addStatement("return \$N", "id")
-    //                    .build()
-    //            )
-            return builder.build()
         }
     }
 
