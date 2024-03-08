@@ -1,6 +1,5 @@
 package com.giffardtechnologies.restdocs.codegen
 
-import com.giffardtechnologies.restdocs.codegen.ObjectProcessor.ClassDefinition
 import com.giffardtechnologies.restdocs.domain.DataObject
 import com.squareup.kotlinpoet.ClassName
 

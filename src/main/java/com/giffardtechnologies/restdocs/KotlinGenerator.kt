@@ -1,5 +1,6 @@
 package com.giffardtechnologies.restdocs
 
+import com.allego.meter.file
 import com.giffardtechnologies.restdocs.codegen.DataObjectProcessor
 import com.giffardtechnologies.restdocs.codegen.EnumProcessor
 import com.giffardtechnologies.restdocs.codegen.FieldAndTypeProcessor
@@ -7,6 +8,7 @@ import com.giffardtechnologies.restdocs.codegen.MethodProcessor
 import com.giffardtechnologies.restdocs.codegen.ObjectProcessor
 import com.giffardtechnologies.restdocs.domain.FieldReference
 import com.giffardtechnologies.restdocs.mappers.mapToModel
+import com.squareup.kotlinpoet.FunSpec
 import java.io.File
 
 class KotlinGenerator {
@@ -72,6 +74,8 @@ class KotlinGenerator {
         document.service?.methods?.forEach {
             methodProcessor.processMethod(it)
         }
+
+        enumProcessor.writeSupportingFiles()
     }
 
 }

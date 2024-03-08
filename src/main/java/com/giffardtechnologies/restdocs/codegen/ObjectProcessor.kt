@@ -7,6 +7,7 @@ import com.giffardtechnologies.restdocs.domain.type.TypeSpec.Nameable
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ObjectSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.TypeSpec
 import io.vavr.collection.Array
@@ -18,8 +19,6 @@ class ObjectProcessor(
     private val fieldAndTypeProcessor: FieldAndTypeProcessor,
     private val enumProcessor: EnumProcessor,
 ) {
-
-    data class ClassDefinition(val className: ClassName, val typeSpec: TypeSpec)
 
     fun writeClassToFile(classDefinition: ClassDefinition) {
         writeClassToFile(classDefinition.className, classDefinition.typeSpec)
@@ -73,8 +72,7 @@ class ObjectProcessor(
         subObjectTypeSpecHandler: (TypeSpec.Builder, ClassName, TypeSpec) -> Unit,
     ): TypeSpec {
         val classBuilder = TypeSpec.classBuilder(className)
-
-        classBuilder.addAnnotation(Serializable::class)
+            .addAnnotation(Serializable::class)
 
         val constructorBuilder = FunSpec.constructorBuilder()
         fields.forEach { field ->

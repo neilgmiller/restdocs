@@ -10,13 +10,16 @@ import com.allego.util.futureproofenum.StringId
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration
 import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.EnumSpec
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.Import
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import kotlinx.serialization.Serializable
 import java.io.File
 
 /**
@@ -27,6 +30,9 @@ class EnumProcessor(
     private val codeDirectory: File,
     private val enumPackage: String,
 ) {
+
+    private val toFunctions = mutableListOf<FunSpec>()
+    private val serializers = mutableListOf<TypeSpec>()
 
     /**
      * @param namedEnumeration   the enumeration to process
@@ -41,8 +47,6 @@ class EnumProcessor(
             addType(typeSpec)
         }
 
-//        val enumPackageDirectory = File(codeDirectory, enumPackage.replace('.', '/'))
-//        enumPackageDirectory.parentFile.mkdirs()
         fileSpec.writeTo(codeDirectory)
     }
 
@@ -51,36 +55,37 @@ class EnumProcessor(
         useFutureProofEnum: Boolean
     ): TypeSpec {
         val enumClassName = ClassName(enumPackage, namedEnumeration.typeName)
-        return processEnumToTypeSpec(enumClassName, namedEnumeration.type, useFutureProofEnum)
+        return processEnumToTypeSpec(enumClassName, namedEnumeration.type, useFutureProofEnum, isNamed = true)
     }
 
     fun processEnumToTypeSpec(
         enumClassName: ClassName,
         enumSpec: EnumSpec<*>,
-        useFutureProofEnum: Boolean
+        useFutureProofEnum: Boolean,
+        isNamed: Boolean = false,
     ): TypeSpec {
         return if (useFutureProofEnum) {
             val enumKeyTypeClass = when (enumSpec.key) {
-                DataType.IntType -> {
-                    Int::class
-                }
-
-                DataType.LongType -> {
-                    Long::class
-                }
-
-                DataType.StringType -> {
-                    String::class
-                }
+                DataType.IntType -> Int::class
+                DataType.LongType -> Long::class
+                DataType.StringType -> String::class
             }
+
+            val serializerClassName = ClassName("$enumPackage.serialization", "${enumClassName.buildNamePrefix()}Serializer")
+
             val builder = TypeSpec.classBuilder(enumClassName).addModifiers(KModifier.SEALED)
                 .primaryConstructor(FunSpec.constructorBuilder().addParameter("id", enumKeyTypeClass).build())
                 .addSuperinterface(
                     superinterface = EnumID::class.asClassName().parameterizedBy(enumKeyTypeClass.asClassName()),
                     delegate = CodeBlock.of("%T(id)", ImmutableEnumID::class.asClassName())
                 )
+                .addAnnotation(AnnotationSpec.builder(Serializable::class).addMember("with = %T::class", serializerClassName) .build())
+
+            val mapperFunctionCodeBlockBuilder = CodeBlock.builder().beginControlFlow("return when (this) {")
+
+            val unknownClassName = enumClassName.nestedClass("UnknownValue")
             builder.addType(
-                TypeSpec.classBuilder(enumClassName.nestedClass("Unknown"))
+                TypeSpec.classBuilder(unknownClassName)
                     .primaryConstructor(FunSpec.constructorBuilder().addParameter("id", enumKeyTypeClass).build())
                     .superclass(enumClassName)
                     .addSuperclassConstructorParameter(CodeBlock.of("%N", "id")).build()
@@ -95,7 +100,27 @@ class EnumProcessor(
                     TypeSpec.objectBuilder(enumConstantClassName).addModifiers(KModifier.DATA).superclass(enumClassName)
                         .addSuperclassConstructorParameter(CodeBlock.of("%L", enumConstantValue)).build()
                 )
+                mapperFunctionCodeBlockBuilder.addStatement("%L -> %T", enumConstantValue, enumClassName.nestedClass(enumConstantClassName))
             }
+            mapperFunctionCodeBlockBuilder.addStatement("else -> %T(this)", unknownClassName)
+            mapperFunctionCodeBlockBuilder.endControlFlow()
+
+            val mapperFunctionName = "to${enumClassName.buildNamePrefix()}"
+            toFunctions.add(
+                FunSpec.builder(mapperFunctionName)
+                    .receiver(enumKeyTypeClass)
+                    .returns(enumClassName)
+                    .addCode(mapperFunctionCodeBlockBuilder.build()).build()
+            )
+
+            serializers.add(
+                TypeSpec.classBuilder(serializerClassName)
+                    .superclass(ClassName("com.allego.api.client.futureproof", enumKeyTypeClass.simpleName + "EnumIDSerializer").parameterizedBy(enumClassName))
+                    .addSuperclassConstructorParameter("%S", enumClassName.simpleName)
+                    .addSuperclassConstructorParameter("%L::%T", enumKeyTypeClass.asClassName().simpleName, ClassName("$enumPackage.support", mapperFunctionName))
+                    .build()
+            )
+
             builder.build()
         } else {
             TODO("what approach")
@@ -145,4 +170,27 @@ class EnumProcessor(
         }
     }
 
+    fun writeSupportingFiles() {
+        val mappingsFileName = ClassName("$enumPackage.support", "EnumMappings")
+        file(mappingsFileName) {
+            toFunctions.forEach {
+                addFunction(it)
+            }
+        }.writeTo(codeDirectory)
+
+        file("$enumPackage.serialization", "EnumSerializers") {
+            serializers.forEach { typeSpec ->
+                addType(typeSpec)
+            }
+        }.writeTo(codeDirectory)
+    }
+
+}
+
+private fun ClassName.buildNamePrefix(): String {
+    val stringBuilder = StringBuilder()
+    this.simpleNames.forEach {
+        stringBuilder.append(it)
+    }
+    return stringBuilder.toString()
 }
