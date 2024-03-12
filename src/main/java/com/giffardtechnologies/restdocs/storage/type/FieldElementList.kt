@@ -1,4 +1,4 @@
-package com.giffardtechnologies.restdocs.htmlgen
+package com.giffardtechnologies.restdocs.storage.type
 
 import com.giffardtechnologies.restdocs.model.FieldPath
 import com.giffardtechnologies.restdocs.model.FieldPathLeaf
@@ -6,12 +6,6 @@ import com.giffardtechnologies.restdocs.model.FieldPathSet
 import com.giffardtechnologies.restdocs.model.FieldPathStem
 import com.giffardtechnologies.restdocs.storage.DataObject
 import com.giffardtechnologies.restdocs.storage.Document
-import com.giffardtechnologies.restdocs.storage.type.DataType
-import com.giffardtechnologies.restdocs.storage.type.Field
-import com.giffardtechnologies.restdocs.storage.type.FieldListElement
-import com.giffardtechnologies.restdocs.storage.type.FieldListIncludeElement
-import com.giffardtechnologies.restdocs.storage.type.NamedType
-import com.giffardtechnologies.restdocs.storage.type.TypeSpec
 import io.vavr.collection.Array
 import io.vavr.collection.HashSet
 
