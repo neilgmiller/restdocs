@@ -2,6 +2,7 @@ package com.giffardtechnologies.restdocs.storage
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.giffardtechnologies.restdocs.DocValidator
+import com.giffardtechnologies.restdocs.documentIfAvailable
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.type.Field
@@ -28,6 +29,8 @@ class DataObject(
                 fields.validateHasNoDuplicates()
                 validationContext.referencableTypes.add(name)
             }
+        } else {
+            fields.validateHasNoDuplicates(validationContext.documentIfAvailable)
         }
     }
 

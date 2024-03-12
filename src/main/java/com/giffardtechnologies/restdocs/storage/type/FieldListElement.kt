@@ -7,6 +7,7 @@ import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.model.FieldPath
 import com.giffardtechnologies.restdocs.model.FieldPathSet
 import com.giffardtechnologies.restdocs.model.FieldPathStem
+import com.giffardtechnologies.restdocs.storage.Document
 import io.vavr.collection.Array
 import io.vavr.collection.HashMap
 import io.vavr.collection.HashSet
@@ -20,20 +21,39 @@ import java.util.stream.Stream
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
 sealed interface FieldListElement
 
-fun List<FieldListElement>.validateHasNoDuplicates() {
-    val duplicates = this.filterIsInstance(Field::class.java).groupingBy { it.name }.eachCount().filter { it.value > 1 }
+fun List<FieldListElement>.validateHasNoDuplicates(parentDocument: Document? = null) {
+    val fields = if (parentDocument == null) {
+        this.filterIsInstance(Field::class.java).map { FieldDetails(it) }
+    } else {
+        FieldElementList(parentDocument, this).getFieldDetails()
+    }
+    val duplicates = fields.findDuplicates { it.field.name }
     if (duplicates.isNotEmpty()) {
         throw ValidationException("Object has duplicate field names: $duplicates")
     }
-    val duplicateLongNames = this.filterIsInstance(Field::class.java).groupingBy { it.longName }.eachCount().filter { it.value > 1 }
+    val duplicateLongNames = fields.findDuplicates { it.field.longName }
     if (duplicateLongNames.isNotEmpty()) {
         throw ValidationException("Object has duplicate field long names: $duplicateLongNames")
     }
-//    groupingBy {
-//        when (it) {
-//            is Field -> it.longName
-//            is FieldListIncludeElement -> TODO()
-//        }
+}
+
+private fun List<FieldDetails>.findDuplicates(keySelector: (FieldDetails) -> String): List<DuplicateDetails> {
+    val grouping = this.groupBy(keySelector) { it }
+    val duplicates = grouping.filter { it.value.size > 1 }
+    return duplicates.entries.map { entry ->
+        val includes = entry.value.mapNotNull { it.includedBy?.include }
+        DuplicateDetails(entry.key, entry.value.size, includes)
+    }
+}
+
+data class DuplicateDetails(val name: String, val duplicateCount: Int, val duplicatesIncludedFrom: List<String>) {
+    override fun toString(): String {
+        return if (duplicatesIncludedFrom.isEmpty()) {
+            "'$name' is duplicated $duplicateCount times"
+        } else {
+            "'$name' is duplicated $duplicateCount times, including from data objects: $duplicatesIncludedFrom)"
+        }
+    }
 }
 
 

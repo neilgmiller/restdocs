@@ -9,15 +9,18 @@ import com.giffardtechnologies.restdocs.storage.Document
 import io.vavr.collection.Array
 import io.vavr.collection.HashSet
 
+data class FieldDetails(val field: Field, val includedBy: FieldListIncludeElement? = null)
+
 /**
  * A class that manages a list of fields whether a straight list or a include
  */
 class FieldElementList(
     private val parentDocument: Document,
-    private val fieldListElements: ArrayList<FieldListElement>
+    private val fieldListElements: List<FieldListElement>
 ) {
 
     private var fields: ArrayList<Field>? = null
+    private var fieldDetails: ArrayList<FieldDetails>? = null
     private var parentType: NamedType? = null
 
     private val dataObjectsByName = parentDocument.dataObjects.associateBy { it.name }
@@ -56,6 +59,34 @@ class FieldElementList(
                 }
             }
             fields = newFields
+            newFields
+        }
+    }
+
+    fun getFieldDetails(): ArrayList<FieldDetails> {
+        return fieldDetails ?: run {
+            val newFields = ArrayList<FieldDetails>()
+            for (fieldListElement in fieldListElements) {
+                if (fieldListElement is Field) {
+                    newFields.add(FieldDetails(fieldListElement))
+                } else if (fieldListElement is FieldListIncludeElement) {
+                    val includedObject = dataObjectsByName[fieldListElement.include]
+                        ?: throw IllegalStateException("Cannot find '" + fieldListElement.include)
+                    if (fieldListElement.excluding.isEmpty()) {
+                        newFields.addAll(includedObject.computedFields.map { FieldDetails(it, fieldListElement) })
+                    } else {
+                        val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
+                        val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
+
+                        val fields = includedObject.computedFields
+
+                        newFields.addAll(getIncludedFields(fields, excludingPathSet, Array.empty()).map { FieldDetails(it, fieldListElement) })
+                    }
+                } else {
+                    throw IllegalStateException("Unsupported element type: " + fieldListElement.javaClass.name)
+                }
+            }
+            fieldDetails = newFields
             newFields
         }
     }

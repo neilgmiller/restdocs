@@ -54,11 +54,22 @@ class DocValidator {
         return document
     }
 
+    public interface ValidationContext
 
-    class AccumulatingContext {
+    class AccumulatingContext : ValidationContext {
         val referencableTypes: MutableSet<String> = HashSet()
     }
 
-    data class FullContext(val referencableTypes: VavrSet<String>, val document: DocumentStorageModel)
+    data class FullContext(val referencableTypes: VavrSet<String>, val document: DocumentStorageModel) :
+        ValidationContext
 
 }
+
+val Any?.documentIfAvailable: Document?
+    get() {
+        return if (this is DocValidator.FullContext) {
+            this.document
+        } else {
+            null
+        }
+    }
