@@ -168,6 +168,11 @@ class EnumProcessor(
         }
         if (useFutureProofEnum) {
             mapperFunctionCodeBlockBuilder.addStatement("else -> %T(this)", unknownClassName)
+        } else {
+            mapperFunctionCodeBlockBuilder.addStatement(
+                "else -> throw %T(\"Unsupported value: '\$this'\")",
+                IllegalArgumentException::class.asClassName()
+            )
         }
         mapperFunctionCodeBlockBuilder.endControlFlow()
 
