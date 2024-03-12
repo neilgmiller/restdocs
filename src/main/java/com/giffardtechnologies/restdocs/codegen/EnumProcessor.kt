@@ -14,7 +14,6 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.Import
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
@@ -65,91 +64,36 @@ class EnumProcessor(
         isNamed: Boolean = false,
     ): TypeSpec {
         return if (useFutureProofEnum) {
-            val enumKeyTypeClass = when (enumSpec.key) {
-                DataType.IntType -> Int::class
-                DataType.LongType -> Long::class
-                DataType.StringType -> String::class
-            }
-
-            val serializerClassName = ClassName("$enumPackage.serialization", "${enumClassName.buildNamePrefix()}Serializer")
-
-            val builder = TypeSpec.classBuilder(enumClassName).addModifiers(KModifier.SEALED)
-                .primaryConstructor(FunSpec.constructorBuilder().addParameter("id", enumKeyTypeClass).build())
-                .addSuperinterface(
-                    superinterface = EnumID::class.asClassName().parameterizedBy(enumKeyTypeClass.asClassName()),
-                    delegate = CodeBlock.of("%T(id)", ImmutableEnumID::class.asClassName())
-                )
-                .addAnnotation(AnnotationSpec.builder(Serializable::class).addMember("with = %T::class", serializerClassName) .build())
-
-            val mapperFunctionCodeBlockBuilder = CodeBlock.builder().beginControlFlow("return when (this) {")
-
-            val unknownClassName = enumClassName.nestedClass("UnknownValue")
-            builder.addType(
-                TypeSpec.classBuilder(unknownClassName)
-                    .primaryConstructor(FunSpec.constructorBuilder().addParameter("id", enumKeyTypeClass).build())
-                    .superclass(enumClassName)
-                    .addSuperclassConstructorParameter(CodeBlock.of("%N", "id")).build()
-            )
-            for (enumConstant in enumSpec.values) {
-                var enumConstantValue = enumConstant.value
-                if (enumSpec.key === DataType.StringType) {
-                    enumConstantValue = "\"" + enumConstantValue + "\""
-                }
-                val enumConstantClassName = fieldNameToClassStyle(enumConstant.longName)
-                builder.addType(
-                    TypeSpec.objectBuilder(enumConstantClassName).addModifiers(KModifier.DATA).superclass(enumClassName)
-                        .addSuperclassConstructorParameter(CodeBlock.of("%L", enumConstantValue)).build()
-                )
-                mapperFunctionCodeBlockBuilder.addStatement("%L -> %T", enumConstantValue, enumClassName.nestedClass(enumConstantClassName))
-            }
-            mapperFunctionCodeBlockBuilder.addStatement("else -> %T(this)", unknownClassName)
-            mapperFunctionCodeBlockBuilder.endControlFlow()
-
-            val mapperFunctionName = "to${enumClassName.buildNamePrefix()}"
-            toFunctions.add(
-                FunSpec.builder(mapperFunctionName)
-                    .receiver(enumKeyTypeClass)
-                    .returns(enumClassName)
-                    .addCode(mapperFunctionCodeBlockBuilder.build()).build()
-            )
-
-            serializers.add(
-                TypeSpec.classBuilder(serializerClassName)
-                    .superclass(ClassName("com.allego.api.client.futureproof", enumKeyTypeClass.simpleName + "EnumIDSerializer").parameterizedBy(enumClassName))
-                    .addSuperclassConstructorParameter("%S", enumClassName.simpleName)
-                    .addSuperclassConstructorParameter("%L::%T", enumKeyTypeClass.asClassName().simpleName, ClassName("$enumPackage.support", mapperFunctionName))
-                    .build()
-            )
-
-            builder.build()
+            processEnumToSealedTypeSpec(enumClassName, enumSpec, true)
         } else {
-            TODO("what approach")
-            val builder = TypeSpec.enumBuilder(enumClassName).addModifiers(KModifier.PUBLIC)
-            val enumKeyTypeClass = when (enumSpec.key) {
-                DataType.IntType -> {
-                    builder.addSuperinterface(IntId::class.asClassName())
-                    Int::class
-                }
-
-                DataType.LongType -> {
-                    builder.addSuperinterface(LongId::class.asClassName())
-                    Long::class
-                }
-
-                DataType.StringType -> {
-                    builder.addSuperinterface(StringId::class.asClassName())
-                    String::class
-                }
-            }
-            for (enumConstant in enumSpec.values) {
-                var enumConstantValue = enumConstant.value
-                if (enumSpec.key === DataType.StringType) {
-                    enumConstantValue = "\"" + enumConstantValue + "\""
-                }
-                builder.addEnumConstant(
-                    convertToEnumConstantStyle(enumConstant.longName)
-                )
-            }
+            processEnumToSealedTypeSpec(enumClassName, enumSpec, false)
+//            TODO("what approach")
+//            val builder = TypeSpec.enumBuilder(enumClassName).addModifiers(KModifier.PUBLIC)
+//            val enumKeyTypeClass = when (enumSpec.key) {
+//                DataType.IntType -> {
+//                    builder.addSuperinterface(IntId::class.asClassName())
+//                    Int::class
+//                }
+//
+//                DataType.LongType -> {
+//                    builder.addSuperinterface(LongId::class.asClassName())
+//                    Long::class
+//                }
+//
+//                DataType.StringType -> {
+//                    builder.addSuperinterface(StringId::class.asClassName())
+//                    String::class
+//                }
+//            }
+//            for (enumConstant in enumSpec.values) {
+//                var enumConstantValue = enumConstant.value
+//                if (enumSpec.key === DataType.StringType) {
+//                    enumConstantValue = "\"" + enumConstantValue + "\""
+//                }
+//                builder.addEnumConstant(
+//                    convertToEnumConstantStyle(enumConstant.longName)
+//                )
+//            }
             //            val idFieldBuilder = FieldSpec.builder(enumKeyTypeClass, "id")
             //                .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
             //            builder.addField(idFieldBuilder.build())
@@ -166,8 +110,93 @@ class EnumProcessor(
             //                    .addStatement("return \$N", "id")
             //                    .build()
             //            )
-            return builder.build()
+//            return builder.build()
         }
+    }
+
+    private fun processEnumToSealedTypeSpec(
+        enumClassName: ClassName,
+        enumSpec: EnumSpec<*>,
+        useFutureProofEnum: Boolean
+    ): TypeSpec {
+        val enumKeyTypeClass = when (enumSpec.key) {
+            DataType.IntType -> Int::class
+            DataType.LongType -> Long::class
+            DataType.StringType -> String::class
+        }
+
+        val serializerClassName =
+            ClassName("$enumPackage.serialization", "${enumClassName.buildNamePrefix()}Serializer")
+
+        val builder = TypeSpec.classBuilder(enumClassName).addModifiers(KModifier.SEALED)
+            .primaryConstructor(FunSpec.constructorBuilder().addParameter("id", enumKeyTypeClass).build())
+            .addSuperinterface(
+                superinterface = EnumID::class.asClassName().parameterizedBy(enumKeyTypeClass.asClassName()),
+                delegate = CodeBlock.of("%T(id)", ImmutableEnumID::class.asClassName())
+            )
+            .addAnnotation(
+                AnnotationSpec.builder(Serializable::class).addMember("with = %T::class", serializerClassName).build()
+            )
+
+        val mapperFunctionCodeBlockBuilder = CodeBlock.builder().beginControlFlow("return when (this) {")
+
+        val unknownClassName = enumClassName.nestedClass("UnknownValue")
+        if (useFutureProofEnum) {
+            builder.addType(
+                TypeSpec.classBuilder(unknownClassName)
+                    .primaryConstructor(FunSpec.constructorBuilder().addParameter("id", enumKeyTypeClass).build())
+                    .superclass(enumClassName)
+                    .addSuperclassConstructorParameter(CodeBlock.of("%N", "id")).build()
+            )
+        }
+
+        for (enumConstant in enumSpec.values) {
+            var enumConstantValue = enumConstant.value
+            if (enumSpec.key === DataType.StringType) {
+                enumConstantValue = "\"" + enumConstantValue + "\""
+            }
+            val enumConstantClassName = fieldNameToClassStyle(enumConstant.longName)
+            builder.addType(
+                TypeSpec.objectBuilder(enumConstantClassName).addModifiers(KModifier.DATA).superclass(enumClassName)
+                    .addSuperclassConstructorParameter(CodeBlock.of("%L", enumConstantValue)).build()
+            )
+            mapperFunctionCodeBlockBuilder.addStatement(
+                "%L -> %T",
+                enumConstantValue,
+                enumClassName.nestedClass(enumConstantClassName)
+            )
+        }
+        if (useFutureProofEnum) {
+            mapperFunctionCodeBlockBuilder.addStatement("else -> %T(this)", unknownClassName)
+        }
+        mapperFunctionCodeBlockBuilder.endControlFlow()
+
+        val mapperFunctionName = "to${enumClassName.buildNamePrefix()}"
+        toFunctions.add(
+            FunSpec.builder(mapperFunctionName)
+                .receiver(enumKeyTypeClass)
+                .returns(enumClassName)
+                .addCode(mapperFunctionCodeBlockBuilder.build()).build()
+        )
+
+        serializers.add(
+            TypeSpec.classBuilder(serializerClassName)
+                .superclass(
+                    ClassName(
+                        "com.allego.api.client.futureproof",
+                        enumKeyTypeClass.simpleName + "EnumIDSerializer"
+                    ).parameterizedBy(enumClassName)
+                )
+                .addSuperclassConstructorParameter("%S", enumClassName.simpleName)
+                .addSuperclassConstructorParameter(
+                    "%L::%T",
+                    enumKeyTypeClass.asClassName().simpleName,
+                    ClassName("$enumPackage.support", mapperFunctionName)
+                )
+                .build()
+        )
+
+        return builder.build()
     }
 
     fun writeSupportingFiles() {

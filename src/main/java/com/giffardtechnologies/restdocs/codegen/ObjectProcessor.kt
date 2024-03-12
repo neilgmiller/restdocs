@@ -96,11 +96,11 @@ class ObjectProcessor(
                 val subObjectClassName = subObjectClassNameFactory(className, field)
                 val subObjectTypeSpec = when (field.type) {
                     is ObjectSpec -> {
-                        processObjectToTypeSpec(subObjectClassName, field.type, true)
+                        processObjectToTypeSpec(subObjectClassName, field.type, useFutureProofEnum)
                     }
 
                     is EnumSpec<*> -> {
-                        enumProcessor.processEnumToTypeSpec(subObjectClassName, field.type, true)
+                        enumProcessor.processEnumToTypeSpec(subObjectClassName, field.type, useFutureProofEnum)
                     }
                 }
 
