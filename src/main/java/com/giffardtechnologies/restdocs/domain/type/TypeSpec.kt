@@ -1,92 +1,73 @@
 package com.giffardtechnologies.restdocs.domain.type
 
-import com.giffardtechnologies.restdocs.domain.Document
+import com.giffardtechnologies.restdocs.domain.Context
 import com.giffardtechnologies.restdocs.domain.FieldElementList
-import com.giffardtechnologies.restdocs.domain.FieldElementList.setParentDocument
-import com.giffardtechnologies.restdocs.domain.FieldListElement
 import com.giffardtechnologies.restdocs.domain.Restriction
-import com.google.gson.annotations.SerializedName
+import io.vavr.collection.Array
+import java.time.Instant
 
-open class TypeSpec {
-    @JvmField
-    var type: DataType? = null
-    @JvmField
-    var interpretedAs: BasicType? = null
+/**
+ * @param value the value of this constant
+ * @param longName a human readable name for this enum constant
+ * @property description a description of the semantics of this enum constant
+ */
+data class EnumConstant<T>(val value: T, val longName: String, val description: String? = null)
+class FlagConstant<T> {}
 
-    @JvmField
-    @SerializedName("typeref")
-    var typeRef: String? = null
-    @JvmField
-    var key: KeyType? = null
-    @JvmField
-    var flagType: FlagType? = null
-    @JvmField
-    var items: TypeSpec? = null
-    @JvmField
-    var restrictions: ArrayList<Restriction>? = null
+sealed interface BooleanRepresentation {
+    object AsString: BooleanRepresentation
+    object AsInteger: BooleanRepresentation
+}
+sealed interface DataType<T> {
+    sealed interface BasicKey<T> : DataType<T> {
+        fun parse(value: String): T
+    }
 
+    sealed interface UsableAsFlag<T> : DataType<T>
+
+    object IntType: DataType<Int>, BasicKey<Int>, UsableAsFlag<Int> {
+        override fun parse(value: String): Int = value.toInt()
+    }
+
+    object LongType: DataType<Long>, BasicKey<Long>, UsableAsFlag<Long> {
+        override fun parse(value: String): Long = value.toLong()
+    }
+
+    object FloatType: DataType<Float>
+    object DoubleType: DataType<Double>
+    object StringType: DataType<String>, BasicKey<String> {
+        override fun parse(value: String): String = value
+    }
+
+    object DateType: DataType<Instant>
+}
+
+sealed interface TypeSpec {
+    data class DataSpec(
+        val type: DataType<*>,
+        val representedAs: DataType<*>? = null,
+        var restrictions: Array<Restriction> = Array.empty()
+    ) : TypeSpec
+
+    data class BooleanSpec(val representedAs: BooleanRepresentation = BooleanRepresentation.AsString): TypeSpec
+
+    sealed interface Nameable : TypeSpec
     /**
-     * Used for translating objects, general case should use the list getters.
-     *
-     * @return the FieldElementList object for this object
-     *
+     * @param fieldElementList Used for translating objects, general case should use the list getters.
      * @see .getFieldListElements
      * @see .getFields
      */
-    @JvmField
-    @SerializedName("fields")
-    val fieldElementList = FieldElementList()
-    @JvmField
-    var values: ArrayList<EnumConstant>? = null
-    private var mParentDocument: Document? = null
-    val hasInterpretedAs: Boolean
-        get() = interpretedAs != null
-
-    // For velocity
-    fun getIsTypeRef(): Boolean {
-        return typeRef != null
+    data class ObjectSpec(val fieldElementList: FieldElementList) : Nameable {
+        val fields = fieldElementList.fields
     }
-
-    fun isTypeRef(): Boolean {
-        return typeRef != null
+    data class EnumSpec<T>(val key: DataType.BasicKey<T>, val values: Array<EnumConstant<T>>) : Nameable
+    data class TypeRefSpec(val referenceName: String, val context: Context) : TypeSpec {
+        val typeRef: NamedType<*> = checkNotNull(context.getTypeByName(referenceName)) { "'$referenceName' does not match any type in context" }
     }
+    sealed interface CollectionSpec: TypeSpec
+    data class ArraySpec(val items: TypeSpec) : CollectionSpec
+    data class MapSpec<T>(val key: DataType.BasicKey<T>, val items: TypeSpec) : CollectionSpec
+    data class BitSetSpec<T>(val flagType: DataType.UsableAsFlag<T>, val values: Array<FlagConstant<T>>) : TypeSpec
 
-    val hasRestrictions: Boolean
-        get() = restrictions != null && !restrictions!!.isEmpty()
-    val fields: ArrayList<Field>?
-        get() = fieldElementList.getFields()
-
-    fun setFields(fields: ArrayList<Field?>?) {
-        fieldElementList.setFields(fields)
-    }
-
-    fun hasFields(): Boolean {
-        return fieldElementList.hasFields()
-    }
-
-    val hasFields: Boolean
-        get() = fieldElementList.hasFields
-    val fieldListElements: ArrayList<FieldListElement>?
-        get() = fieldElementList.getFieldListElements()
-
-    fun setFieldListElements(fieldListElements: ArrayList<FieldListElement?>?) {
-        fieldElementList.setFieldListElements(fieldListElements)
-    }
-
-    var parentDocument: Document?
-        get() = mParentDocument
-        set(parentDocument) {
-            mParentDocument = parentDocument
-            fieldElementList.setParentDocument(mParentDocument)
-            if (items != null) {
-                items.setParentDocument(parentDocument)
-            }
-        }
-
-    fun hasEnumValues(): Boolean {
-        return values != null && !values!!.isEmpty()
-    }
-
-    val hasEnumValues: Boolean
-        get() = hasEnumValues()
 }
+

@@ -1,12 +1,11 @@
 package com.giffardtechnologies.restdocs.domain
 
+import io.vavr.collection.Array
+
 /**
- * A class for including the fields of data object inline with the a list of fields
+ * A class for including the fields of another data object.
  */
-class FieldListIncludeElement : FieldListElement {
-    /**
-     * A reference to a DataObject, all fields of that object will be included
-     */
-    var include: String? = null
-    var excluding = ArrayList<String>()
-}
+class FieldListIncludeElement(
+    val include: DataObject,
+    val excluding: Array<String> = Array.empty(),
+) : FieldListElement

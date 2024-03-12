@@ -1,10 +1,8 @@
 package com.giffardtechnologies.restdocs.domain
 
-import com.google.gson.annotations.SerializedName
+import io.vavr.collection.Array
 
-class RequestBody {
-    var description: String? = null
-
-    @SerializedName("content types")
-    var contentTypes: ArrayList<String>? = null
-}
+data class RequestBody(
+    val description: String? = null,
+    var contentTypes: Array<String>? = null,
+)

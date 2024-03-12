@@ -1,8 +1,6 @@
 package com.giffardtechnologies.restdocs.domain
 
-class Restriction {
-    @JvmField
-    var restriction: String? = null
+class Restriction(val restriction: String) {
     var value = ""
     var values: ArrayList<Any>? = null
     val hasMultipleValues: Boolean

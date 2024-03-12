@@ -1,74 +1,62 @@
 package com.giffardtechnologies.restdocs.domain
 
-import com.giffardtechnologies.restdocs.domain.type.DataType
-import com.giffardtechnologies.restdocs.domain.type.Field
-import com.giffardtechnologies.restdocs.domain.type.NamedType
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.model.FieldPath
 import com.giffardtechnologies.restdocs.model.FieldPathLeaf
 import com.giffardtechnologies.restdocs.model.FieldPathSet
 import com.giffardtechnologies.restdocs.model.FieldPathStem
+import com.giffardtechnologies.restdocs.vavr.mapNonNull
 import io.vavr.collection.Array
 import io.vavr.collection.HashSet
 
 /**
- * A class that manages a list of fields whether a straight list or a include
+ * A class that manages a list of fields whether a straight list or an include-reference
  */
-class FieldElementList {
-    private var fieldListElements: ArrayList<FieldListElement>? = ArrayList()
+class FieldElementList(
+    private val fieldListElements: Array<out FieldListElement>,
+    private val parentType: DataObject? = null
+) {
 
-    @Transient
-    private var fields: ArrayList<Field>? = null
+    private var _fields: Array<Field>? = null
 
-    @Transient
-    private var parentDocument: Document? = null
+    val fields: Array<Field>
+        get() {
+        return _fields ?: run {
+            val newFields = fieldListElements
+                .flatMap { fieldListElement ->
+                    return@flatMap if (fieldListElement is Field) {
+                        Array.of(fieldListElement)
+                    } else if (fieldListElement is FieldListIncludeElement) {
+                        val includedObject = fieldListElement.include
+                        if (fieldListElement.excluding.isEmpty) {
+                            includedObject.type.fields
+                        } else {
+                            val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
+                            val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
 
-    @Transient
-    private var parentType: NamedType? = null
+                            val fields = includedObject.type.fields
 
-    fun getFields(): ArrayList<Field>? {
-        if (fields == null && fieldListElements != null) {
-            val newFields = ArrayList<Field>()
-            for (fieldListElement in fieldListElements!!) {
-                if (fieldListElement is Field) {
-                    newFields.add(fieldListElement)
-                } else if (fieldListElement is FieldListIncludeElement) {
-                    val includedObject = if (parentDocument == null) {
-                        throw IllegalStateException("Cannot find '" + fieldListElement.include)
+                            val fieldsToAdd = getIncludedFields(fields, excludingPathSet, Array.empty())
+
+                            fieldsToAdd
+                        }
                     } else {
-                        parentDocument!!.getDataObjectByName(fieldListElement.include)
+                        throw IllegalStateException("Unsupported element type: " + fieldListElement.javaClass.name)
                     }
-                    if (fieldListElement.excluding.isEmpty()) {
-                        newFields.addAll(includedObject.fields)
-                    } else {
-                        val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
-                        val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
-
-                        val fields = includedObject.fields
-
-                        val fieldsToAdd = getIncludedFields(fields, excludingPathSet, Array.empty())
-
-                        newFields.addAll(fieldsToAdd)
-                    }
-                } else {
-                    throw IllegalStateException("Unsupported element type: " + fieldListElement.javaClass.name)
                 }
-            }
-            linkFields(newFields)
-            fields = newFields
+
+            _fields = newFields
+            newFields
         }
-        return fields
     }
 
     private fun getIncludedFields(
-        fields: ArrayList<Field>,
+        fields: Array<Field>,
         excludingPathSet: FieldPathSet,
         parentPath: Array<String>
-    ): ArrayList<Field> {
-        val includedFields = ArrayList<Field>()
-
+    ): Array<Field> {
         // validate first level fields
-        val fieldNames = fields.stream().map { it.longName }.collect(HashSet.collector())
+        val fieldNames = fields.map { it.longName }.collect(HashSet.collector())
         val excludedFieldNames = HashSet.ofAll(excludingPathSet.map { it.field })
         if (!fieldNames.containsAll(excludedFieldNames)) {
             val missedExcludes = excludedFieldNames.removeAll(fieldNames)
@@ -82,97 +70,61 @@ class FieldElementList {
             )
         }
 
-        fields.forEach { field ->
+        return fields.mapNonNull { field ->
             when(val node = excludingPathSet[field.longName]) {
-                is FieldPathLeaf -> {}
+                is FieldPathLeaf -> null
                 is FieldPathStem -> {
                     val newPath = parentPath.append(field.longName)
-                    val subField = Field()
-                    subField.name = field.name
-                    subField.longName = field.longName
-                    subField.parent = field.parent
-                    subField.parentDocument = parentDocument
-                    if (field.typeRef != null) {
-                        val dataObject = parentDocument!!.getDataObjectByName(field.typeRef)
-                        subField.type = DataType.OBJECT
-                        subField.fields = getIncludedFields(dataObject.fields, node.childPathElements, newPath)
-                    } else if (field.type == DataType.ARRAY && field.items!!.typeRef != null) {
-                        val dataObject = parentDocument!!.getDataObjectByName(field.items.typeRef)
-                        subField.type = DataType.ARRAY
-                        subField.items = TypeSpec()
-                        subField.items.parentDocument = parentDocument
-                        subField.items.type = DataType.OBJECT
-                        subField.items.fields = getIncludedFields(dataObject.fields, node.childPathElements, newPath)
-                    } else if (field.type == DataType.OBJECT) {
-                        subField.type = DataType.OBJECT
-                        subField.fields = getIncludedFields(field.fields!!, node.childPathElements, newPath)
-                    } else if (field.type == DataType.ARRAY && field.items!!.type == DataType.OBJECT) {
-                        subField.type = DataType.ARRAY
-                        subField.items = TypeSpec()
-                        subField.items.parentDocument = parentDocument
-                        subField.items.type = DataType.OBJECT
-                        subField.items.fields = getIncludedFields(
-                            field.items.fields!!,
-                            node.childPathElements,
-                            newPath
-                        )
-                    } else {
-                        throw IllegalStateException(
-                            "Cannot exclude sub-fields of non-object type (type-ref or object): '${
-                                newPath.joinToString(
-                                    separator = "."
-                                )
-                            }'"
-                        )
-                    }
-                    includedFields.add(subField)
+                    Field(
+                        name = field.name,
+                        longName = field.longName,
+                        type = getIncludedFieldTypeSpec(field.type, node.childPathElements, newPath),
+                        description = field.description,
+                        defaultValue = field.defaultValue,
+                        isRequired = field.isRequired,
+                        sampleValues = field.sampleValues,
+                    )
                 }
-                null -> includedFields.add(field)
+                null -> field
             }
         }
-
-        return includedFields
    }
 
-    fun setFields(fields: ArrayList<Field>) {
-        this.fields = ArrayList(fields)
-        fieldListElements = ArrayList(fields)
-        linkFields(fields)
-    }
-
-    fun hasFields(): Boolean {
-        return fieldListElements != null && fieldListElements!!.isNotEmpty()
-    }
-
-    val hasFields: Boolean
-        get() = fieldListElements != null && fieldListElements!!.isNotEmpty()
-
-    fun getFieldListElements(): ArrayList<FieldListElement>? {
-        return fieldListElements
-    }
-
-    fun setFieldListElements(fieldListElements: ArrayList<FieldListElement>) {
-        this.fieldListElements = ArrayList(fieldListElements)
-        fields = null
-    }
-
-    private fun linkFields(fields: ArrayList<Field>) {
-        for (field in fields) {
-            field.parent = parentType
-            field.parentDocument = parentDocument
-        }
-    }
-
-    fun setParentDocument(parentDocument: Document?) {
-        this.parentDocument = parentDocument
-        fieldListElements?.forEach {
-            when(it) {
-                is Field -> it.parentDocument = parentDocument
+    private fun getIncludedFieldTypeSpec(
+        typeSpec: TypeSpec,
+        childPathElements: FieldPathSet,
+        newPath: Array<String>
+    ): TypeSpec {
+        return when (typeSpec) {
+            is TypeSpec.TypeRefSpec -> {
+                getIncludedFieldTypeSpec(typeSpec.typeRef.type, childPathElements, newPath)
+            }
+            is TypeSpec.ObjectSpec -> {
+                TypeSpec.ObjectSpec(
+                    fieldElementList = FieldElementList(
+                        fieldListElements = getIncludedFields(typeSpec.fields, childPathElements, newPath)
+                    )
+                )
+            }
+            is TypeSpec.ArraySpec -> {
+                TypeSpec.ArraySpec(
+                    getIncludedFieldTypeSpec(typeSpec.items, childPathElements, newPath)
+                )
+            }
+            is TypeSpec.BitSetSpec<*>,
+            is TypeSpec.DataSpec,
+            is TypeSpec.BooleanSpec,
+            is TypeSpec.MapSpec<*>,
+            is TypeSpec.EnumSpec<*> -> {
+                throw IllegalStateException(
+                    "Cannot exclude sub-fields of non-object type (type-ref or object): '${
+                        newPath.joinToString(
+                            separator = "."
+                        )
+                    }'"
+                )
             }
         }
     }
 
-    fun setParentType(parentType: NamedType?) {
-        this.parentType = parentType
-    }
 }
