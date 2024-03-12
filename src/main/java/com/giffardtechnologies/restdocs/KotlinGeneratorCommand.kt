@@ -73,9 +73,9 @@ class KotlinGeneratorCommand : Callable<Unit> {
             FieldReference.fromString(reference)
         }
 
-        val dtoPackage: String = properties.getProperty("dtoPackage")
+        val clientPackage: String = properties.getProperty("clientPackage")
 
-        KotlinGenerator().generate(sourceFile, Options(codeDir, dtoPackage, false, forceTopLevel, excludedFields))
+        KotlinGenerator().generate(sourceFile, Options(codeDir, clientPackage, false, forceTopLevel, excludedFields))
     }
 
     private fun getLocalPropertiesFile(propertiesFile: File): File {
