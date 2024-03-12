@@ -10,6 +10,7 @@ import com.giffardtechnologies.restdocs.storage.Restriction
 import com.giffardtechnologies.restdocs.storage.Service
 import com.giffardtechnologies.restdocs.storage.type.EnumConstant
 import com.giffardtechnologies.restdocs.storage.type.Field
+import com.giffardtechnologies.restdocs.storage.type.FieldElementList
 import com.giffardtechnologies.restdocs.storage.type.TypeSpec
 
 class ObjectInspectionHelper(val document: Document) {

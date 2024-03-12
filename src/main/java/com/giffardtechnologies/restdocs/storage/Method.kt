@@ -1,10 +1,12 @@
 package com.giffardtechnologies.restdocs.storage
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.giffardtechnologies.restdocs.documentIfAvailable
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.type.Field
 import com.giffardtechnologies.restdocs.storage.type.FieldListElement
+import com.giffardtechnologies.restdocs.storage.type.validateHasNoDuplicates
 
 enum class HTTPMethod {
     GET, PUT, POST, DELETE, HEAD, OPTIONS, TRACE, CONNECT
@@ -34,5 +36,6 @@ data class Method(
         if (path == null && id == null) {
             throw ValidationException("Method must have at least one of 'id' and 'path'")
         }
+        parameters?.validateHasNoDuplicates(validationContext.documentIfAvailable)
     }
 }

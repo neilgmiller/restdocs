@@ -2,6 +2,7 @@ package com.giffardtechnologies.restdocs.storage.type
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.giffardtechnologies.restdocs.DocValidator
+import com.giffardtechnologies.restdocs.documentIfAvailable
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.Restriction
@@ -42,7 +43,7 @@ open class TypeSpec(
                     if (fields == null) {
                         throw ValidationException("$classString of 'object' type must define 'fields'")
                     }
-                    fields.validateHasNoDuplicates()
+                    fields.validateHasNoDuplicates(validationContext.documentIfAvailable)
                 }
                 DataType.COLLECTION -> {
                     if (key == null) {
