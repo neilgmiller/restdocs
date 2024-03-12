@@ -7,7 +7,7 @@ class FieldPathSet private constructor(private val childPathElements: Map<String
 
     companion object  {
 
-        fun ofAll(branches: Collection<FieldPath>): FieldPathSet {
+        fun ofAll(branches: Iterable<FieldPath>): FieldPathSet {
             val pathSet = mutableMapOf<String, FieldPathBuilderNode>()
 
             val sortedBranches = branches.sortedWith(Comparator.naturalOrder())
