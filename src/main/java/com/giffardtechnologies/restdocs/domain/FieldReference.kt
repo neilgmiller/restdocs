@@ -36,7 +36,7 @@ class FieldReference(val node: String, val child: FieldReference?) {
         get() = child == null
 
     companion object {
-        fun fromParts(parts: List<String>): FieldReference {
+        fun fromParts(parts: MutableList<String>): FieldReference {
             val node: String = parts.removeAt(0)
             return if (parts.isEmpty()) {
                 FieldReference(node, null)
@@ -48,7 +48,6 @@ class FieldReference(val node: String, val child: FieldReference?) {
             }
         }
 
-        @JvmStatic
         fun fromString(reference: String): FieldReference {
             val parts = Arrays.stream(reference.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
                 .collect(Collectors.toList())
