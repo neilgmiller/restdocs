@@ -2,15 +2,12 @@ package com.giffardtechnologies.restdocs.domain.dsl
 
 import com.giffardtechnologies.restdocs.domain.Context
 import com.giffardtechnologies.restdocs.domain.DataObject
-import com.giffardtechnologies.restdocs.domain.DelegatingContext
 import com.giffardtechnologies.restdocs.domain.Document
-import com.giffardtechnologies.restdocs.domain.DummyContext
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration
 import com.giffardtechnologies.restdocs.domain.Service
 import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.domain.type.NamedType
 import io.vavr.collection.Array
-import io.vavr.collection.HashMap
 
 fun document(title: String, configure: DocumentConfiguration.() -> Unit): Document {
     val documentBuilder = DocumentBuilder(title)
@@ -18,6 +15,11 @@ fun document(title: String, configure: DocumentConfiguration.() -> Unit): Docume
     return documentBuilder.build()
 }
 
+class DelegatingContext(var context: Context) : Context {
+    override fun getTypeByName(name: String): NamedType<*>? {
+        return context.getTypeByName(name)
+    }
+}
 
 open class DocumentConfiguration {
 
@@ -62,8 +64,6 @@ private class DocumentBuilder(private val title: String) : DocumentConfiguration
             title,
             Array.ofAll(enumerations),
             Array.ofAll(dataObjects),
-            HashMap.ofAll(dataObjectsByName),
-            HashMap.ofAll(enumerationsByName),
             service
         )
         context.context = document
