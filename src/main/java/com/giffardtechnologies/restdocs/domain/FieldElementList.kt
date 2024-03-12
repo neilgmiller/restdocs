@@ -43,14 +43,7 @@ class FieldElementList(
 
                                 fieldsToAdd
                             }
-                            includedFields.map { field ->
-                                if (field.type is TypeSpec.EnumSpec<*>) {
-                                    field.copy(type = TypeSpec.TypeRefSpec("${includedObject.typeName}.${field.longName}", includedObject))
-                                    TODO()
-                                } else {
-                                    field
-                                }
-                            }
+                            includedFields
                         }
                     }
                 }
