@@ -67,7 +67,7 @@ class KotlinGenerator {
             dtoPackage,
             fieldAndTypeProcessor,
             enumProcessor,
-            supportPackage = options.clientPackage + ".requests.support"
+            supportPackage = options.clientPackage + ".support.request"
         )
 
         document.service?.methods?.forEach {
