@@ -4,18 +4,21 @@ import com.giffardtechnologies.restdocs.domain.DataObject
 import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.domain.type.DataType.BasicKey
 import com.giffardtechnologies.restdocs.domain.Field
+import com.giffardtechnologies.restdocs.domain.type.BooleanRepresentation
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ArraySpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.MapSpec
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class FieldAndTypeProcessor(
@@ -50,7 +53,7 @@ class FieldAndTypeProcessor(
                 !isNullable,
                 false,
                 useFutureProofEnum,
-                subObjectClassNameFactory = { field -> subObjectClassNameFactory(objectClassName, field) },
+                subObjectClassNameFactory = { soField -> subObjectClassNameFactory(objectClassName, soField) },
                 parentField = field,
             ),
         )
@@ -60,6 +63,12 @@ class FieldAndTypeProcessor(
                     .addMember("%S", field.name)
                     .build()
             )
+
+        if (field.type is TypeSpec.BooleanSpec && field.type.representedAs is BooleanRepresentation.AsInteger) {
+            fieldBuilder.addAnnotation(
+                AnnotationSpec.builder(Serializable::class).addMember("with = %T::class", ClassName("com.allego.api.client.support.serialization", "BooleanIntSerializer")).build()
+            )
+        }
 
         // add initializers
         val type = getEffectiveFieldType(field)
@@ -169,11 +178,40 @@ class FieldAndTypeProcessor(
         subObjectClassNameFactory: (Field) -> ClassName,
         parentField: Field,
     ): TypeName {
-        val typeName = when (typeSpec) {
-            is TypeSpec.BitSetSpec<*> -> Int::class.asTypeName() // TODO()
-            is TypeSpec.BooleanSpec -> Int::class.asTypeName() // TODO()
-            is ArraySpec -> Int::class.asTypeName() // TODO()
-            is MapSpec<*> -> Int::class.asTypeName() // TODO()
+        val typeName: TypeName = when (typeSpec) {
+            is TypeSpec.BitSetSpec<*> -> Long::class.asTypeName() // TODO()
+            is TypeSpec.BooleanSpec -> Boolean::class.asTypeName()
+            is ArraySpec -> {
+                if (typeSpec.items is TypeSpec.BooleanSpec) {
+                    throw IllegalArgumentException("Boolean not supported in array type")
+                }
+                List::class.asClassName().parameterizedBy(
+                    getTypeName(
+                        typeSpec.items,
+                        required = true,
+                        convertIntBoolean,
+                        futureProofEnum,
+                        subObjectClassNameFactory,
+                        parentField
+                    )
+                )
+            }
+            is MapSpec<*> -> {
+                if (typeSpec.items is TypeSpec.BooleanSpec) {
+                    throw IllegalArgumentException("Boolean not supported in map type")
+                }
+                Map::class.asClassName().parameterizedBy(
+                    getBasicTypeName(typeSpec.key),
+                    getTypeName(
+                        typeSpec.items,
+                        required = true,
+                        convertIntBoolean,
+                        futureProofEnum,
+                        subObjectClassNameFactory,
+                        parentField
+                    )
+                )
+            }
             is TypeSpec.DataSpec -> getBasicTypeName(typeSpec.type)
             is TypeSpec.EnumSpec<*> -> {
                 subObjectClassNameFactory(parentField)

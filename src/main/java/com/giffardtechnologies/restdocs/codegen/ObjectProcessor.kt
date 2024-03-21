@@ -2,12 +2,12 @@ package com.giffardtechnologies.restdocs.codegen
 
 import com.giffardtechnologies.meter.file
 import com.giffardtechnologies.restdocs.domain.Field
+import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ArraySpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.EnumSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.Nameable
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ObjectSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.TypeSpec
 import io.vavr.collection.Array
@@ -92,15 +92,20 @@ class ObjectProcessor(
                 classBuilder.addProperty(propertySpec.toBuilder().initializer(field.longName).build())
             }
 
-            if (field.type is Nameable) {
+            val typeOrItemType = if (field.type is ArraySpec) {
+                field.type.items
+            } else {
+                field.type
+            }
+            if (typeOrItemType is Nameable) {
                 val subObjectClassName = subObjectClassNameFactory(className, field)
-                val subObjectTypeSpec = when (field.type) {
+                val subObjectTypeSpec = when (typeOrItemType) {
                     is ObjectSpec -> {
-                        processObjectToTypeSpec(subObjectClassName, field.type, useFutureProofEnum)
+                        processObjectToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
                     }
 
                     is EnumSpec<*> -> {
-                        enumProcessor.processEnumToTypeSpec(subObjectClassName, field.type, useFutureProofEnum)
+                        enumProcessor.processEnumToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
                     }
                 }
 
