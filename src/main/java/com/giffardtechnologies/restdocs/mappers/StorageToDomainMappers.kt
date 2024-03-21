@@ -193,10 +193,16 @@ private fun TypeSpecStorageModel.mapToModel(typeSpecIdentifier: String, context:
             }
         } else {
             when (type) {
-                DataTypeStorageModel.INT -> TypeSpec.DataSpec(
-                    DataType.IntType,
-                    restrictions = restrictions.mapRestrictions(),
-                )
+                DataTypeStorageModel.INT -> {
+                    if (restrictions?.size == 1 && restrictions[0].restriction == "boolean") {
+                        TypeSpec.BooleanSpec(BooleanRepresentation.AsInteger)
+                    } else {
+                        TypeSpec.DataSpec(
+                            DataType.IntType,
+                            restrictions = restrictions.mapRestrictions(),
+                        )
+                    }
+                }
 
                 DataTypeStorageModel.LONG -> TypeSpec.DataSpec(
                     DataType.LongType,
