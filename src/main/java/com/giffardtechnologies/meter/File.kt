@@ -1,4 +1,4 @@
-package com.allego.meter
+package com.giffardtechnologies.meter
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec

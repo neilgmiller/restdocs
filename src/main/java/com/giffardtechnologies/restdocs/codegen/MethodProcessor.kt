@@ -1,6 +1,6 @@
 package com.giffardtechnologies.restdocs.codegen
 
-import com.allego.meter.file
+import com.giffardtechnologies.meter.file
 import com.giffardtechnologies.restdocs.domain.Method
 import com.giffardtechnologies.restdocs.domain.Response
 import com.squareup.kotlinpoet.ClassName

@@ -1,8 +1,8 @@
 package com.giffardtechnologies.restdocs.codegen
 
-import com.allego.meter.file
 import com.allego.api.client.support.futureproof.EnumID
 import com.allego.api.client.support.futureproof.ImmutableEnumID
+import com.giffardtechnologies.meter.file
 import com.allego.util.futureproofenum.FutureProof
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration
 import com.giffardtechnologies.restdocs.domain.type.DataType

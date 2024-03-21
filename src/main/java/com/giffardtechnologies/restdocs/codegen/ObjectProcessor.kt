@@ -1,6 +1,6 @@
 package com.giffardtechnologies.restdocs.codegen
 
-import com.allego.meter.file
+import com.giffardtechnologies.meter.file
 import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.EnumSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.Nameable
