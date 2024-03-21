@@ -1,4 +1,4 @@
-package com.allego.api.client.futureproof
+package com.allego.api.client.support.futureproof
 
 interface EnumID<T> {
     val id: T

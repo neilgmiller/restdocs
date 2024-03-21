@@ -1,12 +1,9 @@
 package com.giffardtechnologies.restdocs.codegen
 
-import com.allego.api.client.futureproof.EnumID
-import com.allego.api.client.futureproof.ImmutableEnumID
 import com.allego.meter.file
+import com.allego.api.client.support.futureproof.EnumID
+import com.allego.api.client.support.futureproof.ImmutableEnumID
 import com.allego.util.futureproofenum.FutureProof
-import com.allego.util.futureproofenum.IntId
-import com.allego.util.futureproofenum.LongId
-import com.allego.util.futureproofenum.StringId
 import com.giffardtechnologies.restdocs.domain.NamedEnumeration
 import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.EnumSpec
@@ -188,7 +185,7 @@ class EnumProcessor(
             TypeSpec.classBuilder(serializerClassName)
                 .superclass(
                     ClassName(
-                        "com.allego.api.client.futureproof",
+                        "com.allego.api.client.support.futureproof",
                         enumKeyTypeClass.simpleName + "EnumIDSerializer"
                     ).parameterizedBy(enumClassName)
                 )
