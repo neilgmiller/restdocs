@@ -167,9 +167,9 @@ class EnumProcessor(
             mapperFunctionCodeBlockBuilder.addStatement("else -> %T(this)", unknownClassName)
         } else {
             mapperFunctionCodeBlockBuilder.addStatement(
-                "else -> throw %T(\"Unsupported value: '\$this'\")",
-                IllegalArgumentException::class.asClassName()
+                "else -> throw IllegalArgumentException(\"Unsupported value: '\$this'\")"
             )
+            // IllegalArgumentException does not need an include
         }
         mapperFunctionCodeBlockBuilder.endControlFlow()
 
