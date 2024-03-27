@@ -13,6 +13,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.asClassName
 import java.io.File
@@ -104,6 +105,23 @@ class KotlinGenerator {
 
                     document.service?.methods?.forEach {
                         val (requestClassName, responseClassName) = methodProcessor.getClassNames(it)
+
+                        classBuilder.addFunction(
+                            FunSpec.builder("execute")
+                                .addParameter("request", requestClassName)
+                                .addModifiers(KModifier.SUSPEND)
+                                .returns(responseClassName)
+                                .addAnnotation(
+                                    AnnotationSpec.builder(ClassName("kotlin", "Throws"))
+                                        .addMember("%T::class", ClassName(options.clientPackage, "APIException"))
+                                        .addMember("%T::class", ClassName("io.ktor.utils.io.errors", "IOException"))
+                                        .addMember("%T::class", ClassName("kotlin.coroutines.cancellation", "CancellationException"))
+                                        .build()
+                                )
+                                .addCode("return apiServerClient.execute(request)")
+                                .build()
+                        )
+
                         classBuilder.addFunction(
                             FunSpec.builder("executeBlocking")
                                 .addParameter("request", requestClassName)
@@ -123,6 +141,25 @@ class KotlinGenerator {
                                 )
                                 .build()
                         )
+
+                        classBuilder.addFunction(
+                            FunSpec.builder("executeForResult")
+                                .addParameter("request", requestClassName)
+                                .returns(Result::class.asClassName().parameterizedBy(responseClassName))
+                                .addCode("""
+                                    | return try {
+                                    |     val response = %T {
+                                    |         apiServerClient.execute(request)
+                                    |     }
+                                    |     Result.success(response)
+                                    | } catch (e: Exception) {
+                                    |     Result.failure(e)
+                                    | }
+                                """.trimMargin("|"), ClassName("kotlinx.coroutines", "runBlocking")
+                                )
+                                .build()
+                        )
+
                     }
                 }
             }
