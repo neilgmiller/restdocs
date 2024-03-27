@@ -63,6 +63,7 @@ class KotlinGeneratorCommand : Callable<Unit> {
 //        )
 //        mPathAndBodyStyleRequestClass = mProperties.getProperty("altPathAndBodyStyleRequestClass")
         val codeDir = File(propertiesFile.parentFile, properties.getProperty("codeDir"))
+        val iOSCodeDir = File(propertiesFile.parentFile, properties.getProperty("iOSCodeDir"))
 
 
         val forceTopLevel: Set<FieldReference> = properties.getSetProperty("javagen.forceTopLevel") { reference ->
@@ -75,7 +76,10 @@ class KotlinGeneratorCommand : Callable<Unit> {
 
         val clientPackage: String = properties.getProperty("clientPackage")
 
-        KotlinGenerator().generate(sourceFile, Options(codeDir, clientPackage, false, forceTopLevel, excludedFields))
+        KotlinGenerator().generate(
+            sourceFile,
+            Options(codeDir, iOSCodeDir, clientPackage, false, forceTopLevel, excludedFields)
+        )
     }
 
     private fun getLocalPropertiesFile(propertiesFile: File): File {
