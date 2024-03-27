@@ -29,7 +29,9 @@ class File internal constructor(val builder: FileSpec.Builder) {
     }
 
     fun addClass(name: String, define: ClassDef.() -> Unit) {
-        ClassDef(TypeSpec.classBuilder(name))
+        val classBuilder = TypeSpec.classBuilder(name)
+        define(ClassDef(classBuilder))
+        builder.addType(classBuilder.build())
     }
 
     fun addType(typeSpec: TypeSpec) {
@@ -83,4 +85,9 @@ class ClassDef internal constructor(private val builder: TypeSpec.Builder) {
             builder.addProperty(PropertySpec.builder(name, typeName).addModifiers(*modifiers).build())
         }
     }
+
+    fun raw(callback: (TypeSpec.Builder) -> Unit) {
+        callback(builder)
+    }
+
 }
