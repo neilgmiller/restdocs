@@ -47,13 +47,33 @@ class MethodProcessor(
 
     private data class ResponseClassDefinition(val className: ClassName, val typeSpec: TypeSpec? = null)
 
-    fun processMethod(method: Method) {
+    data class MethodClassNames(val requestClassName: ClassName, val responseClassName: ClassName)
+
+    fun getClassNames(method: Method): MethodClassNames {
         val methodName = StringUtils.capitalize(method.name)
+        val requestClassName = ClassName(requestsPackage, methodName + "Request")
 
-        val responseClassDefinition = createResponseClassDefinition(method.response, methodName)
+        val responseClassName = method.response?.let { response ->
+            when (response.typeSpec) {
+                is DomainTypeSpec.TypeRefSpec -> {
+                    ClassName(typeRefPackage, response.typeSpec.referenceName)
+                }
 
-        val requestClassNameStr = methodName + "Request"
-        val requestClassName = ClassName(requestsPackage, requestClassNameStr)
+                is DomainTypeSpec.ObjectSpec -> {
+                    ClassName(requestsPackage, methodName + "Response")
+                }
+
+                else -> null
+            }
+        } ?: Unit::class.asClassName()
+
+
+        return MethodClassNames(requestClassName, responseClassName)
+    }
+
+    fun processMethod(method: Method) {
+        val (requestClassName, responseClassName) = getClassNames(method)
+
         val baseClassName = if (method.isAuthenticationRequired) {
             mAuthenticatedAllegoRequestClassName
         } else {
@@ -64,9 +84,7 @@ class MethodProcessor(
             }
         }
 
-        val superClassType = baseClassName.parameterizedBy(
-            responseClassDefinition.className
-        )
+        val superClassType = baseClassName.parameterizedBy(responseClassName)
 
         val requestClassBuilder = TypeSpec.classBuilder(requestClassName)
             .superclass(superClassType)
@@ -77,11 +95,7 @@ class MethodProcessor(
             requestClassBuilder.addSuperclassConstructorParameter("%N", "Unit")
             Unit::class.asClassName()
         } else {
-            val paramsClassName = ClassName(
-                requestsPackage,
-                requestClassNameStr,
-                "Params"
-            )
+            val paramsClassName = requestClassName.nestedClass("Params")
 
             val paramsTypeSpec = objectProcessor.processObjectToTypeSpec(
                 paramsClassName,
@@ -148,7 +162,7 @@ class MethodProcessor(
             FunSpec.builder("deserializeResponse")
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter("jsonElement", JsonElement::class.asClassName())
-                .returns(responseClassDefinition.className)
+                .returns(responseClassName)
                 .addCode("return %T.%T(jsonElement)", Json::class.asClassName(), ClassName("kotlinx.serialization.json", "decodeFromJsonElement"))
                 .build()
         )
@@ -166,10 +180,12 @@ class MethodProcessor(
                 builder.build()
             )
 
+        val responseClassTypeSpec = createResponseClassDefinition(method.response, responseClassName)
+
         file(requestClassName) {
             addType(requestClassBuilder.build())
-            responseClassDefinition.typeSpec?.let {
-                addType(responseClassDefinition.typeSpec)
+            responseClassTypeSpec?.let {
+                addType(responseClassTypeSpec)
             }
         }
             .writeTo(codeDirectory)
@@ -177,31 +193,22 @@ class MethodProcessor(
 
     private fun createResponseClassDefinition(
         response: Response?,
-        methodName: String
-    ): ResponseClassDefinition {
+        responseClassName: ClassName
+    ): TypeSpec? {
         return response?.let {
             when (response.typeSpec) {
-                is DomainTypeSpec.TypeRefSpec -> {
-                    ResponseClassDefinition(ClassName(typeRefPackage, response.typeSpec.referenceName))
-                }
-
                 is DomainTypeSpec.ObjectSpec -> {
-                    // TODO old - this need to handle imports for type refs
-                    val className = ClassName(requestsPackage, methodName + "Response")
-                    ResponseClassDefinition(
-                        className,
                         objectProcessor.processObjectToTypeSpec(
-                            className,
+                            responseClassName,
                             response.typeSpec,
                             useFutureProofEnum = true,
                             forceTopLevel = false,
-                        )
                     )
                 }
 
                 else -> null
             }
-        } ?: ResponseClassDefinition(Unit::class.asClassName())
+        }
     }
 
     private fun addMinimalConstructor(
