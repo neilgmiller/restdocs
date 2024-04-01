@@ -5,4 +5,4 @@ package com.giffardtechnologies.restdocs.domain
  *
  * @see FieldElementList
  */
-interface FieldListElement
+sealed interface FieldListElement
