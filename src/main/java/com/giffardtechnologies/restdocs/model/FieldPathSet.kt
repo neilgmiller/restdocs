@@ -80,6 +80,9 @@ class FieldPathSet private constructor(private val childPathElements: Map<String
         return childPathElements[fieldName].orNull
     }
 
+    fun isEmpty(): Boolean {
+        return childPathElements.isEmpty
+    }
 
 }
 

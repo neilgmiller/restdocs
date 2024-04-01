@@ -23,25 +23,35 @@ class FieldElementList(
         get() {
         return _fields ?: run {
             val newFields = fieldListElements
-                .flatMap { fieldListElement ->
-                    return@flatMap if (fieldListElement is Field) {
-                        Array.of(fieldListElement)
-                    } else if (fieldListElement is FieldListIncludeElement) {
-                        val includedObject = fieldListElement.include
-                        if (fieldListElement.excluding.isEmpty) {
-                            includedObject.type.fields
-                        } else {
-                            val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
-                            val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
-
-                            val fields = includedObject.type.fields
-
-                            val fieldsToAdd = getIncludedFields(fields, excludingPathSet, Array.empty())
-
-                            fieldsToAdd
+                .flatMap { fieldListElement: FieldListElement ->
+                    return@flatMap when (fieldListElement) {
+                        is Field -> {
+                            Array.of(fieldListElement)
                         }
-                    } else {
-                        throw IllegalStateException("Unsupported element type: " + fieldListElement.javaClass.name)
+
+                        is FieldListIncludeElement -> {
+                            val includedObject = fieldListElement.include
+                            val includedFields = if (fieldListElement.excluding.isEmpty) {
+                                includedObject.type.fields
+                            } else {
+                                val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
+                                val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
+
+                                val fields = includedObject.type.fields
+
+                                val fieldsToAdd = getIncludedFields(fields, excludingPathSet, Array.empty())
+
+                                fieldsToAdd
+                            }
+                            includedFields.map { field ->
+                                if (field.type is TypeSpec.EnumSpec<*>) {
+                                    field.copy(type = TypeSpec.TypeRefSpec("${includedObject.typeName}.${field.longName}", includedObject))
+                                    TODO()
+                                } else {
+                                    field
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -55,37 +65,42 @@ class FieldElementList(
         excludingPathSet: FieldPathSet,
         parentPath: Array<String>
     ): Array<Field> {
-        // validate first level fields
-        val fieldNames = fields.map { it.longName }.collect(HashSet.collector())
-        val excludedFieldNames = HashSet.ofAll(excludingPathSet.map { it.field })
-        if (!fieldNames.containsAll(excludedFieldNames)) {
-            val missedExcludes = excludedFieldNames.removeAll(fieldNames)
-            throw IllegalStateException(
-                "'excluding' element refers to unknown field${if (missedExcludes.size() > 1) "s" else ""}: ${
-                    missedExcludes.map { "'" + parentPath.joinToString(separator = ".", postfix = ".") + it + "'" }
-                        .joinToString(
-                            separator = ", "
-                        )
-                }"
-            )
-        }
+        if (excludingPathSet.isEmpty()) {
+            return fields
+        } else {
+            // validate first level fields
+            val fieldNames = fields.map { it.longName }.collect(HashSet.collector())
+            val excludedFieldNames = HashSet.ofAll(excludingPathSet.map { it.field })
+            if (!fieldNames.containsAll(excludedFieldNames)) {
+                val missedExcludes = excludedFieldNames.removeAll(fieldNames)
+                throw IllegalStateException(
+                    "'excluding' element refers to unknown field${if (missedExcludes.size() > 1) "s" else ""}: ${
+                        missedExcludes.map { "'" + parentPath.joinToString(separator = ".", postfix = ".") + it + "'" }
+                            .joinToString(
+                                separator = ", "
+                            )
+                    }"
+                )
+            }
 
-        return fields.mapNonNull { field ->
-            when(val node = excludingPathSet[field.longName]) {
-                is FieldPathLeaf -> null
-                is FieldPathStem -> {
-                    val newPath = parentPath.append(field.longName)
-                    Field(
-                        name = field.name,
-                        longName = field.longName,
-                        type = getIncludedFieldTypeSpec(field.type, node.childPathElements, newPath),
-                        description = field.description,
-                        defaultValue = field.defaultValue,
-                        isRequired = field.isRequired,
-                        sampleValues = field.sampleValues,
-                    )
+            return fields.mapNonNull { field ->
+                when (val node = excludingPathSet[field.longName]) {
+                    is FieldPathLeaf -> null
+                    is FieldPathStem -> {
+                        val newPath = parentPath.append(field.longName)
+                        Field(
+                            name = field.name,
+                            longName = field.longName,
+                            type = getIncludedFieldTypeSpec(field.type, node.childPathElements, newPath),
+                            description = field.description,
+                            defaultValue = field.defaultValue,
+                            isRequired = field.isRequired,
+                            sampleValues = field.sampleValues,
+                        )
+                    }
+
+                    null -> field
                 }
-                null -> field
             }
         }
    }
