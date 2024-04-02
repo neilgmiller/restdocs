@@ -15,6 +15,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.asClassName
+import org.apache.commons.io.FileUtils
 import java.io.File
 
 class KotlinGenerator {
@@ -56,6 +57,15 @@ class KotlinGenerator {
 //        }
 
         val dtoPackage = options.clientPackage + ".dto"
+        val requestsPackage = options.clientPackage + ".requests"
+
+        // clean out old generated code
+        val dtoDir = File(options.codeDirectory.absolutePath + "/" + dtoPackage.replace('.', '/'))
+        FileUtils.deleteDirectory(dtoDir)
+        val requestDir = File(options.codeDirectory.absolutePath + "/" + requestsPackage.replace('.', '/'))
+        FileUtils.deleteDirectory(requestDir)
+
+        // start generation
         val enumProcessor = EnumProcessor(options.codeDirectory, dtoPackage)
 
         for (namedEnumeration in document.enumerations) {
@@ -72,7 +82,7 @@ class KotlinGenerator {
 
         val methodProcessor = MethodProcessor(
             options.codeDirectory,
-            options.clientPackage + ".requests",
+            requestsPackage,
             dtoPackage,
             fieldAndTypeProcessor,
             enumProcessor,
