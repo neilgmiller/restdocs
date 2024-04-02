@@ -114,13 +114,13 @@ startScripts {
             })
 }
 
-tasks.register('createJavaStartScript', Copy) {
+tasks.register('createKotlinGeneratorStartScript', Copy) {
     from file("$buildDir/scripts/doc_generator")
-    rename { String filename -> return 'java_generator' }
-    filter { String line -> line.replaceAll("(.*)DocGenerator(.*)", '$1JavaGenerator$2') }
+    rename { String filename -> return 'kotlin_generator' }
+    filter { String line -> line.replaceAll("(.*)DocGenerator(.*)", '$1KotlinGenerator$2') }
     into file("$buildDir/scripts")
 }
-startScripts.finalizedBy createJavaStartScript
+startScripts.finalizedBy createKotlinGeneratorStartScript
 
 tasks.register('createValidatorStartScript', Copy) {
     from file("$buildDir/scripts/doc_generator")
