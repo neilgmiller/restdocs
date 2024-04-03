@@ -58,6 +58,7 @@ class DocValidator {
 
     class AccumulatingContext : ValidationContext {
         val referencableTypes: MutableSet<String> = HashSet()
+        val methodClassNames: MutableSet<String> = HashSet()
     }
 
     data class FullContext(val referencableTypes: VavrSet<String>, val document: DocumentStorageModel) :

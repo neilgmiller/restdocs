@@ -1,6 +1,7 @@
 package com.giffardtechnologies.restdocs.storage
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.giffardtechnologies.restdocs.DocValidator
 import com.giffardtechnologies.restdocs.documentIfAvailable
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
@@ -34,8 +35,18 @@ data class Method(
 ) : Validatable {
     override fun validate(validationContext: Any?) {
         if (path == null && id == null) {
-            throw ValidationException("Method must have at least one of 'id' and 'path'")
+            throw ValidationException("A method must have at least one of 'id' and 'path'")
         }
-        parameters?.validateHasNoDuplicates(validationContext.documentIfAvailable)
+        if (validationContext is DocValidator.AccumulatingContext) {
+            if (validationContext.methodClassNames.contains(name)) {
+                throw ValidationException("A method already exists with the name: \"$name\"")
+            } else {
+                parameters?.validateHasNoDuplicates()
+                validationContext.methodClassNames.add(name)
+            }
+        } else {
+            parameters?.validateHasNoDuplicates(validationContext.documentIfAvailable)
+        }
+
     }
 }
