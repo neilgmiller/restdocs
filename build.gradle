@@ -10,7 +10,7 @@ group 'org.giffardtechnologies'
 version '2.0-SNAPSHOT'
 
 kotlin {
-    jvmToolchain(18)
+    jvmToolchain(17)
 }
 
 def homePath = System.properties['user.home']
