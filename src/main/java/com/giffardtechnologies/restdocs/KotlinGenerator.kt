@@ -94,6 +94,7 @@ class KotlinGenerator {
         }
 
         enumProcessor.writeSupportingFiles()
+        methodProcessor.writeSupportingFiles()
 
         file(ClassName(options.clientPackage, "SwiftAPIServerClient")) {
             addClass("SwiftAPIServerClient") {

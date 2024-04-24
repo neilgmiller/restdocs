@@ -9,6 +9,8 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import kotlinx.serialization.json.Json
@@ -38,10 +40,71 @@ class MethodProcessor(
         "AllegoOpenRequest"
     )
 
+    private val mAllegoBaseRequestClassName = ClassName(
+        supportPackage,
+        "AllegoRequest"
+    )
+
     private val mAllegoPathAndBodyRequestClassName: ClassName = ClassName(
         supportPackage,
         "AllegoBodyStackRequest"
     )
+
+//    private val deserializeFromParamsFunSpecBuilder = FunSpec.builder("deserializeFromParams")
+//        .addParameter("json", Json::class.asClassName())
+//        .addParameter("methodID", Long::class.asClassName())
+//        .addParameter("jsonString", String::class.asClassName())
+//        .returns(mAllegoBaseRequestClassName)
+//        .addCode(
+//            CodeBlock.builder()
+//                .beginControlFlow("when(methodID) {")
+//        )
+
+    private val deserializeWhenBlock = CodeBlock.builder()
+
+
+    fun writeSupportingFiles() {
+        val mappingsFileName = ClassName(
+            "$requestsPackage.serialization",
+            "DeserializeFromParams"
+        )
+        file(mappingsFileName) {
+            addFunction(
+                FunSpec.builder("deserializeFromParams")
+                    .addParameter("json", Json::class.asClassName())
+                    .addParameter("methodID", Int::class.asClassName())
+                    .addParameter("jsonString", String::class.asClassName())
+                    .returns(mAllegoBaseRequestClassName.parameterizedBy(STAR))
+                    .addCode(
+                        CodeBlock.builder()
+                            .beginControlFlow("return when(methodID) {")
+                            .add(deserializeWhenBlock.build())
+                            .add("else -> throw IllegalArgumentException(\"Unknown method ID: \$methodID\")")
+                            .endControlFlow()
+                            .build()
+                    )
+                    .build()
+            )
+        }.writeTo(codeDirectory)
+    }
+
+    fun getDeserializeFromParamsFunSpec(): FunSpec {
+        return FunSpec.builder("deserializeFromParams")
+            .addParameter("json", Json::class.asClassName())
+            .addParameter("methodID", Long::class.asClassName())
+            .addParameter("jsonString", String::class.asClassName())
+            .returns(mAllegoBaseRequestClassName)
+            .addCode(
+                CodeBlock.builder()
+                    .beginControlFlow("return when(methodID) {")
+                    .add(deserializeWhenBlock.build())
+                    .add("else -> TODO()")
+                    .endControlFlow()
+                    .build()
+            )
+            .build()
+//        return deserializeFromParamsFunSpecBuilder.build()
+    }
 
     private val objectProcessor: ObjectProcessor = ObjectProcessor(codeDirectory, fieldAndTypeProcessor, enumProcessor)
 
@@ -93,6 +156,11 @@ class MethodProcessor(
 
         if (method.parameters.isEmpty) {
             requestClassBuilder.addSuperclassConstructorParameter("%N", "Unit")
+            deserializeWhenBlock.addStatement(
+                "%L -> %T()",
+                method.id,
+                requestClassName,
+            )
             Unit::class.asClassName()
         } else {
             val paramsClassName = requestClassName.nestedClass("Params")
@@ -160,9 +228,41 @@ class MethodProcessor(
             }
             formatBuilder.append(")")
 
-            requestClassBuilder.addSuperclassConstructorParameter(formatBuilder.toString(), *parameterNames.toTypedArray())
+            requestClassBuilder.addSuperclassConstructorParameter("params")
 
-            requestClassBuilder.primaryConstructor(constructorBuilder.build())
+            requestClassBuilder.primaryConstructor(
+                FunSpec.constructorBuilder()
+                    .addModifiers(KModifier.PRIVATE)
+                    .addParameter("params", paramsClassName)
+                    .build()
+            )
+
+            requestClassBuilder.addFunction(
+                constructorBuilder
+                    .callThisConstructor(CodeBlock.of(formatBuilder.toString(), *parameterNames.toTypedArray()))
+                    .build()
+            )
+
+            requestClassBuilder.addType(
+                TypeSpec.companionObjectBuilder()
+                    .addFunction(
+                        FunSpec.builder("deserializeFromParams")
+                            .addParameter("json", Json::class.asClassName())
+                            .addParameter("jsonString", String::class.asClassName())
+                            .returns(requestClassName)
+                            .addCode(
+                                CodeBlock.of("return %T(json.decodeFromString<%T>(jsonString))", requestClassName, paramsClassName)
+                            )
+                            .build()
+                    )
+                    .build()
+            )
+
+            deserializeWhenBlock.addStatement(
+                "%L -> %T.deserializeFromParams(json, jsonString)",
+                method.id,
+                requestClassName,
+            )
         }
 
         requestClassBuilder.addFunction(
