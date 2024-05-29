@@ -216,7 +216,7 @@ class EnumProcessor(
 
 }
 
-private fun ClassName.buildNamePrefix(): String {
+fun ClassName.buildNamePrefix(): String {
     val stringBuilder = StringBuilder()
     this.simpleNames.forEach {
         stringBuilder.append(it)

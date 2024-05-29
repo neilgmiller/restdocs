@@ -26,6 +26,7 @@ class MethodProcessor(
     private val typeRefPackage: String,
     private val fieldAndTypeProcessor: FieldAndTypeProcessor,
     enumProcessor: EnumProcessor,
+    bitSetProcessor: BitSetProcessor,
     private val usePath: Boolean = false,
     supportPackage: String = "$requestsPackage.support",
 ) {
@@ -106,7 +107,8 @@ class MethodProcessor(
 //        return deserializeFromParamsFunSpecBuilder.build()
     }
 
-    private val objectProcessor: ObjectProcessor = ObjectProcessor(codeDirectory, fieldAndTypeProcessor, enumProcessor)
+    private val objectProcessor: ObjectProcessor =
+        ObjectProcessor(codeDirectory, fieldAndTypeProcessor, enumProcessor, bitSetProcessor)
 
     private data class ResponseClassDefinition(val className: ClassName, val typeSpec: TypeSpec? = null)
 

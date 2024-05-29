@@ -22,6 +22,7 @@ import com.giffardtechnologies.restdocs.domain.FieldListIncludeElement
 import com.giffardtechnologies.restdocs.domain.RequestBody
 import com.giffardtechnologies.restdocs.domain.Response
 import com.giffardtechnologies.restdocs.domain.dsl.DocumentConfiguration
+import com.giffardtechnologies.restdocs.domain.dsl.bitSetSpec
 import com.giffardtechnologies.restdocs.domain.dsl.field
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
@@ -124,7 +125,11 @@ private fun FieldListElementStorageModel.configureField(
             )
         }
 
-        is FieldListIncludeElementStorageModel -> { /* TODO */ }
+        is FieldListIncludeElementStorageModel -> {
+            dataObjectConfiguration.add(
+                this.mapToModel(context)
+            )
+        }
     }
 }
 
@@ -330,15 +335,15 @@ private fun <T> mapEnumOfType(
 }
 
 private fun <T> mapBitSetOfType(
-    keyType: DataType.BasicKey<T>,
+    keyType: DataType.UsableAsFlag<T>,
     values: ArrayList<EnumConstant>,
-) = enumSpec(
+) = bitSetSpec(
     keyType = keyType,
 ) {
     values.forEach {
         value(
             value = keyType.parse(it.value),
-            longName = if (keyType is DataType.StringType) it.longName ?: it.value else requireNotNull(it.longName) { "'longName' must not be blank for numeric key enums" },
+            longName = checkNotNull(it.longName) { "Flag constants must have a long name."},
             description = it.description
         )
     }

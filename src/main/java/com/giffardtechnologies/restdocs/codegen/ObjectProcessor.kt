@@ -3,6 +3,7 @@ package com.giffardtechnologies.restdocs.codegen
 import com.giffardtechnologies.meter.file
 import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ArraySpec
+import com.giffardtechnologies.restdocs.domain.type.TypeSpec.BitSetSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.EnumSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.Nameable
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ObjectSpec
@@ -18,6 +19,7 @@ class ObjectProcessor(
     private val codeDirectory: File,
     private val fieldAndTypeProcessor: FieldAndTypeProcessor,
     private val enumProcessor: EnumProcessor,
+    private val bitSetProcessor: BitSetProcessor,
 ) {
 
     fun writeClassToFile(classDefinition: ClassDefinition) {
@@ -112,6 +114,10 @@ class ObjectProcessor(
 
                     is EnumSpec<*> -> {
                         enumProcessor.processEnumToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
+                    }
+
+                    is BitSetSpec<*> -> {
+                        bitSetProcessor.processBitSetToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
                     }
                 }
 

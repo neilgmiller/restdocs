@@ -3,6 +3,7 @@ package com.giffardtechnologies.restdocs.domain.dsl
 import com.giffardtechnologies.restdocs.domain.FieldElementList
 import com.giffardtechnologies.restdocs.domain.FieldListElement
 import com.giffardtechnologies.restdocs.domain.Field
+import com.giffardtechnologies.restdocs.domain.FieldListIncludeElement
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import io.vavr.collection.Array
 
@@ -32,6 +33,10 @@ open class ObjectSpecConfiguration protected constructor() {
                 fieldsByLongName[longName] = field
             }
         }
+    }
+
+    fun add(field: FieldListIncludeElement) {
+        fieldListElements.add(field)
     }
 
 }

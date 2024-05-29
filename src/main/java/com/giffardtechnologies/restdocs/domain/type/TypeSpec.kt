@@ -12,7 +12,7 @@ import java.time.Instant
  * @property description a description of the semantics of this enum constant
  */
 data class EnumConstant<T>(val value: T, val longName: String, val description: String? = null)
-class FlagConstant<T> {}
+data class FlagConstant<T>(val value: T, val longName: String, val description: String? = null)
 
 sealed interface BooleanRepresentation {
     object AsString: BooleanRepresentation
@@ -23,13 +23,13 @@ sealed interface DataType<T> {
         fun parse(value: String): T
     }
 
-    sealed interface UsableAsFlag<T> : DataType<T>
+    sealed interface UsableAsFlag<T> : BasicKey<T>
 
-    object IntType: DataType<Int>, BasicKey<Int>, UsableAsFlag<Int> {
+    object IntType: DataType<Int>, UsableAsFlag<Int> {
         override fun parse(value: String): Int = value.toInt()
     }
 
-    object LongType: DataType<Long>, BasicKey<Long>, UsableAsFlag<Long> {
+    object LongType: DataType<Long>, UsableAsFlag<Long> {
         override fun parse(value: String): Long = value.toLong()
     }
 
@@ -67,7 +67,7 @@ sealed interface TypeSpec {
     sealed interface CollectionSpec: TypeSpec
     data class ArraySpec(val items: TypeSpec) : CollectionSpec
     data class MapSpec<T>(val key: DataType.BasicKey<T>, val items: TypeSpec) : CollectionSpec
-    data class BitSetSpec<T>(val flagType: DataType.UsableAsFlag<T>, val values: Array<FlagConstant<T>>) : TypeSpec
+    data class BitSetSpec<T>(val flagType: DataType.UsableAsFlag<T>, val values: Array<FlagConstant<T>>) : Nameable
 
 }
 

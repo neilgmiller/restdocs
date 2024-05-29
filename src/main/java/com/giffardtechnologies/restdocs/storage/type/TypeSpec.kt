@@ -65,6 +65,11 @@ open class TypeSpec(
                     if (values == null) {
                         throw ValidationException("$classString of 'bitset' type must define 'values'")
                     }
+                    values.forEach {
+                        if (it.longName == null) {
+                            throw ValidationException("$classString of 'bitset' defines a flag constants without a long name.")
+                        }
+                    }
                 }
             }
         } else if (typeRef != null) {

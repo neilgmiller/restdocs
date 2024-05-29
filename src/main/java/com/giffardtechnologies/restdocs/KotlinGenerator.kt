@@ -1,6 +1,7 @@
 package com.giffardtechnologies.restdocs
 
 import com.giffardtechnologies.meter.file
+import com.giffardtechnologies.restdocs.codegen.BitSetProcessor
 import com.giffardtechnologies.restdocs.codegen.DataObjectProcessor
 import com.giffardtechnologies.restdocs.codegen.EnumProcessor
 import com.giffardtechnologies.restdocs.codegen.FieldAndTypeProcessor
@@ -72,8 +73,11 @@ class KotlinGenerator {
             enumProcessor.processEnum(namedEnumeration)
         }
 
+        val bitSetProcessor = BitSetProcessor(options.codeDirectory, dtoPackage)
+
         val fieldAndTypeProcessor = FieldAndTypeProcessor(dtoPackage, dtoPackage)
-        val objectProcessor = ObjectProcessor(options.codeDirectory, fieldAndTypeProcessor, enumProcessor)
+        val objectProcessor =
+            ObjectProcessor(options.codeDirectory, fieldAndTypeProcessor, enumProcessor, bitSetProcessor)
         val dataObjectProcessor = DataObjectProcessor(dtoPackage, objectProcessor)
 
         document.dataObjects.filter { !it.isHidden }.forEach { dataObject ->
@@ -86,6 +90,7 @@ class KotlinGenerator {
             dtoPackage,
             fieldAndTypeProcessor,
             enumProcessor,
+            bitSetProcessor,
             supportPackage = options.clientPackage + ".support.request"
         )
 

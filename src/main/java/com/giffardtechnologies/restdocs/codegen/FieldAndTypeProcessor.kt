@@ -193,7 +193,12 @@ class FieldAndTypeProcessor(
         parentField: Field,
     ): TypeName {
         val typeName: TypeName = when (typeSpec) {
-            is TypeSpec.BitSetSpec<*> -> Long::class.asTypeName() // TODO()
+            is TypeSpec.BitSetSpec<*> -> {
+                when (typeSpec.flagType) {
+                    DataType.IntType -> Int::class.asTypeName()
+                    DataType.LongType -> Long::class.asTypeName()
+                }
+            }
             is TypeSpec.BooleanSpec -> Boolean::class.asTypeName()
             is ArraySpec -> {
                 if (typeSpec.items is TypeSpec.BooleanSpec) {
