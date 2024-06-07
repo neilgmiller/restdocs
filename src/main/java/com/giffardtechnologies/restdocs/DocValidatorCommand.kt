@@ -1,5 +1,6 @@
 package com.giffardtechnologies.restdocs
 
+import com.fasterxml.jackson.databind.JsonMappingException
 import picocli.CommandLine
 import java.io.BufferedInputStream
 import java.io.File
@@ -7,6 +8,7 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.Callable
+import kotlin.system.exitProcess
 
 @CommandLine.Command(
     description = ["Validates the documentation YAML"],
@@ -14,14 +16,15 @@ import java.util.concurrent.Callable
     mixinStandardHelpOptions = true,
     version = ["DocGenerator 1.0"]
 )
-class DocValidatorCommand : Callable<Unit> {
+class DocValidatorCommand : Callable<Int> {
 
     companion object {
         @Throws(IOException::class)
         @JvmStatic
         fun main(args: Array<String>) {
             val docGenerator = DocValidatorCommand()
-            CommandLine(docGenerator).execute(*args)
+            val exitCode = CommandLine(docGenerator).execute(*args)
+            exitProcess(exitCode)
         }
     }
 
@@ -32,7 +35,7 @@ class DocValidatorCommand : Callable<Unit> {
     private var mPropertiesFile: File? = null
 
     @Throws(Exception::class)
-    override fun call() {
+    override fun call() : Int {
         val propertiesFile: File = (mPropertiesFile ?: File("docbuild.properties")).absoluteFile
         val propsInStream = BufferedInputStream(FileInputStream(propertiesFile))
         val properties = Properties()
@@ -40,7 +43,13 @@ class DocValidatorCommand : Callable<Unit> {
         propsInStream.close()
         val sourceFile = File(propertiesFile.parentFile, properties.getProperty("sourceFile"))
 
-        DocValidator().validate(sourceFile)
+        try {
+            DocValidator().validate(sourceFile)
+        } catch (e: JsonMappingException) {
+            System.err.println(e.message)
+            return CommandLine.ExitCode.SOFTWARE
+        }
+        return CommandLine.ExitCode.OK
     }
 
 }

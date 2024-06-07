@@ -17,15 +17,11 @@ class DocValidator {
 
     @Throws(IOException::class)
     fun validate(sourceFile: File) {
-        try {
-            getValidatedDocument(sourceFile) { message -> println(message) }
-        } catch (e: JsonMappingException) {
-            System.err.println(e.message)
-        }
+        getValidatedDocument(sourceFile) { message -> println(message) }
     }
 
     @Throws(IOException::class, JsonMappingException::class)
-    fun getValidatedDocument(sourceFile: File, messageHandler: (String) -> Unit = {}) : Document {
+    fun getValidatedDocument(sourceFile: File, messageHandler: (String) -> Unit = {}): Document {
         println("Validating '${sourceFile.absolutePath}'...")
         val input = BufferedInputStream(FileInputStream(sourceFile))
 
