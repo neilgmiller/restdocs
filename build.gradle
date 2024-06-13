@@ -10,7 +10,7 @@ group 'org.giffardtechnologies'
 version '2.0-SNAPSHOT'
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(11)
 }
 
 def homePath = System.properties['user.home']
@@ -84,13 +84,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.3'
 
     implementation 'com.squareup:javapoet:1.13.0'
-    implementation 'com.google.googlejavaformat:google-java-format:1.15.0'
-    // https://mvnrepository.com/artifact/org.eclipse.jdt/org.eclipse.jdt.core
-    implementation group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.29.0'
-    // temporarily force this for missing dependency at 3.10
-    implementation('org.eclipse.platform:org.eclipse.equinox.preferences:3.10.1'){
-        force = true
-    }
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    implementation 'com.google.guava:guava:33.2.1-jre'
     implementation "com.allego.common:futureproofenum:1.0-SNAPSHOT"
 
     def mapstruct_version = "1.5.3.Final"
