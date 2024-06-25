@@ -13,8 +13,7 @@ import org.mapstruct.factory.Mappers;
 public interface JavaFieldMapper {
     JavaFieldMapper INSTANCE = Mappers.getMapper(JavaFieldMapper.class);
 
-    @Mappings({@Mapping(target = "typeName", ignore = true),
-               @Mapping(target = "parentDocument", ignore = true)})
+    @Mappings({@Mapping(target = "typeName", ignore = true)})
     JavaGenerator.JavaField dtoToJavaModel(Field field);
 
     @InheritConfiguration

@@ -34,9 +34,9 @@ class FieldElementList {
                     newFields.add(fieldListElement)
                 } else if (fieldListElement is FieldListIncludeElement) {
                     val includedObject = if (parentDocument == null) {
-                        throw IllegalStateException("Cannot find '" + fieldListElement.include)
+                        throw IllegalStateException("Parent document not set.")
                     } else {
-                        parentDocument!!.getDataObjectByName(fieldListElement.include)
+                        checkNotNull(parentDocument!!.getDataObjectByName(fieldListElement.include)) { "Cannot find '${fieldListElement.include}'" }
                     }
                     if (fieldListElement.excluding.isEmpty()) {
                         newFields.addAll(includedObject.fields)
