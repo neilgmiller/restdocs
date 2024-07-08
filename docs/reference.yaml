@@ -42,6 +42,8 @@ enumerations:
             description: a collection of items with a key, aka a map
           - value: enum
             description: an enumeration of allowed values 
+          - value: bitset
+            description: a bitset with a list of defined values for the bits used
     - name:          KeyType
       description:   An enumeration of types alowed for use as keys.
       key:           string
@@ -97,7 +99,7 @@ data objects:
             items:
                 typeref: EnumConstant
     - name: EnumConstant
-      description: "An enum constant: a particular value for an enum"
+      description: "An enum constant: a particular value for an enum (also used for bitset)"
       fields:
           - name: value 
             description: The key value for this constant. A string is used, which will be parsed to the key type.
@@ -170,6 +172,11 @@ data objects:
             description: The type of this field, either this or 'typeref' must be present
             required: no
             typeref: DataType
+          - name: interpretedAs
+            description: The type this field should be interpretted as. E.g. type is `int`, but it is interpretted as
+                         `boolean`
+            required: no
+            typeref: BasicType
           - name: typeref
             description: The type of this field, referencing a named type. Either this or 'type' must be present.
             required: no
@@ -195,7 +202,7 @@ data objects:
             items:
                 typeref: Field
           - name: values
-            description: A list of enum constants, required if this field type is 'enum'.
+            description: A list of enum or bitset constants, required if this field type is 'enum' or 'bitset'.
             required: no
             type: array
             items:
@@ -264,7 +271,8 @@ data objects:
       description: A restriction on the allowed values
       fields:
           - name: restriction 
-            description: The description of the restriction. E.g. 'boolean' to restrict an 'int' to 0 or 1
+            description: The description of the restriction. I.e a string field might be restricted to valid BCP-47 
+                         language tags
             required: yes
             type: string
     - name: Service

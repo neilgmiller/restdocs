@@ -18,7 +18,7 @@
                 #if ($field.required)
                             required
                 #else
-                            optional#if ($field.hasDefaultValue), defaults to '$field.defaultValue'#end
+                            optional#if ($helper.hasDefaultValue($field)), defaults to '$field.defaultValue'#end
                 #end
                             </span>
                         </td>
@@ -27,15 +27,18 @@
                         </td>
                         <td>
 	                        <span class="type" id="type">
-                	#if ($field.isTypeRef)
+                	#if ($helper.isTypeRef($field))
                             	$link.typeSimple($field.typeRef)
-                    #elseif ($field.type.name() == "ARRAY" && $field.items.isTypeRef)
+                    #elseif ($field.type.name() == "ARRAY" && $helper.isTypeRef($field.items))
                             	array of $link.typeSimple($field.items.typeRef)
                     #else
                             	$link.type( $text.fieldClass($field) )
                     #end
                             </span>
-                #if ($field.hasRestrictions)
+                #if ($helper.hasInterpretedAs($field))
+                            <br><span>interpreted as $text.stringFor( $field.interpretedAs )</span>
+                #end
+                #if ($helper.hasRestrictions($field))
                     #foreach( $restriction in $field.restrictions)
                             <br><span>$restriction.restriction</span>
                         #if ($restriction.hasMultipleValues)
@@ -65,7 +68,7 @@
                         <td colspan=4 style="padding: 0.25em 0 0 2em">
                             <table>
                     			#fieldheaders
-        			#foreach( $inner_field in $object.fields )
+        			#foreach( $inner_field in $helper.getFields($object) )
                     			#fieldrow( $inner_field )
         			#end
                 			</table>
@@ -99,13 +102,15 @@
 #macro( enumConstantRow $constant )
                     <tr>
                         <td>
-                            <span class="fieldname">$constant.longName</span><br>
+                            <span class="fieldname">$helper.getLongName($constant)</span><br>
                         </td>
                         <td>
                             <span class="fieldname">$constant.value</span>
                         </td>
                         <td>
+                            #if ($helper.hasDescription($constant))
                             $constant.description
+                            #end
                         </td>
                     </tr>
 #end
@@ -114,6 +119,7 @@
     <title>$document.title</title>
     <link href="css/api.css" rel="stylesheet">
 </head>
+<meta charset="utf-8"/>
 <body>
 	<script>
 		function toggleNav() {
@@ -140,65 +146,71 @@
 			<span id="collapseIcon" style="display: none"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" role="presentation"><path d="M13.706 9.698a.988.988 0 0 0 0-1.407 1.01 1.01 0 0 0-1.419 0l-2.965 2.94a1.09 1.09 0 0 0 0 1.548l2.955 2.93a1.01 1.01 0 0 0 1.42 0 .988.988 0 0 0 0-1.407l-2.318-2.297 2.327-2.307z" fill="currentColor" fill-rule="evenodd"></path></svg></span>
 		</button>
 		<ul id="navItems">
-#if ($document.hasDataObjects)
 			<li><a href="#toc">Table of Contents</a></li>
-            <li>Data Objects</li>
-                <ul>
-    #foreach( $dataObject in $document.dataObjects )
-                    <li><a href="#$dataObject.name">$dataObject.name</a></li>
+      <li>Data Objects</li>
+          <ul>
+    #if ($helper.hasVisibleDataObjects($document))
+              <li>Data Objects
+                  <ul>
+        #foreach( $dataObject in $helper.getVisibleDataObjects($document) )
+                      <li><a href="#$dataObject.name">$dataObject.name</a></li>
+        #end
+                  </ul>
+              </li>
     #end
-                </ul>
-#end
-#if ($document.hasEnumerations)
-            <li>Enumerations</li>
-                <ul>
-    #foreach( $enumeration in $document.enumerations )
-                    <li><a href="#$enumeration.name">$enumeration.name</a></li>
+    #if ($helper.hasEnumerations($document))
+              <li>Enumerations
+                  <ul>
+        #foreach( $enumeration in $document.enumerations )
+                      <li><a href="#$enumeration.name">$enumeration.name</a></li>
+        #end
+                  </ul>
+              </li>
     #end
-                </ul>
-#end
         </ul>
 	</nav>
 	<div id="main">
     <section id="toc" role="directory">
-			
+
         <h1>Table of Contents</h1>
         <ul>
-#if ($document.hasDataObjects)
-            <li>Data Objects</li>
+#if ($helper.hasVisibleDataObjects($document))
+            <li>Data Objects
                 <ul>
-    #foreach( $dataObject in $document.dataObjects )
+    #foreach( $dataObject in $helper.getVisibleDataObjects($document))
                     <li><a href="#$dataObject.name">$dataObject.name</a></li>
     #end
                 </ul>
+            </li>
 #end
-#if ($document.hasEnumerations)
-            <li>Enumerations</li>
+#if ($helper.hasEnumerations($document))
+            <li>Enumerations
                 <ul>
     #foreach( $enumeration in $document.enumerations )
                     <li><a href="#$enumeration.name">$enumeration.name</a></li>
     #end
                 </ul>
+            </li>
 #end
         </ul>
     </section>
     <section id="api" role="main">
-#if ($document.hasDataObjects)
+#if ($helper.hasVisibleDataObjects($document))
         <section>
             <h2>Data Objects</h2>
-#foreach( $dataObject in $document.dataObjects )
+#foreach( $dataObject in $helper.getVisibleDataObjects($document) )
             <section>
                 <h3 id="$dataObject.name">$dataObject.name</h3>
                 <p>$dataObject.description</p>
-    #if ($dataObject.hasFields)
+    #if ($helper.hasFields($dataObject))
                 <table>
                     #fieldheaders
-        #foreach( $field in $dataObject.fields )
+        #foreach( $field in $helper.getFields($dataObject) )
                     #fieldrow( $field )
         #end
                 </table>
     #end
-    #if ($dataObject.hasChildren)
+    #if ($helper.hasChildren($dataObject))
                 <h4>Discriminator</h4>
                 <table>
                     #fieldheaders
@@ -210,7 +222,7 @@
                 <p>$child.description</p>
                 <table>
                     #fieldheaders
-            #foreach( $field in $child.fields )
+            #foreach( $field in $helper.getFields($child) )
                     #fieldrow( $field )
             #end
                 </table>
@@ -220,14 +232,14 @@
 #end
         </section>
 #end
-#if ($document.hasEnumerations)
+#if ($helper.hasEnumerations($document))
         <section>
             <h2>Enumerations</h2>
 #foreach( $enumeration in $document.enumerations )
             <section>
                 <h3 id="$enumeration.name">$enumeration.name</h3>
                 <p>$enumeration.description</p>
-    #if ($enumeration.hasEnumValues)
+    #if ($helper.hasEnumValues($enumeration))
                 <table>
                     #enumheaders
         #foreach( $constant in $enumeration.values )
