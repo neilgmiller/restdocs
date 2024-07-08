@@ -109,15 +109,11 @@ class FieldAndTypeProcessor(
                     if (field.defaultValue.matches(Regex("-?\\d+"))) {
                         // TODO convert numeric to name
                     } else {
-                        if (useFutureProofEnum) {
-                            // TODO convert default to value
-                        } else {
-                            fieldBuilder.initializer(
-                                "%T.%L",
-                                className,
-                                fieldNameToClassStyle(field.defaultValue)
-                            )
-                        }
+                        fieldBuilder.initializer(
+                            "%T.%L",
+                            className,
+                            fieldNameToClassStyle(field.defaultValue)
+                        )
                     }
                 }
                 is TypeSpec.ObjectSpec -> {}
