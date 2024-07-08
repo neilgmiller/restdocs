@@ -33,6 +33,12 @@ import java.util.concurrent.Callable
     @CommandLine.Option(names = ["-v", "--verbose"], description = ["Turn on verbose output"])
     private var mVerbose = false
 
+    @CommandLine.Option(
+        names = ["-r", "--reference"],
+        description = ["Treat the source document as reference documentation"]
+    )
+    private var sourceIsReferenceDocument = false
+
     @Throws(Exception::class)
     override fun call() {
         val executableDir = File(System.getProperty("execdir"))
@@ -57,7 +63,12 @@ import java.util.concurrent.Callable
             templateFile
         }
 
-        DocGenerator().generate(sourceFile, templateFile, outputFile, DocGenerator.Options(mVerbose))
+        DocGenerator().generate(
+            sourceFile,
+            templateFile,
+            outputFile,
+            DocGenerator.Options(mVerbose, sourceIsReferenceDocument)
+        )
     }
 
 }

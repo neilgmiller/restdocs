@@ -14,7 +14,7 @@ import java.util.*
 
 class DocGenerator {
 
-    data class Options(val verboseLogging: Boolean)
+    data class Options(val verboseLogging: Boolean, val useNameForLongName: Boolean)
 
     @Throws(Exception::class)
     fun generate(sourceFile: File, templateFile: File, outputFile: File, options: Options) {
@@ -22,12 +22,12 @@ class DocGenerator {
             println("Template file is: $templateFile")
         }
 
-        generateHTML(sourceFile, templateFile, outputFile)
+        generateHTML(sourceFile, templateFile, outputFile, options)
     }
 
     @Throws(IOException::class)
-    private fun generateHTML(sourceFile: File, templateFile: File, outputFile: File) {
-        val doc = DocValidator().getValidatedDocument(sourceFile)
+    private fun generateHTML(sourceFile: File, templateFile: File, outputFile: File, options: Options) {
+        val doc = DocValidator(DocValidator.Options(options.useNameForLongName)).getValidatedDocument(sourceFile)
 
         /*
 		 *  create a new instance of the engine

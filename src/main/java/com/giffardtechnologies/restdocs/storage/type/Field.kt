@@ -2,6 +2,7 @@ package com.giffardtechnologies.restdocs.storage.type
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.giffardtechnologies.restdocs.DocValidator
 import com.giffardtechnologies.restdocs.jackson.TrueOnNullBooleanDeserializer
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
@@ -41,7 +42,8 @@ open class Field(
         if (longName.isBlank()) {
             throw ValidationException("Field must have a long name")
         }
-        if (!longName.matches(alphaNumericRegex)) {
+        val useRelaxedLongNames = validationContext !is DocValidator.ValidationContext || validationContext.relaxedLongNames
+        if (!useRelaxedLongNames && !longName.matches(alphaNumericRegex)) {
             throw ValidationException("Field long name must be alphanumeric, and cannot start with a number: '$longName'")
         }
     }

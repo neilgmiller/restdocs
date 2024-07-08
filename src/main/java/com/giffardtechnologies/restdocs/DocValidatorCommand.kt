@@ -34,6 +34,12 @@ class DocValidatorCommand : Callable<Int> {
     )
     private var mPropertiesFile: File? = null
 
+    @CommandLine.Option(
+        names = ["-r", "--reference"],
+        description = ["Treat the source document as reference documentation"]
+    )
+    private var sourceIsReferenceDocument = false
+
     @Throws(Exception::class)
     override fun call() : Int {
         val propertiesFile: File = (mPropertiesFile ?: File("docbuild.properties")).absoluteFile
@@ -44,7 +50,7 @@ class DocValidatorCommand : Callable<Int> {
         val sourceFile = File(propertiesFile.parentFile, properties.getProperty("sourceFile"))
 
         try {
-            DocValidator().validate(sourceFile)
+            DocValidator(DocValidator.Options(sourceIsReferenceDocument)).validate(sourceFile)
         } catch (e: JsonMappingException) {
             System.err.println(e.message)
             return CommandLine.ExitCode.SOFTWARE
