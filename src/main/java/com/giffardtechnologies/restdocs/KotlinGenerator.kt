@@ -120,9 +120,11 @@ class KotlinGenerator {
                     document.service?.methods?.forEach {
                         val (requestClassName, responseClassName) = methodProcessor.getClassNames(it)
 
+                        val requestArgName = requestClassName.simpleName.replaceFirstChar(Char::lowercaseChar)
+
                         classBuilder.addFunction(
                             FunSpec.builder("execute")
-                                .addParameter("request", requestClassName)
+                                .addParameter(requestArgName, requestClassName)
                                 .addModifiers(KModifier.SUSPEND)
                                 .returns(responseClassName)
                                 .addAnnotation(
@@ -132,13 +134,13 @@ class KotlinGenerator {
                                         .addMember("%T::class", ClassName("kotlin.coroutines.cancellation", "CancellationException"))
                                         .build()
                                 )
-                                .addCode("return apiServerClient.execute(request)")
+                                .addCode("return apiServerClient.execute($requestArgName)")
                                 .build()
                         )
 
                         classBuilder.addFunction(
                             FunSpec.builder("executeBlocking")
-                                .addParameter("request", requestClassName)
+                                .addParameter(requestArgName, requestClassName)
                                 .returns(responseClassName)
                                 .addAnnotation(
                                     AnnotationSpec.builder(ClassName("kotlin", "Throws"))
@@ -149,7 +151,7 @@ class KotlinGenerator {
                                 )
                                 .addCode("""
                                     | return %T {
-                                    |   apiServerClient.execute(request)
+                                    |   apiServerClient.execute($requestArgName)
                                     | }
                                 """.trimMargin("|"), ClassName("kotlinx.coroutines", "runBlocking")
                                 )
@@ -158,12 +160,12 @@ class KotlinGenerator {
 
                         classBuilder.addFunction(
                             FunSpec.builder("executeForResult")
-                                .addParameter("request", requestClassName)
+                                .addParameter(requestArgName, requestClassName)
                                 .returns(Result::class.asClassName().parameterizedBy(responseClassName))
                                 .addCode("""
                                     | return try {
                                     |     val response = %T {
-                                    |         apiServerClient.execute(request)
+                                    |         apiServerClient.execute($requestArgName)
                                     |     }
                                     |     Result.success(response)
                                     | } catch (e: Exception) {
