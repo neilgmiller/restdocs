@@ -191,10 +191,11 @@ class FieldAndTypeProcessor(
     ): TypeName {
         val typeName: TypeName = when (typeSpec) {
             is TypeSpec.BitSetSpec<*> -> {
-                when (typeSpec.flagType) {
-                    DataType.IntType -> Int::class.asTypeName()
-                    DataType.LongType -> Long::class.asTypeName()
+                val setClass = when (typeSpec.flagType) {
+                    DataType.IntType -> ClassName("com.allego.api.client.support.bitset", "IntBitSet")
+                    DataType.LongType -> ClassName("com.allego.api.client.support.bitset", "BitSet")
                 }
+                setClass.parameterizedBy(subObjectClassNameFactory(parentField))
             }
             is TypeSpec.BooleanSpec -> Boolean::class.asTypeName()
             is ArraySpec -> {
