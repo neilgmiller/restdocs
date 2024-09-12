@@ -4,6 +4,7 @@ import com.giffardtechnologies.restdocs.storage.Common
 import com.giffardtechnologies.restdocs.storage.DataObject
 import com.giffardtechnologies.restdocs.storage.Document
 import com.giffardtechnologies.restdocs.storage.Method
+import com.giffardtechnologies.restdocs.storage.NamedBitSet
 import com.giffardtechnologies.restdocs.storage.NamedEnumeration
 import com.giffardtechnologies.restdocs.storage.Response
 import com.giffardtechnologies.restdocs.storage.Restriction
@@ -14,6 +15,10 @@ import com.giffardtechnologies.restdocs.storage.type.FieldElementList
 import com.giffardtechnologies.restdocs.storage.type.TypeSpec
 
 class ObjectInspectionHelper(val document: Document) {
+
+    fun hasBitSets(document: Document): Boolean {
+        return document.bitsets.isNotEmpty()
+    }
 
     fun hasEnumerations(document: Document): Boolean {
         return document.enumerations.isNotEmpty()
@@ -29,6 +34,10 @@ class ObjectInspectionHelper(val document: Document) {
 
     fun hasEnumValues(enumeration: NamedEnumeration): Boolean {
         return !enumeration.values.isNullOrEmpty()
+    }
+
+    fun hasBitSetValues(bitSet: NamedBitSet): Boolean {
+        return !bitSet.values.isNullOrEmpty()
     }
 
     fun getLongName(enumConstant: EnumConstant): String {
