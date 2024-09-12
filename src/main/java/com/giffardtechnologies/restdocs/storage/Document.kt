@@ -6,5 +6,6 @@ data class Document(
         val title: String,
         val service: Service?,
         val enumerations: ArrayList<NamedEnumeration> = ArrayList(),
+        val bitsets: ArrayList<NamedBitSet> = ArrayList(),
         @JsonProperty("data objects") val dataObjects: ArrayList<DataObject> = ArrayList()
 )

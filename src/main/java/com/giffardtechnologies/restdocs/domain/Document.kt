@@ -10,6 +10,7 @@ interface Context {
 
 class Document(
     var title: String,
+    val bitsets: Array<NamedBitSet>,
     val enumerations: Array<NamedEnumeration>,
     val dataObjects: Array<DataObject>,
     val service: Service? = null,
@@ -17,12 +18,14 @@ class Document(
 
     private val dataObjectNames = HashMap.ofAll(dataObjects.associateBy { it.typeName })
     private val enumerationNames = HashMap.ofAll(enumerations.associateBy { it.typeName })
+    private val bitSetNames = HashMap.ofAll(bitsets.associateBy { it.typeName })
 
     override fun getTypeByName(name: String): NamedType<*>? {
         val dataObject = dataObjectNames[name].orNull
         val namedEnumeration = enumerationNames[name].orNull
-        check(!(dataObject == null && namedEnumeration == null)) { "Type reference to undefined type: $name." }
-        check(!(dataObject != null && namedEnumeration != null)) { "Ambiguous type reference: $name." }
-        return dataObject ?: namedEnumeration
+        val namedBitSet = bitSetNames[name].orNull
+        check(!(dataObject == null && namedEnumeration == null && namedBitSet == null)) { "Type reference to undefined type: $name." }
+        check(!(dataObject != null && namedEnumeration != null && namedBitSet != null)) { "Ambiguous type reference: $name." }
+        return dataObject ?: namedEnumeration ?: namedBitSet
     }
 }

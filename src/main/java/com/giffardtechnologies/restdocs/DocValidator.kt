@@ -36,8 +36,9 @@ class DocValidator {
 
         val dataObjectNames = document.dataObjects.map { it.name }
         val enumerationNames = document.enumerations.map { it.name }
+        val bitSetNames = document.bitsets.map { it.name }
         val responseTypeNames = document.service?.common?.responseDataObjects?.map { it.name } ?: emptyList()
-        val referencableTypes = VavrHashSet.ofAll(dataObjectNames + enumerationNames + responseTypeNames)
+        val referencableTypes = VavrHashSet.ofAll(dataObjectNames + enumerationNames + responseTypeNames + bitSetNames)
 
         val contextMapper = createMapper(FullContext(referencableTypes, document))
         contextMapper.readValue(

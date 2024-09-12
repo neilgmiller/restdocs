@@ -4,6 +4,7 @@ import com.giffardtechnologies.restdocs.domain.DataObject
 import com.giffardtechnologies.restdocs.domain.type.DataType
 import com.giffardtechnologies.restdocs.domain.type.DataType.BasicKey
 import com.giffardtechnologies.restdocs.domain.Field
+import com.giffardtechnologies.restdocs.domain.NamedBitSet
 import com.giffardtechnologies.restdocs.domain.type.BooleanRepresentation
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ArraySpec
@@ -236,7 +237,18 @@ class FieldAndTypeProcessor(
                 subObjectClassNameFactory(parentField)
             }
 
-            is TypeSpec.TypeRefSpec -> ClassName(typeRefPackage, typeSpec.referenceName)
+            is TypeSpec.TypeRefSpec -> {
+                val referencedType = typeSpec.typeRef.value
+                if (referencedType is NamedBitSet) {
+                    val setClass = when(referencedType.type.flagType) {
+                        DataType.IntType -> ClassName("com.allego.api.client.support.bitset", "IntBitSet")
+                        DataType.LongType -> ClassName("com.allego.api.client.support.bitset", "BitSet")
+                    }
+                    setClass.parameterizedBy(ClassName(typeRefPackage, typeSpec.referenceName))
+                } else {
+                    ClassName(typeRefPackage, typeSpec.referenceName)
+                }
+            }
 
 //            DATE -> return ClassName.get(LocalDate::class.java)
 //            COLLECTION -> return ParameterizedTypeName.get(

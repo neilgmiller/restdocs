@@ -75,6 +75,10 @@ class KotlinGenerator {
 
         val bitSetProcessor = BitSetProcessor(options.codeDirectory, dtoPackage)
 
+        for (namedBitSet in document.bitsets) {
+            bitSetProcessor.processBitSet(namedBitSet)
+        }
+
         val fieldAndTypeProcessor = FieldAndTypeProcessor(dtoPackage, dtoPackage)
         val objectProcessor =
             ObjectProcessor(options.codeDirectory, fieldAndTypeProcessor, enumProcessor, bitSetProcessor)
@@ -98,6 +102,7 @@ class KotlinGenerator {
             methodProcessor.processMethod(it)
         }
 
+        bitSetProcessor.writeSupportingFiles()
         enumProcessor.writeSupportingFiles()
         methodProcessor.writeSupportingFiles()
 

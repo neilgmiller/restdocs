@@ -19,11 +19,13 @@ import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.FieldElementList
 import com.giffardtechnologies.restdocs.domain.FieldListElement
 import com.giffardtechnologies.restdocs.domain.FieldListIncludeElement
+import com.giffardtechnologies.restdocs.domain.NamedBitSet
 import com.giffardtechnologies.restdocs.domain.RequestBody
 import com.giffardtechnologies.restdocs.domain.Response
 import com.giffardtechnologies.restdocs.domain.dsl.DocumentConfiguration
 import com.giffardtechnologies.restdocs.domain.dsl.bitSetSpec
 import com.giffardtechnologies.restdocs.domain.dsl.field
+import com.giffardtechnologies.restdocs.domain.dsl.namedBitSet
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.HTTPMethod
@@ -35,6 +37,7 @@ import com.giffardtechnologies.restdocs.storage.Common as CommonStorageModel
 import com.giffardtechnologies.restdocs.storage.DataObject as DataObjectStorageModel
 import com.giffardtechnologies.restdocs.storage.Document as DocumentStorageModel
 import com.giffardtechnologies.restdocs.storage.Method as MethodStorageModel
+import com.giffardtechnologies.restdocs.storage.NamedBitSet as NamedBitSetStorageModel
 import com.giffardtechnologies.restdocs.storage.NamedEnumeration as NamedEnumerationStorageModel
 import com.giffardtechnologies.restdocs.storage.RequestBody as RequestBodyStorageModel
 import com.giffardtechnologies.restdocs.storage.Response as ResponseStorageModel
@@ -49,6 +52,7 @@ import com.giffardtechnologies.restdocs.storage.type.TypeSpec as TypeSpecStorage
 // StorageModel
 fun DocumentStorageModel.mapToModel(): Document {
     val document = document(title) {
+        bitsets.map { it.mapToModel() }.forEach { addNamedBitSet(it) }
         enumerations.map { it.mapToModel() }.forEach { addNamedEnumeration(it) }
         dataObjects.map { it.mapToModel(context) }.forEach { addDataObject(it) }
         service = this@mapToModel.service.mapToModel(context, this)
@@ -58,6 +62,36 @@ fun DocumentStorageModel.mapToModel(): Document {
 
 private fun <U, V, T: List<U>> T?.mapList(mapper: (U) -> V): Array<V> {
     return this?.stream()?.map { mapper(it) }?.collect(Array.collector()) ?: Array.empty()
+}
+
+private fun NamedBitSetStorageModel.mapToModel() : NamedBitSet {
+    check(values != null) { "An enumeration must have a list of values" }
+    return when (this.key) {
+        null,
+        KeyType.INT -> mapBitSetOfType(this.typeName, keyType = DataType.IntType, description, values)
+        KeyType.LONG -> mapBitSetOfType(this.typeName, keyType = DataType.LongType, description, values)
+        KeyType.STRING -> throw IllegalArgumentException("${this.typeName} of 'bitset' type cannot have a 'key' of type 'string'")
+        KeyType.ENUM -> throw IllegalArgumentException("${this.typeName} of 'bitset' type cannot have a 'key' of type 'enum'")
+    }
+}
+
+private fun <T> mapBitSetOfType(
+    name: String,
+    keyType: DataType.UsableAsFlag<T>,
+    description: String?,
+    values: ArrayList<EnumConstant>,
+) = namedBitSet(
+    name = name,
+    keyType = keyType,
+) {
+    this.description = description
+    values.forEach {
+        value(
+            value = keyType.parse(it.value),
+            longName = requireNotNull(it.longName) { "'longName' must not be blank for flags" },
+            description = it.description
+        )
+    }
 }
 
 private fun NamedEnumerationStorageModel.mapToModel() : NamedEnumeration {

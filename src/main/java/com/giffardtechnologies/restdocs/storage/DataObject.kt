@@ -24,7 +24,7 @@ class DataObject(
         }
         if (validationContext is DocValidator.AccumulatingContext) {
             if (validationContext.referencableTypes.contains(name)) {
-                throw ValidationException("An data object or enumeration already exists with the name: \"$name\"")
+                throw ValidationException("A data object, enumeration, or bitset already exists with the name: \"$name\"")
             } else {
                 fields.validateHasNoDuplicates()
                 validationContext.referencableTypes.add(name)

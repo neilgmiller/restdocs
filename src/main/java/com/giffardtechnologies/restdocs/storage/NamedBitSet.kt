@@ -9,12 +9,12 @@ import com.giffardtechnologies.restdocs.storage.type.KeyType
 import com.giffardtechnologies.restdocs.storage.type.NamedType
 import com.giffardtechnologies.restdocs.storage.type.TypeSpec
 
-class NamedEnumeration(
+class NamedBitSet(
     val name: String,
     val description: String? = null,
     key: KeyType,
     values: ArrayList<EnumConstant>,
-) : TypeSpec(type = DataType.ENUM, null, key = key, values = values), NamedType, Validatable {
+) : TypeSpec(type = DataType.BITSET, null, key = key, values = values), NamedType, Validatable {
 
     override val typeName: String
         get() = name
