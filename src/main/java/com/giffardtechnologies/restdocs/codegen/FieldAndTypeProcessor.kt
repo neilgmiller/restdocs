@@ -92,7 +92,7 @@ class FieldAndTypeProcessor(
                 is TypeSpec.BooleanSpec -> {
                     when(type.representedAs) {
                         BooleanRepresentation.AsInteger -> {
-                            val defaultBoolean = if (field.defaultValue == "0") "true" else "false"
+                            val defaultBoolean = if (field.defaultValue == "0") "false" else "true"
                             fieldBuilder.initializer("%L", defaultBoolean)
                         }
                         BooleanRepresentation.AsString -> {
