@@ -34,7 +34,7 @@ repositories {
             username "$allegoArtifactoryUser"
             password "$allegoArtifactoryPassword"
         }
-        url "https://dev-build.allego.com/artifactory/$allegoAndroidArtifactoryRepo/"
+        url "https://dev-artifactory.allego-dev.com/artifactory/$allegoAndroidArtifactoryRepo/"
     }
 }
 
