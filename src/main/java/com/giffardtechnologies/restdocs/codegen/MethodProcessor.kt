@@ -7,6 +7,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.STAR
@@ -62,6 +63,9 @@ class MethodProcessor(
 //        )
 
     private val deserializeWhenBlock = CodeBlock.builder()
+    private val serializeWhenBlock = CodeBlock.builder()
+
+    private val encodeToString = MemberName("kotlinx.serialization", "encodeToString")
 
 
     fun writeSupportingFiles() {
@@ -81,6 +85,28 @@ class MethodProcessor(
                             .beginControlFlow("return when(methodID) {")
                             .add(deserializeWhenBlock.build())
                             .add("else -> throw IllegalArgumentException(\"Unknown method ID: \$methodID\")")
+                            .endControlFlow()
+                            .build()
+                    )
+                    .build()
+            )
+        }.writeTo(codeDirectory)
+
+        val serializerFileName = ClassName(
+            "$requestsPackage.serialization",
+            "SerializeParamsFromBaseRequest"
+        )
+        file(serializerFileName) {
+            addFunction(
+                FunSpec.builder("serializeParamsFromBaseRequest")
+                    .addParameter("json", Json::class.asClassName())
+                    .addParameter("request", mAllegoBaseRequestClassName.parameterizedBy(STAR))
+                    .returns(String::class.asClassName())
+                    .addCode(
+                        CodeBlock.builder()
+                            .beginControlFlow("return when(request) {")
+                            .add(serializeWhenBlock.build())
+                            .add("else -> throw IllegalArgumentException(\"Unknown request call: \$request::class.name\")")
                             .endControlFlow()
                             .build()
                     )
@@ -161,6 +187,10 @@ class MethodProcessor(
             deserializeWhenBlock.addStatement(
                 "%L -> %T()",
                 method.id,
+                requestClassName,
+            )
+            serializeWhenBlock.addStatement(
+                "is %T -> \"\"",
                 requestClassName,
             )
             Unit::class.asClassName()
@@ -257,12 +287,26 @@ class MethodProcessor(
                             )
                             .build()
                     )
+                    .addFunction(
+                        FunSpec.builder("serializeFromParams")
+                            .addParameter("json", Json::class.asClassName())
+                            .addParameter("request", requestClassName)
+                            .returns(String::class.asClassName())
+                            .addCode(
+                                CodeBlock.of("return json.%1M<%2T>(request.requestParams as %2T)", encodeToString, paramsClassName)
+                            )
+                            .build()
+                    )
                     .build()
             )
 
             deserializeWhenBlock.addStatement(
                 "%L -> %T.deserializeFromParams(json, jsonString)",
                 method.id,
+                requestClassName,
+            )
+            serializeWhenBlock.addStatement(
+                "is %1T -> %1T.serializeFromParams(json, request)",
                 requestClassName,
             )
         }
