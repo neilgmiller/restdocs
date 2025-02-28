@@ -4,7 +4,6 @@ import com.giffardtechnologies.restdocs.domain.Document
 import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.google.common.base.CaseFormat
-import com.squareup.kotlinpoet.ClassName
 import java.util.*
 import java.util.regex.MatchResult
 import java.util.regex.Matcher
@@ -90,6 +89,14 @@ fun Field.toObjectName(): String { // TODO dtoPackage: String
     }
 }
 
+fun Field.toPropertyName(): String {
+    return toPropertyStyle(longName)
+}
+
+fun toPropertyStyle(input: String): String {
+    return input.replace("Id$".toRegex(), "ID").replace("Ids$".toRegex(), "IDs")
+}
+
 @Suppress("unused")
 class ModelExts(private val mDocument: Document) {
 
@@ -170,11 +177,6 @@ class ModelExts(private val mDocument: Document) {
 //        }
 //        return null
 //    }
-
-    fun toGetterStyle(input: String): String {
-        return input.replace("Id$".toRegex(), "ID").replace("Ids$".toRegex(), "IDs")
-    }
-
 
     fun fieldNameToClassStyle(input: String): String {
         var input = input

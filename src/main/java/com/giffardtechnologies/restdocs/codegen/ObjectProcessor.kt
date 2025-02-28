@@ -89,16 +89,16 @@ class ObjectProcessor(
                 objectClassName = className,
                 subObjectClassNameFactory = subObjectClassNameFactory
             )
-            val parameterSpecBuilder = ParameterSpec.builder(field.longName, propertySpec.type)
+            val parameterSpecBuilder = ParameterSpec.builder(field.toPropertyName(), propertySpec.type)
             if (!propertySpec.type.isNullable || completeConstructor) {
                 if (!completeConstructor) {
                     parameterSpecBuilder.defaultValue(propertySpec.initializer)
                 }
                 constructorBuilder.addParameter(parameterSpecBuilder.build())
-                classBuilder.addProperty(propertySpec.toBuilder().initializer(field.longName).build())
+                classBuilder.addProperty(propertySpec.toBuilder().initializer(field.toPropertyName()).build())
             } else {
                 constructorBuilder.addParameter(parameterSpecBuilder.defaultValue("null").build())
-                classBuilder.addProperty(propertySpec.toBuilder().initializer(field.longName).build())
+                classBuilder.addProperty(propertySpec.toBuilder().initializer(field.toPropertyName()).build())
             }
 
             val typeOrItemType = if (field.type is ArraySpec) {

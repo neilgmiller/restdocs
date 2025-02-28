@@ -49,8 +49,8 @@ class FieldAndTypeProcessor(
     ): PropertySpec {
         val isNullable = (!field.isRequired && (field.defaultValue == null || !initializeWithDefault)) && !(field.type is ArraySpec || field.type is MapSpec<*>)
         val fieldBuilder = PropertySpec.builder(
-            field.longName,
-            getTypeName(
+            name = field.toPropertyName(),
+            type = getTypeName(
                 field.type,
                 !isNullable,
                 false,
