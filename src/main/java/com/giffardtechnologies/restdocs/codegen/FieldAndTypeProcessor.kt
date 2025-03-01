@@ -120,7 +120,7 @@ class FieldAndTypeProcessor(
                 is TypeSpec.ObjectSpec -> {}
                 is TypeSpec.TypeRefSpec -> {}
             }
-        } else if (initializeWithDefault && initializeCollections && type is TypeSpec.CollectionSpec) {
+        } else if (initializeWithDefault && initializeCollections && type is TypeSpec.CollectionSpec && !field.isRequired) {
             when (type) {
                 is ArraySpec -> fieldBuilder.initializer("listOf()")
                 is MapSpec<*> -> fieldBuilder.initializer("mapOf()")
