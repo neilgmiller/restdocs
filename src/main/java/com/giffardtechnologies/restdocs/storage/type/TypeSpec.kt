@@ -54,11 +54,45 @@ open class TypeSpec(
                     }
                 }
                 DataType.ENUM -> {
-                    if (key == KeyType.ENUM) {
-                        throw ValidationException("$classString of 'enum' type cannot have a 'key' of type 'enum'")
+                    val keyStringInvalid = when (key) {
+                        KeyType.INT -> { it: String ->
+                            try {
+                                it.toInt()
+                                false
+                            } catch (e: Exception) {
+                                true
+                            }
+                        }
+                        KeyType.LONG -> { it: String ->
+                            try {
+                                it.toLong()
+                                false
+                            } catch (e: Exception) {
+                                true
+                            }
+                        }
+                        KeyType.STRING -> { _ -> false }
+                        KeyType.ENUM -> throw ValidationException("$classString of 'enum' type cannot have a 'key' of type 'enum'")
+                        null -> throw ValidationException("$classString of 'enum' type missing 'key' of type")
                     }
                     if (values == null) {
                         throw ValidationException("$classString of 'enum' type must define 'values'")
+                    } else {
+                        val valuesKeySet = mutableSetOf<String>()
+                        val valuesNameSet = mutableSetOf<String>()
+                        values.forEach {
+                            if (keyStringInvalid(it.value)) {
+                                throw ValidationException("Key '${it.value}' in '$classString' does not match key type: $key")
+                            }
+                            if (valuesKeySet.contains(it.value)) {
+                                throw ValidationException("Duplicate key '${it.value}' found in '$classString'")
+                            }
+                            valuesKeySet.add(it.value)
+                            if (valuesNameSet.contains(it.longName)) {
+                                throw ValidationException("Duplicate longName '${it.longName}' found in '$classString'")
+                            }
+                            valuesNameSet.add(it.value)
+                        }
                     }
                 }
                 DataType.BITSET -> {
