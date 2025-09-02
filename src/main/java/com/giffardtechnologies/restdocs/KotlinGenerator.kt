@@ -15,6 +15,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asClassName
 import org.apache.commons.io.FileUtils
 import java.io.File
@@ -111,6 +112,7 @@ class KotlinGenerator {
                 raw { classBuilder ->
                     val constructorBuilder = FunSpec.constructorBuilder()
                     val apiServerClientClassName = ClassName(options.clientPackage, "APIServerClient")
+                        .parameterizedBy(ClassName("io.ktor.client.engine.darwin", "DarwinClientEngineConfig"))
                     constructorBuilder.addParameter("apiServerClient", apiServerClientClassName)
                     classBuilder.primaryConstructor(constructorBuilder.build())
                     val propertySpecBuilder = PropertySpec.builder(
