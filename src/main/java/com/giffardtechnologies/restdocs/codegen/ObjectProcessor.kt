@@ -5,6 +5,7 @@ import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ArraySpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.BitSetSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.EnumSpec
+import com.giffardtechnologies.restdocs.domain.type.TypeSpec.MapSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.Nameable
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ObjectSpec
 import com.squareup.kotlinpoet.ClassName
@@ -101,11 +102,7 @@ class ObjectProcessor(
                 classBuilder.addProperty(propertySpec.toBuilder().initializer(field.toPropertyName()).build())
             }
 
-            val typeOrItemType = if (field.type is ArraySpec) {
-                field.type.items
-            } else {
-                field.type
-            }
+            val typeOrItemType = getFieldOrItemType(field.type)
             if (typeOrItemType is Nameable) {
                 val subObjectClassName = subObjectClassNameFactory(className, field)
                 val subObjectTypeSpec = when (typeOrItemType) {
@@ -128,6 +125,14 @@ class ObjectProcessor(
         classBuilder.primaryConstructor(constructorBuilder.build())
 
         return classBuilder.build()
+    }
+
+    private fun getFieldOrItemType(type: com.giffardtechnologies.restdocs.domain.type.TypeSpec): com.giffardtechnologies.restdocs.domain.type.TypeSpec {
+        return when (type) {
+            is ArraySpec -> getFieldOrItemType(type.items)
+            is MapSpec<*> -> getFieldOrItemType(type.items)
+            else -> type
+        }
     }
 
     private fun getSubObjectClassName(parentClassName: ClassName, field: Field, forceTopLevel: Boolean): ClassName {
