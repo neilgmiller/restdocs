@@ -17,3 +17,4 @@
 /.idea/jarRepositories.xml
 /local.properties
 .idea/libraries/**
+/.claude
