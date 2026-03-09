@@ -1,0 +1,51 @@
+[versions]
+kotlin = "1.9.21"
+junit = "4.13.1"
+snakeyaml = "2.2"
+velocity = "2.3"
+velocity-tools = "3.1"
+gson = "2.10.1"
+picocli = "4.7.5"
+findbugs = "3.0.2"
+jetbrains-annotations = "23.0.0"
+kotlinx-serialization = "1.5.0"
+kotlinx-datetime = "0.5.0"
+commons-io = "2.11.0"
+commons-lang3 = "3.13.0"
+commons-text = "1.11.0"
+kotlinpoet = "1.16.0"
+vavr = "0.10.3"
+jackson = "2.15.3"
+javapoet = "1.13.0"
+guava = "33.2.1-jre"
+futureproofenum = "1.0-SNAPSHOT"
+mapstruct = "1.5.3.Final"
+
+[libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+snakeyaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeyaml" }
+velocity-engine = { group = "org.apache.velocity", name = "velocity-engine-core", version.ref = "velocity" }
+velocity-tools = { group = "org.apache.velocity.tools", name = "velocity-tools-generic", version.ref = "velocity-tools" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+picocli = { group = "info.picocli", name = "picocli", version.ref = "picocli" }
+findbugs-jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "findbugs" }
+jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-annotations" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
+commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commons-lang3" }
+commons-text = { group = "org.apache.commons", name = "commons-text", version.ref = "commons-text" }
+kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
+vavr = { group = "io.vavr", name = "vavr", version.ref = "vavr" }
+jackson-dataformat-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+javapoet = { group = "com.squareup", name = "javapoet", version.ref = "javapoet" }
+guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+futureproofenum = { group = "com.allego.common", name = "futureproofenum", version.ref = "futureproofenum" }
+mapstruct = { group = "org.mapstruct", name = "mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { group = "org.mapstruct", name = "mapstruct-processor", version.ref = "mapstruct" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

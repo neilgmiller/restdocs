@@ -5,6 +5,7 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.Callable
 
@@ -35,7 +36,7 @@ import java.util.concurrent.Callable
 
     @Throws(Exception::class)
     override fun call() {
-        val executableDir = File(System.getProperty("execdir"))
+        val executableDir = File(System.getProperty("user.dir")) // user.dir is the working directory, not to be confused with user.home
         val propertiesFile: File = (mPropertiesFile ?: File("docbuild.properties")).absoluteFile
         val propsInStream = BufferedInputStream(FileInputStream(propertiesFile))
         val properties = Properties()
