@@ -1,14 +1,10 @@
 package com.giffardtechnologies.restdocs.jackson
 
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.deser.std.DelegatingDeserializer
-import com.fasterxml.jackson.databind.deser.std.NumberDeserializers.BooleanDeserializer
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
 
-internal class TrueOnNullBooleanDeserializer : DelegatingDeserializer(BooleanDeserializer(Boolean::class.java, true)) {
+internal class TrueOnNullBooleanDeserializer : YesNoBooleanDeserializer() {
 
-    override fun newDelegatingInstance(newDelegatee: JsonDeserializer<*>?): JsonDeserializer<*> {
-        throw NotImplementedError("AFAIK we don't need this, and whatever it's supposed to do is not documented.")
-    }
+    override fun getNullValue(ctxt: DeserializationContext): Boolean = true
 
 }
-

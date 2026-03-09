@@ -1,22 +1,27 @@
 package com.giffardtechnologies.restdocs.jackson.validation
 
-import com.fasterxml.jackson.databind.JavaType
-import com.fasterxml.jackson.databind.JsonMappingException
-import com.fasterxml.jackson.databind.type.TypeFactory
-import com.fasterxml.jackson.databind.util.Converter
+import tools.jackson.core.JacksonException
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.JavaType
+import tools.jackson.databind.SerializationContext
+import tools.jackson.databind.type.TypeFactory
+import tools.jackson.databind.util.Converter
 
 class ValidatingConverter(private val type: JavaType, private val validationContext: Any?) : Converter<Any, Any> {
 
-    override fun convert(value: Any): Any {
+    override fun convert(ctxt: DeserializationContext, value: Any): Any {
         if (value is Validatable) {
-            //JsonMappingException
             try {
                 value.validate(validationContext)
             } catch (e: Exception) {
-                //JsonProcessingException
-                throw JsonMappingException(null, e.message, e)
+                if (e is JacksonException) throw e
+                throw ctxt.instantiationException(value::class.java, e)
             }
         }
+        return value
+    }
+
+    override fun convert(ctxt: SerializationContext, value: Any): Any {
         return value
     }
 

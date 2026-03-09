@@ -1,7 +1,7 @@
 package com.giffardtechnologies.restdocs.storage.type
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import tools.jackson.databind.annotation.JsonDeserialize
 import com.giffardtechnologies.restdocs.jackson.TrueOnNullBooleanDeserializer
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException

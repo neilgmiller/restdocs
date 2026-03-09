@@ -1,6 +1,6 @@
 package com.giffardtechnologies.restdocs
 
-import com.fasterxml.jackson.databind.JsonMappingException
+import tools.jackson.core.JacksonException
 import picocli.CommandLine
 import java.io.BufferedInputStream
 import java.io.File
@@ -45,7 +45,7 @@ class DocValidatorCommand : Callable<Int> {
 
         try {
             DocValidator().validate(sourceFile)
-        } catch (e: JsonMappingException) {
+        } catch (e: JacksonException) {
             System.err.println(e.message)
             return CommandLine.ExitCode.SOFTWARE
         }

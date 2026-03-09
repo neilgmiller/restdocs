@@ -1,6 +1,6 @@
 package com.giffardtechnologies.restdocs
 
-import com.fasterxml.jackson.databind.JsonMappingException
+import tools.jackson.core.JacksonException
 import com.giffardtechnologies.restdocs.jackson.createMapper
 import com.giffardtechnologies.restdocs.storage.Document
 import java.io.BufferedInputStream
@@ -20,7 +20,7 @@ class DocValidator {
         getValidatedDocument(sourceFile) { message -> println(message) }
     }
 
-    @Throws(IOException::class, JsonMappingException::class)
+    @Throws(IOException::class, JacksonException::class)
     fun getValidatedDocument(sourceFile: File, messageHandler: (String) -> Unit = {}): Document {
         println("Validating '${sourceFile.absolutePath}'...")
         val input = BufferedInputStream(FileInputStream(sourceFile))

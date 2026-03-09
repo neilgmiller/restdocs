@@ -1,46 +1,38 @@
 package com.giffardtechnologies.restdocs.jackson.validation
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.*
-import com.fasterxml.jackson.databind.deser.ContextualDeserializer
-import com.fasterxml.jackson.databind.deser.ResolvableDeserializer
-import com.fasterxml.jackson.databind.deser.SettableBeanProperty
-import com.fasterxml.jackson.databind.deser.impl.ObjectIdReader
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer
-import com.fasterxml.jackson.databind.jsontype.TypeDeserializer
-import com.fasterxml.jackson.databind.type.LogicalType
-import com.fasterxml.jackson.databind.util.AccessPattern
+import tools.jackson.core.JacksonException
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.*
+import tools.jackson.databind.deser.SettableBeanProperty
+import tools.jackson.databind.deser.std.StdDeserializer
+import tools.jackson.databind.jsontype.TypeDeserializer
+import tools.jackson.databind.type.LogicalType
+import tools.jackson.databind.util.AccessPattern
 import java.io.IOException
 
 /**
- * Base class that simplifies implementations of [JsonDeserializer]s
+ * Base class that simplifies implementations of [ValueDeserializer]s
  * that mostly delegate functionality to another deserializer implementation
- * (possibly forming a chaing of deserializers delegating functionality
+ * (possibly forming a chain of deserializers delegating functionality
  * in some cases)
- *
- * @since 2.1
  */
-class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>, private val validationContext: Any?) : StdDeserializer<Any?>(
+class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, private val validationContext: Any?) : StdDeserializer<Any?>(
     _delegatee.handledType()
-), ContextualDeserializer, ResolvableDeserializer {
+) {
 
     /*
     / **********************************************************************
     / * Overridden methods for contextualization, resolving
     / **********************************************************************
      */
-    @Throws(JsonMappingException::class)
     override fun resolve(ctxt: DeserializationContext) {
-        if (_delegatee is ResolvableDeserializer) {
-            (_delegatee as ResolvableDeserializer).resolve(ctxt)
-        }
+        _delegatee.resolve(ctxt)
     }
 
-    @Throws(JsonMappingException::class)
     override fun createContextual(
         ctxt: DeserializationContext,
         property: BeanProperty?
-    ): JsonDeserializer<*> {
+    ): ValueDeserializer<*> {
         val vt = ctxt.constructType(_delegatee.handledType())
         val del = ctxt.handleSecondaryContextualization(
             _delegatee,
@@ -53,7 +45,7 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>, privat
         }
     }
 
-    override fun replaceDelegatee(delegatee: JsonDeserializer<*>): JsonDeserializer<*> {
+    override fun replaceDelegatee(delegatee: ValueDeserializer<*>): ValueDeserializer<*> {
         return if (delegatee === _delegatee) {
             this
         } else {
@@ -76,7 +68,7 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>, privat
             try {
                 deserializedObject.validate(validationContext)
             } catch (e: Exception) {
-                throw JsonMappingException(ctxt.parser, e.message, e)
+                throw ctxt.instantiationException(deserializedObject::class.java, e)
             }
         }
         return deserializedObject
@@ -89,7 +81,7 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>, privat
         intoValue: Any?
     ): Any? {
         @Suppress("UNCHECKED_CAST")
-        return (_delegatee as JsonDeserializer<Any?>).deserialize(p, ctxt, intoValue)
+        return (_delegatee as ValueDeserializer<Any?>).deserialize(p, ctxt, intoValue)
     }
 
     @Throws(IOException::class)
@@ -109,12 +101,11 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>, privat
         return _delegatee.isCachable
     }
 
-    // since 2.9
     override fun supportsUpdate(config: DeserializationConfig): Boolean {
         return _delegatee.supportsUpdate(config)
     }
 
-    override fun getDelegatee(): JsonDeserializer<*> {
+    override fun getDelegatee(): ValueDeserializer<*> {
         return _delegatee
     }
 
@@ -127,27 +118,22 @@ class ValidatingDeserializer(private val _delegatee: JsonDeserializer<*>, privat
         return _delegatee.nullAccessPattern
     }
 
-    @Throws(JsonMappingException::class)
+    @Throws(JacksonException::class)
     override fun getNullValue(ctxt: DeserializationContext): Any? {
         return _delegatee.getNullValue(ctxt)
     }
 
-    @Throws(JsonMappingException::class)
+    @Throws(JacksonException::class)
     override fun getEmptyValue(ctxt: DeserializationContext): Any {
         return _delegatee.getEmptyValue(ctxt)
     }
 
-    // since 2.12
     override fun logicalType(): LogicalType {
         return _delegatee.logicalType()
     }
 
     override fun getKnownPropertyNames(): Collection<Any> {
         return _delegatee.knownPropertyNames
-    }
-
-    override fun getObjectIdReader(): ObjectIdReader? {
-        return _delegatee.objectIdReader
     }
 
     companion object {

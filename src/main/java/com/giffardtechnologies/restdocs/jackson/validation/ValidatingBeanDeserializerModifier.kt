@@ -1,79 +1,79 @@
 package com.giffardtechnologies.restdocs.jackson.validation
 
-import com.fasterxml.jackson.databind.*
-import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier
-import com.fasterxml.jackson.databind.type.*
+import tools.jackson.databind.*
+import tools.jackson.databind.deser.ValueDeserializerModifier
+import tools.jackson.databind.type.*
 import java.io.IOException
 
-class ValidatingBeanDeserializerModifier(private val validationContext: Any?) : BeanDeserializerModifier() {
+class ValidatingBeanDeserializerModifier(private val validationContext: Any?) : ValueDeserializerModifier() {
     override fun modifyDeserializer(
         config: DeserializationConfig,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
-        return createDelegate(beanDesc.type, deserializer)
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
+        return createDelegate(beanDescRef.get().type, deserializer)
     }
 
     override fun modifyEnumDeserializer(
         config: DeserializationConfig,
         type: JavaType,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
         return createDelegate(type, deserializer)
     }
 
     override fun modifyReferenceDeserializer(
         config: DeserializationConfig,
         type: ReferenceType,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
         return createDelegate(type, deserializer)
     }
 
     override fun modifyArrayDeserializer(
         config: DeserializationConfig,
-        type: ArrayType,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
-        return createDelegate(type, deserializer)
+        valueType: ArrayType,
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
+        return createDelegate(valueType, deserializer)
     }
 
     override fun modifyCollectionDeserializer(
         config: DeserializationConfig,
         type: CollectionType,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
         return createDelegate(type, deserializer)
     }
 
     override fun modifyCollectionLikeDeserializer(
         config: DeserializationConfig,
         type: CollectionLikeType,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
         return createDelegate(type, deserializer)
     }
 
     override fun modifyMapDeserializer(
         config: DeserializationConfig,
         type: MapType,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
         return createDelegate(type, deserializer)
     }
 
     override fun modifyMapLikeDeserializer(
         config: DeserializationConfig,
         type: MapLikeType,
-        beanDesc: BeanDescription,
-        deserializer: JsonDeserializer<*>
-    ): JsonDeserializer<*> {
+        beanDescRef: BeanDescription.Supplier,
+        deserializer: ValueDeserializer<*>
+    ): ValueDeserializer<*> {
         return createDelegate(type, deserializer)
     }
 
@@ -94,7 +94,7 @@ class ValidatingBeanDeserializerModifier(private val validationContext: Any?) : 
         }
     }
 
-    private fun createDelegate(type: JavaType, target: JsonDeserializer<*>): JsonDeserializer<*> {
+    private fun createDelegate(type: JavaType, target: ValueDeserializer<*>): ValueDeserializer<*> {
         return ValidatingDeserializer(target, validationContext)
     }
 }

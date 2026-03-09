@@ -15,7 +15,7 @@ commons-lang3 = "3.13.0"
 commons-text = "1.11.0"
 kotlinpoet = "1.18.1"
 vavr = "0.10.3"
-jackson = "2.15.3"
+jackson = "3.1.0"
 javapoet = "1.13.0"
 guava = "33.2.1-jre"
 futureproofenum = "1.0-SNAPSHOT"
@@ -38,8 +38,8 @@ commons-text = { group = "org.apache.commons", name = "commons-text", version.re
 kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
 vavr = { group = "io.vavr", name = "vavr", version.ref = "vavr" }
-jackson-dataformat-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
-jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+jackson-dataformat-yaml = { group = "tools.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-module-kotlin = { group = "tools.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 javapoet = { group = "com.squareup", name = "javapoet", version.ref = "javapoet" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 futureproofenum = { group = "com.allego.common", name = "futureproofenum", version.ref = "futureproofenum" }
