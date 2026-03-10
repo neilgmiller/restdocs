@@ -17,4 +17,4 @@ me=$(basename "$0")
 
 cd "$DIR" || exit
 
-./restdocs-tool/.restdocs/"$version"/bin/"$me" "$@"
+./restdocs-tool/.restdocs/"$version"/bin/"$me" --reference "$@"
