@@ -114,6 +114,20 @@ tasks.forEach { task ->
     }
 }
 
+val processResources = tasks.named<ProcessResources>("processResources") {
+    val versionValue = project.version.toString()
+    inputs.property("version", versionValue)
+    doLast {
+        val file = destinationDir.resolve("version.properties")
+        println("Properties: ${file.absolutePath}")
+        file.writeText("version=$versionValue\n")
+    }
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(processResources)
+}
+
 tasks.register<Copy>("getDeps") {
     from(sourceSets.main.get().runtimeClasspath)
     into("runtime-libs/")

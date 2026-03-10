@@ -15,7 +15,7 @@ import java.util.stream.Collectors
     description = ["Constructs a set of classes for a Kotlin Multi-Platform library for accessing the API"],
     name = "kotlin_generator",
     mixinStandardHelpOptions = true,
-    version = ["KotlinGenerator 1.0"]
+    versionProvider = VersionProvider::class
 )
 class KotlinGeneratorCommand : Callable<Unit> {
 

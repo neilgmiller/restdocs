@@ -13,7 +13,7 @@ import java.util.concurrent.Callable
     description = ["Generates documents or code based for a given API descriptor"],
     name = "doc_generator",
     mixinStandardHelpOptions = true,
-    version = ["DocGenerator 1.1"]
+    versionProvider = VersionProvider::class
 )class DocGeneratorCommand : Callable<Unit> {
 
     companion object {

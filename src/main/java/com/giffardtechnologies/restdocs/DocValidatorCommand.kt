@@ -14,7 +14,7 @@ import kotlin.system.exitProcess
     description = ["Validates the documentation YAML"],
     name = "doc_validator",
     mixinStandardHelpOptions = true,
-    version = ["DocGenerator 1.0"]
+    versionProvider = VersionProvider::class
 )
 class DocValidatorCommand : Callable<Int> {
 
