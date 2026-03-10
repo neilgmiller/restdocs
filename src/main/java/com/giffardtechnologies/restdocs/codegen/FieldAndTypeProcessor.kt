@@ -1,11 +1,11 @@
 package com.giffardtechnologies.restdocs.codegen
 
 import com.giffardtechnologies.restdocs.domain.DataObject
-import com.giffardtechnologies.restdocs.domain.type.DataType
-import com.giffardtechnologies.restdocs.domain.type.DataType.BasicKey
 import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.NamedBitSet
 import com.giffardtechnologies.restdocs.domain.type.BooleanRepresentation
+import com.giffardtechnologies.restdocs.domain.type.DataType
+import com.giffardtechnologies.restdocs.domain.type.DataType.BasicKey
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ArraySpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.MapSpec
@@ -30,22 +30,12 @@ class FieldAndTypeProcessor(
     fun createPropertySpec(
         field: Field,
         useFutureProofEnum: Boolean = true,
-        objectClassName: ClassName,
         initializeCollections: Boolean = true,
         initializeWithDefault: Boolean = true,
-    ): PropertySpec {
-        return createPropertySpec(field, useFutureProofEnum, initializeCollections, initializeWithDefault, objectClassName) { parentClassName, subField ->
+        objectClassName: ClassName,
+        subObjectClassNameFactory: (ClassName, Field) -> ClassName = { parentClassName, subField ->
             parentClassName.nestedClass(subField.toObjectName())
         }
-    }
-
-    fun createPropertySpec(
-        field: Field,
-        useFutureProofEnum: Boolean = true,
-        initializeCollections: Boolean = true,
-        initializeWithDefault: Boolean = true,
-        objectClassName: ClassName,
-        subObjectClassNameFactory: (ClassName, Field) -> ClassName
     ): PropertySpec {
         val isNullable = (!field.isRequired && (field.defaultValue == null || !initializeWithDefault)) && !(field.type is ArraySpec || field.type is MapSpec<*>)
         val fieldBuilder = PropertySpec.builder(

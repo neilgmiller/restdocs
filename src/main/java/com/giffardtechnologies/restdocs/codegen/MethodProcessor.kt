@@ -11,7 +11,6 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.STAR
-import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import kotlinx.serialization.json.Json
@@ -20,7 +19,20 @@ import org.apache.commons.lang3.StringUtils
 import java.io.File
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec as DomainTypeSpec
 
-
+/**
+ * Processes a [Method] definition to generate the corresponding request and response classes.
+ * This class is responsible for creating the necessary files for API calls, including serialization
+ * and deserialization logic.
+ *
+ * @property codeDirectory The directory where the generated code will be written.
+ * @property requestsPackage The package name for the generated request classes.
+ * @property typeRefPackage The package name for referenced types.
+ * @property fieldAndTypeProcessor A processor for handling fields and types within the method.
+ * @property enumProcessor A processor for handling enums.
+ * @property bitSetProcessor A processor for handling bitsets.
+ * @property usePath A flag to determine if path-based requests should be used.
+ * @property supportPackage The package name for supporting classes.
+ */
 class MethodProcessor(
     private val codeDirectory: File,
     private val requestsPackage: String,
@@ -68,6 +80,11 @@ class MethodProcessor(
     private val encodeToString = MemberName("kotlinx.serialization", "encodeToString")
 
 
+    /**
+     * Writes the supporting files for serialization and deserialization.
+     * This includes a file for deserializing parameters from a JSON string and another for
+     * serializing a base request to a JSON string.
+     */
     fun writeSupportingFiles() {
         val mappingsFileName = ClassName(
             "$requestsPackage.serialization",
@@ -115,6 +132,11 @@ class MethodProcessor(
         }.writeTo(codeDirectory)
     }
 
+    /**
+     * Returns a [FunSpec] for a function that deserializes parameters from a JSON string based on a method ID.
+     *
+     * @return A [FunSpec] for the `deserializeFromParams` function.
+     */
     fun getDeserializeFromParamsFunSpec(): FunSpec {
         return FunSpec.builder("deserializeFromParams")
             .addParameter("json", Json::class.asClassName())
@@ -138,8 +160,20 @@ class MethodProcessor(
 
     private data class ResponseClassDefinition(val className: ClassName, val typeSpec: TypeSpec? = null)
 
+    /**
+     * Holds the generated class names for a method's request and response.
+     *
+     * @property requestClassName The [ClassName] for the generated request class.
+     * @property responseClassName The [ClassName] for the generated response class.
+     */
     data class MethodClassNames(val requestClassName: ClassName, val responseClassName: ClassName)
 
+    /**
+     * Generates the class names for a given [Method].
+     *
+     * @param method The method to generate class names for.
+     * @return A [MethodClassNames] instance containing the request and response class names.
+     */
     fun getClassNames(method: Method): MethodClassNames {
         val methodName = StringUtils.capitalize(method.name)
         val requestClassName = ClassName(requestsPackage, methodName + "Request")
@@ -162,20 +196,16 @@ class MethodProcessor(
         return MethodClassNames(requestClassName, responseClassName)
     }
 
+    /**
+     * Processes a single [Method] to generate its corresponding request and response classes.
+     *
+     * @param method The method to process.
+     */
     fun processMethod(method: Method) {
         val (requestClassName, responseClassName) = getClassNames(method)
 
-        val baseClassName = if (method.isAuthenticationRequired) {
-            mAuthenticatedAllegoRequestClassName
-        } else {
-            if (usePath && method.id == null) {
-                mAllegoPathAndBodyRequestClassName
-            } else {
-                mAllegoRequestClassName
-            }
-        }
-
-        val superClassType = baseClassName.parameterizedBy(responseClassName)
+        val superClassName = getSuperClassName(method)
+        val superClassType = superClassName.parameterizedBy(responseClassName)
 
         val requestClassBuilder = TypeSpec.classBuilder(requestClassName)
             .superclass(superClassType)
@@ -343,6 +373,19 @@ class MethodProcessor(
             }
         }
             .writeTo(codeDirectory)
+    }
+
+    private fun getSuperClassName(method: Method): ClassName {
+        val baseClassName = if (method.isAuthenticationRequired) {
+            mAuthenticatedAllegoRequestClassName
+        } else {
+            if (usePath && method.id == null) {
+                mAllegoPathAndBodyRequestClassName
+            } else {
+                mAllegoRequestClassName
+            }
+        }
+        return baseClassName
     }
 
     private fun createResponseClassDefinition(
@@ -695,4 +738,3 @@ class MethodProcessor(
     //			}
     //		}
 }
-
