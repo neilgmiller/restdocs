@@ -7,6 +7,25 @@ import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.Restriction
 
+/**
+ * The base class for all type specifications in the REST documentation model.
+ *
+ * A `TypeSpec` describes the data type of a field, response, or other typed element. Every
+ * instance must specify exactly one of [type] or [typeRef].
+ *
+ * @property type The explicit [DataType] of this element.
+ * @property interpretedAs An optional [BasicType] describing how the raw [type] should be
+ * semantically interpreted (e.g., an INT that is actually a BOOLEAN).
+ * @property typeRef A reference to a named type (data object, enumeration, or bitset) defined
+ * elsewhere in the document.
+ * @property key The key type for [DataType.ENUM], [DataType.BITSET], and [DataType.COLLECTION].
+ * @property flagType The integer storage type for [DataType.BITSET] fields.
+ * @property items The element type for [DataType.ARRAY] and [DataType.COLLECTION].
+ * @property restrictions Optional value restrictions (e.g., length or pattern constraints).
+ * @property fields Inline field definitions when [type] is [DataType.OBJECT].
+ * @property values Enumeration or bitset constants when [type] is [DataType.ENUM] or
+ * [DataType.BITSET].
+ */
 open class TypeSpec(
     val type: DataType? = null,
     val interpretedAs: BasicType? = null,
@@ -20,6 +39,16 @@ open class TypeSpec(
     val values: ArrayList<EnumConstant>? = null,
 ) : Validatable {
 
+    /**
+     * Validates the type specification, enforcing rules such as:
+     * - Exactly one of [type] or [typeRef] must be set.
+     * - [DataType.ARRAY] requires [items].
+     * - [DataType.OBJECT] requires [fields].
+     * - [DataType.COLLECTION] requires both [key] and [items].
+     * - [DataType.ENUM] requires a valid [key] and non-empty [values] with no duplicates.
+     * - [DataType.BITSET] requires non-empty [values] where every constant has a long name.
+     * - [typeRef] is validated against the known referencable types in a full validation context.
+     */
     override fun validate(validationContext: Any?) {
         val classString = this::class.simpleName
         if (type != null && typeRef != null) {

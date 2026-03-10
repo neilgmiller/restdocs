@@ -9,10 +9,30 @@ import com.giffardtechnologies.restdocs.storage.type.Field
 import com.giffardtechnologies.restdocs.storage.type.FieldListElement
 import com.giffardtechnologies.restdocs.storage.type.validateHasNoDuplicates
 
+/** The HTTP verb for an API method. */
 enum class HTTPMethod {
     GET, PUT, POST, DELETE, HEAD, OPTIONS, TRACE, CONNECT
 }
 
+/**
+ * Represents a single API endpoint (method) in the REST documentation.
+ *
+ * A method must have at least one of [id] or [path] to be valid.
+ *
+ * @property method The HTTP verb used to invoke this endpoint.
+ * @property path The URL path of the endpoint, relative to the service base path.
+ * @property protocolsAllowed The list of allowed protocols (e.g., `"http"`, `"https"`).
+ * @property id An optional numeric identifier for the method.
+ * @property name A unique programmatic name for this method, used for code generation.
+ * @property description Human-readable description of what this endpoint does.
+ * @property isAuthenticationRequired Whether callers must supply authentication credentials.
+ * @property headers HTTP headers accepted by this method.
+ * @property parameters Query or path parameters accepted by this method.
+ * @property requestBody Description of the request body, if any.
+ * @property response Description of the successful response body.
+ * @property successCodes HTTP status codes that indicate success.
+ * @property failureCodes HTTP status codes that indicate failure.
+ */
 data class Method(
     val method: HTTPMethod? = null,
     val path: String? = null,
@@ -33,6 +53,11 @@ data class Method(
     @JsonProperty("failure codes")
     val failureCodes: ArrayList<String> = ArrayList(),
 ) : Validatable {
+    /**
+     * Validates this method, ensuring it has at least one of [id] or [path], and that parameter
+     * names are unique. During accumulation phase, also checks that [name] is globally unique
+     * among all methods.
+     */
     override fun validate(validationContext: Any?) {
         if (path == null && id == null) {
             throw ValidationException("A method must have at least one of 'id' and 'path'")

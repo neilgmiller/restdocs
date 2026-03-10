@@ -9,10 +9,25 @@ import com.giffardtechnologies.restdocs.storage.Document
 import io.vavr.collection.Array
 import io.vavr.collection.HashSet
 
+/**
+ * Pairs a resolved [Field] with the [FieldListIncludeElement] that brought it in, if any.
+ *
+ * @property field The resolved field.
+ * @property includedBy The include element that contributed this field, or `null` if the field
+ * was declared directly in the containing object.
+ */
 data class FieldDetails(val field: Field, val includedBy: FieldListIncludeElement? = null)
 
 /**
- * A class that manages a list of fields whether a straight list or a include
+ * Resolves and manages a list of [FieldListElement] items into a flat list of [Field] instances.
+ *
+ * Handles both direct [Field] elements and [FieldListIncludeElement] entries, expanding the latter
+ * by inlining the referenced data object's fields (with exclusions and required-state overrides
+ * applied).
+ *
+ * @constructor
+ * @param parentDocument The document used to look up data objects referenced by include elements.
+ * @param fieldListElements The raw field list to resolve.
  */
 class FieldElementList(
     private val parentDocument: Document,
@@ -35,6 +50,10 @@ class FieldElementList(
             return FieldElementList(parentDocument, this.fields!!).getFields()
         }
 
+    /**
+     * Returns the resolved flat list of [Field] instances after expanding all include elements.
+     * The result is cached after the first call.
+     */
     fun getFields(): ArrayList<Field> {
         return fields ?: run {
             val newFields = ArrayList<Field>()
@@ -77,6 +96,11 @@ class FieldElementList(
         }
     }
 
+    /**
+     * Returns the resolved flat list of [FieldDetails], pairing each field with the
+     * [FieldListIncludeElement] that contributed it (or `null` for directly declared fields).
+     * The result is cached after the first call.
+     */
     fun getFieldDetails(): ArrayList<FieldDetails> {
         return fieldDetails ?: run {
             val newFields = ArrayList<FieldDetails>()
@@ -192,13 +216,19 @@ class FieldElementList(
         return includedFields
    }
 
+    /** Returns `true` if the underlying [fieldListElements] list is non-empty. */
     fun hasFields(): Boolean {
         return fieldListElements.isNotEmpty()
     }
 
+    /** `true` if the underlying [fieldListElements] list is non-empty. */
     val hasFields: Boolean
         get() = fieldListElements.isNotEmpty()
 
+    /**
+     * Associates a [NamedType] as the logical owner of this field list, used for contextual
+     * error messages during code generation.
+     */
     fun setParentType(parentType: NamedType?) {
         this.parentType = parentType
     }

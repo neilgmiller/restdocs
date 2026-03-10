@@ -18,6 +18,16 @@ import io.vavr.collection.Array
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
 sealed interface FieldListElement
 
+/**
+ * Validates that this list of [FieldListElement] items contains no duplicate field [Field.name]
+ * or [Field.longName] values.
+ *
+ * When [parentDocument] is provided, include elements are expanded before checking, so duplicates
+ * introduced via [FieldListIncludeElement] are also detected.
+ *
+ * @param parentDocument The document used to resolve [FieldListIncludeElement] references.
+ * @throws com.giffardtechnologies.restdocs.jackson.validation.ValidationException if duplicates are found.
+ */
 fun List<FieldListElement>.validateHasNoDuplicates(parentDocument: Document? = null) {
     val fields = if (parentDocument == null) {
         this.filterIsInstance<Field>().map { FieldDetails(it) }
@@ -44,6 +54,14 @@ private fun List<FieldDetails>.findDuplicates(keySelector: (FieldDetails) -> Str
     }
 }
 
+/**
+ * Describes a single duplicate field name or long name found during validation.
+ *
+ * @property name The duplicated field name or long name.
+ * @property duplicateCount The total number of occurrences of [name] in the field list.
+ * @property duplicatesIncludedFrom The names of the [FieldListIncludeElement] sources that
+ * contributed one or more of the duplicates, if any.
+ */
 data class DuplicateDetails(val name: String, val duplicateCount: Int, val duplicatesIncludedFrom: List<String>) {
     override fun toString(): String {
         return if (duplicatesIncludedFrom.isEmpty()) {
@@ -55,22 +73,37 @@ data class DuplicateDetails(val name: String, val duplicateCount: Int, val dupli
 }
 
 /**
- * A class for including the fields of data object inline with a list of fields
+ * A [FieldListElement] that inlines the fields of a referenced [com.giffardtechnologies.restdocs.storage.DataObject]
+ * into the containing field list, with optional exclusions and required-state overrides.
+ *
+ * @property include The name of the data object whose fields are to be included.
+ * @property excluding Long-name paths of fields (and sub-fields) to omit from the included set.
+ * @property overrideRequired When set, overrides the [Field.isRequired] value for included fields,
+ * except those listed in [RequiredOverride.excluding].
  */
 class FieldListIncludeElement(
     /**
-     * A reference to a DataObject, all fields of that object will be included
+     * A reference to a DataObject, all fields of that object will be included.
      */
     val include: String,
     val excluding: ArrayList<String> = ArrayList(),
     val overrideRequired: RequiredOverride? = null,
 ) : FieldListElement, Validatable {
 
+    /**
+     * Returns the [excluding] paths as a [FieldPathSet] for efficient lookup during field
+     * resolution.
+     */
     fun excludingPathSet(): FieldPathSet {
         val fieldPaths = excluding.map { FieldPath(it) }
         return FieldPathSet.ofAll(fieldPaths)
     }
 
+    /**
+     * Validates this include element against a full context, checking that [include] refers to a
+     * known type and that all [excluding] paths and [overrideRequired] exclusions refer to
+     * existing fields.
+     */
     override fun validate(validationContext: Any?) {
         if (validationContext is DocValidator.FullContext) {
             if (!validationContext.referencableTypes.contains(include)) {
@@ -88,10 +121,23 @@ class FieldListIncludeElement(
     }
 }
 
+/**
+ * Overrides the [Field.isRequired] value for fields brought in by a [FieldListIncludeElement].
+ *
+ * @property required The required state to apply to included fields.
+ * @property excluding Long-name paths of included fields that should keep their original required
+ * state and not be overridden.
+ */
 class RequiredOverride(
     val required: Boolean,
     val excluding: ArrayList<String>? = null
 ) {
+    /**
+     * Validates that all paths in [excluding] refer to actual fields in the included [fields] list.
+     *
+     * @param context The full validation context used to resolve type references.
+     * @param fields The field list of the data object being included.
+     */
     fun validate(context: DocValidator.FullContext, fields: ArrayList<FieldListElement>) {
         if (!excluding.isNullOrEmpty()) {
             val excludingPathSet = FieldPathSet.ofAll(excluding.map { FieldPath(it) })

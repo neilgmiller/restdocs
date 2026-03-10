@@ -9,6 +9,17 @@ import com.giffardtechnologies.restdocs.storage.type.KeyType
 import com.giffardtechnologies.restdocs.storage.type.NamedType
 import com.giffardtechnologies.restdocs.storage.type.TypeSpec
 
+/**
+ * A top-level named bitset that can be referenced by other fields in the document.
+ *
+ * A bitset is an enumeration where each constant represents a single bit flag and multiple flags
+ * can be combined. All constants must have a [EnumConstant.longName].
+ *
+ * @property name The unique identifier for this bitset, used for type references.
+ * @property description Human-readable description of the bitset's purpose.
+ * @param key The underlying integer key type used to store the combined flag value.
+ * @param values The list of individual flag constants defined for this bitset.
+ */
 class NamedBitSet(
     val name: String,
     val description: String? = null,
@@ -19,6 +30,11 @@ class NamedBitSet(
     override val typeName: String
         get() = name
 
+    /**
+     * Validates this bitset, checking for a non-blank name and that all flag constants have a
+     * long name. During accumulation phase, also ensures the name is globally unique among all
+     * referencable types.
+     */
     override fun validate(validationContext: Any?) {
         super.validate(validationContext)
         if (name.isBlank()) {
