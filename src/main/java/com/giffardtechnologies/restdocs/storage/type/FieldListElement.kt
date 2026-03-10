@@ -28,7 +28,8 @@ fun List<FieldListElement>.validateHasNoDuplicates(parentDocument: Document? = n
     if (duplicates.isNotEmpty()) {
         throw ValidationException("Object has duplicate field names: $duplicates")
     }
-    val duplicateLongNames = fields.findDuplicates { it.field.longName }
+    // skip blanks in the duplicate check, as they were allowed by [ValidationOptions.longNameIsOptional]
+    val duplicateLongNames = fields.filter { it.field.longName.isNotBlank() }.findDuplicates { it.field.longName }
     if (duplicateLongNames.isNotEmpty()) {
         throw ValidationException("Object has duplicate field long names: $duplicateLongNames")
     }

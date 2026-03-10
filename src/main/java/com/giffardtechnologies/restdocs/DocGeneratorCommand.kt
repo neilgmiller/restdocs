@@ -5,7 +5,6 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
-import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.Callable
 
@@ -34,6 +33,9 @@ import java.util.concurrent.Callable
     @CommandLine.Option(names = ["-v", "--verbose"], description = ["Turn on verbose output"])
     private var mVerbose = false
 
+    @CommandLine.Option(names = ["--reference"], description = ["Run with reference-doc style validation"])
+    private var referenceStyleValidation = false
+
     @Throws(Exception::class)
     override fun call() {
         val executableDir = File(System.getProperty("user.dir")) // user.dir is the working directory, not to be confused with user.home
@@ -58,7 +60,7 @@ import java.util.concurrent.Callable
             templateFile
         }
 
-        DocGenerator().generate(sourceFile, templateFile, outputFile, DocGenerator.Options(mVerbose))
+        DocGenerator(referenceStyleValidation).generate(sourceFile, templateFile, outputFile, DocGenerator.Options(mVerbose))
     }
 
 }

@@ -7,13 +7,23 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
-import java.util.*
 import kotlin.collections.HashSet
 import com.giffardtechnologies.restdocs.storage.Document as DocumentStorageModel
 import io.vavr.collection.HashSet as VavrHashSet
 import io.vavr.collection.Set as VavrSet
 
-class DocValidator {
+class DocValidator(val validationOptions: ValidationOptions = ValidationOptions()) {
+
+    constructor(referenceStyleValidation: Boolean) : this(
+        if (referenceStyleValidation) {
+            ValidationOptions(
+                longNameIsOptional = true,
+                longNameAllowsSpaces = true,
+            )
+        } else {
+            ValidationOptions()
+        }
+    )
 
     @Throws(IOException::class)
     fun validate(sourceFile: File) {
@@ -23,12 +33,11 @@ class DocValidator {
     @Throws(IOException::class, JacksonException::class)
     fun getValidatedDocument(sourceFile: File, messageHandler: (String) -> Unit = {}): Document {
         println("Validating '${sourceFile.absolutePath}'...")
-        val input = BufferedInputStream(FileInputStream(sourceFile))
 
         // Jackson Mapper
-        val mapper = createMapper(AccumulatingContext())
+        val mapper = createMapper(AccumulatingContext(validationOptions))
         val document = mapper.readValue(
-            input,
+            BufferedInputStream(FileInputStream(sourceFile)),
             DocumentStorageModel::class.java
         )
 
@@ -40,7 +49,7 @@ class DocValidator {
         val responseTypeNames = document.service?.common?.responseDataObjects?.map { it.name } ?: emptyList()
         val referencableTypes = VavrHashSet.ofAll(dataObjectNames + enumerationNames + responseTypeNames + bitSetNames)
 
-        val contextMapper = createMapper(FullContext(referencableTypes, document))
+        val contextMapper = createMapper(FullContext(referencableTypes, document, validationOptions))
         contextMapper.readValue(
             BufferedInputStream(FileInputStream(sourceFile)),
             DocumentStorageModel::class.java
@@ -51,15 +60,23 @@ class DocValidator {
         return document
     }
 
-    public interface ValidationContext
+    abstract class ValidationContext(val validationOptions: ValidationOptions)
 
-    class AccumulatingContext : ValidationContext {
+    class AccumulatingContext(validationOptions: ValidationOptions) : ValidationContext(validationOptions) {
         val referencableTypes: MutableSet<String> = HashSet()
         val methodClassNames: MutableSet<String> = HashSet()
     }
 
-    data class FullContext(val referencableTypes: VavrSet<String>, val document: DocumentStorageModel) :
-        ValidationContext
+    class FullContext(
+        val referencableTypes: VavrSet<String>,
+        val document: DocumentStorageModel,
+        validationOptions: ValidationOptions,
+    ) : ValidationContext(validationOptions)
+
+    data class ValidationOptions(
+        val longNameIsOptional: Boolean = false,
+        val longNameAllowsSpaces: Boolean = false,
+    )
 
 }
 

@@ -1,6 +1,7 @@
 package com.giffardtechnologies.restdocs.storage.type
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.giffardtechnologies.restdocs.DocValidator
 import com.giffardtechnologies.restdocs.jackson.TrueOnNullBooleanDeserializer
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
@@ -9,7 +10,7 @@ import tools.jackson.databind.annotation.JsonDeserialize
 
 open class Field(
     val name: String,
-    val longName: String,
+    val longName: String = "",
     val description: String? = null,
     @JsonProperty("default")
     val defaultValue: String? = null,
@@ -30,18 +31,38 @@ open class Field(
     fields: ArrayList<FieldListElement>? = null,
     values: ArrayList<EnumConstant>? = null,
 ) : TypeSpec(type, interpretedAs, typeRef, key, flagType, items, restrictions, fields, values), FieldListElement, Validatable {
+
     companion object {
         val alphaNumericRegex = Regex("^[A-Za-z][A-Za-z0-9_]*$")
+        val alphaNumericWithSpacesRegex = Regex("^[A-Za-z][A-Za-z0-9_ ]*$")
+
+        private fun getLongNameValidationRegex(validationContext: Any?): Regex {
+            val longNameAllowsSpaces = if (validationContext is DocValidator.ValidationContext) {
+                validationContext.validationOptions.longNameAllowsSpaces
+            } else {
+                false
+            }
+            return if (longNameAllowsSpaces) {
+                alphaNumericWithSpacesRegex
+            } else {
+                alphaNumericRegex
+            }
+        }
     }
+
     override fun validate(validationContext: Any?) {
         super.validate(validationContext)
         if (name.isBlank()) {
             throw ValidationException("Field must have a name")
         }
         if (longName.isBlank()) {
-            throw ValidationException("Field must have a long name")
+            if (validationContext is DocValidator.ValidationContext && validationContext.validationOptions.longNameIsOptional) {
+                return
+            } else {
+                throw ValidationException("Field must have a long name")
+            }
         }
-        if (!longName.matches(alphaNumericRegex)) {
+        if (!longName.matches(getLongNameValidationRegex(validationContext))) {
             throw ValidationException("Field long name must be alphanumeric, and cannot start with a number: '$longName'")
         }
     }

@@ -12,7 +12,7 @@ import java.io.FileWriter
 import java.io.IOException
 import java.util.*
 
-class DocGenerator {
+class DocGenerator(val referenceStyleValidation: Boolean) {
 
     data class Options(val verboseLogging: Boolean)
 
@@ -27,7 +27,7 @@ class DocGenerator {
 
     @Throws(IOException::class)
     private fun generateHTML(sourceFile: File, templateFile: File, outputFile: File) {
-        val doc = DocValidator().getValidatedDocument(sourceFile)
+        val doc = DocValidator(referenceStyleValidation).getValidatedDocument(sourceFile)
 
         /*
 		 *  create a new instance of the engine

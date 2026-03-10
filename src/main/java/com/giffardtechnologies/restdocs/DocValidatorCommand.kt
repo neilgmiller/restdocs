@@ -1,5 +1,6 @@
 package com.giffardtechnologies.restdocs
 
+import com.giffardtechnologies.restdocs.DocValidator.ValidationOptions
 import tools.jackson.core.JacksonException
 import picocli.CommandLine
 import java.io.BufferedInputStream
@@ -34,6 +35,9 @@ class DocValidatorCommand : Callable<Int> {
     )
     private var mPropertiesFile: File? = null
 
+    @CommandLine.Option(names = ["--reference"], description = ["Run with reference-doc style validation"])
+    private var referenceStyleValidation = false
+
     @Throws(Exception::class)
     override fun call() : Int {
         val propertiesFile: File = (mPropertiesFile ?: File("docbuild.properties")).absoluteFile
@@ -44,7 +48,7 @@ class DocValidatorCommand : Callable<Int> {
         val sourceFile = File(propertiesFile.parentFile, properties.getProperty("sourceFile"))
 
         try {
-            DocValidator().validate(sourceFile)
+            DocValidator(referenceStyleValidation).validate(sourceFile)
         } catch (e: JacksonException) {
             System.err.println(e.message)
             return CommandLine.ExitCode.SOFTWARE
