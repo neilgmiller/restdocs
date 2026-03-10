@@ -16,6 +16,11 @@ if [ ! -e "$DIR/restdocs.properties" ]; then
   exit 1
 fi
 
+if [ ! -e "$DIR/restdocs.config" ]; then
+  1>&2 echo "Restdocs config missing, expected at '$DIR/restdocs.config'"
+  exit 1
+fi
+
 present=$( grep -c distributionVersion "$DIR"/restdocs.properties )
 
 if [ "$present" != 1 ]; then
@@ -24,13 +29,19 @@ if [ "$present" != 1 ]; then
 fi
 
 version=$( grep distributionVersion "$DIR"/restdocs.properties | cut -d "=" -f 2 )
+password=$( grep tools-downloader-password "$DIR"/restdocs.config | cut -d "=" -f 2 )
+
+if [ -z "$password" ]; then
+  1>&2 echo "Restdocs password missing from '$DIR/restdocs.config'"
+  exit 1
+fi
 
 if [ ! -d "$DIR/.restdocs" ]; then
     mkdir "$DIR/.restdocs"
 fi
 
 if [ ! -d "$DIR/.restdocs/$version" ]; then
-    curl -L -u"tools-downloader:XXXX-XXXX-XXXX" "https://dev-artifactory.allego-dev.com/artifactory/tools/com.allego/restdocs/restdocs-$version.zip" -o "$DIR/.restdocs/$version.zip"
+    curl -L -u"tools-downloader:$password" "https://dev-artifactory.allego-dev.com/artifactory/tools/com.allego/restdocs/restdocs-$version.zip" -o "$DIR/.restdocs/$version.zip"
     unzip -q "$DIR/.restdocs/$version.zip" -d "$DIR"/.restdocs/
     mv "$DIR/.restdocs/restdocs-$version" "$DIR/.restdocs/$version"
     rm "$DIR/.restdocs/$version.zip"

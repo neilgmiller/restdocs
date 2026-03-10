@@ -11,6 +11,8 @@
 
 DIR="${BASH_SOURCE%/*}"
 
+"$DIR"/restdocs-tool/ensure_password
+
 version=$("$DIR"/restdocs-tool/restdocs)
 
 me=$(basename "$0")
