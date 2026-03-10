@@ -233,6 +233,7 @@ class MethodProcessor(
                 useFutureProofEnum = false,
                 completeConstructor = true,
                 initializeWithDefault = false,
+                initializeCollections = false,
                 subObjectClassNameFactory = { parentClassName, field ->
                     if (parentClassName == paramsClassName) {
                         requestClassName.nestedClass(fieldToClassStyle(field, parentClassName.simpleName, asInner = true))
@@ -262,7 +263,8 @@ class MethodProcessor(
                     field,
                     false,
                     objectClassName = requestClassName,
-                    initializeWithDefault = false
+                    initializeWithDefault = false,
+                    initializeCollections = false,
                 )
                 val parameterSpecBuilder = ParameterSpec.builder(field.longName, propertySpec.type)
                 if (propertySpec.type.isNullable) {

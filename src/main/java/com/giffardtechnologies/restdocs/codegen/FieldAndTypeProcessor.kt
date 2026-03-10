@@ -37,7 +37,7 @@ class FieldAndTypeProcessor(
             parentClassName.nestedClass(subField.toObjectName())
         }
     ): PropertySpec {
-        val isNullable = (!field.isRequired && (field.defaultValue == null || !initializeWithDefault)) && !(field.type is ArraySpec || field.type is MapSpec<*>)
+        val isNullable = (!field.isRequired && (field.defaultValue == null || !initializeWithDefault)) && !((field.type is ArraySpec || field.type is MapSpec<*>) && initializeCollections)
         val fieldBuilder = PropertySpec.builder(
             name = field.toPropertyName(),
             type = getTypeName(

@@ -77,6 +77,7 @@ class ObjectProcessor(
         initializeWithDefault: Boolean = true,
         subObjectClassNameFactory: (ClassName, Field) -> ClassName,
         subObjectTypeSpecHandler: (TypeSpec.Builder, ClassName, TypeSpec) -> Unit,
+        initializeCollections: Boolean = true,
     ): TypeSpec {
         val classBuilder = TypeSpec.classBuilder(className).addModifiers(KModifier.DATA)
             .addAnnotation(Serializable::class)
@@ -87,6 +88,7 @@ class ObjectProcessor(
                 field,
                 useFutureProofEnum,
                 initializeWithDefault = initializeWithDefault,
+                initializeCollections = initializeCollections,
                 objectClassName = className,
                 subObjectClassNameFactory = subObjectClassNameFactory
             )
@@ -102,29 +104,50 @@ class ObjectProcessor(
                 classBuilder.addProperty(propertySpec.toBuilder().initializer(field.toPropertyName()).build())
             }
 
+            // create sub-object classes from Nameable types
             val typeOrItemType = getFieldOrItemType(field.type)
             if (typeOrItemType is Nameable) {
-                val subObjectClassName = subObjectClassNameFactory(className, field)
-                val subObjectTypeSpec = when (typeOrItemType) {
-                    is ObjectSpec -> {
-                        processObjectToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
-                    }
-
-                    is EnumSpec<*> -> {
-                        enumProcessor.processEnumToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
-                    }
-
-                    is BitSetSpec<*> -> {
-                        bitSetProcessor.processBitSetToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
-                    }
-                }
-
-                subObjectTypeSpecHandler(classBuilder, subObjectClassName, subObjectTypeSpec)
+                createSubObjectClass(
+                    subObjectClassNameFactory,
+                    className,
+                    field,
+                    typeOrItemType,
+                    useFutureProofEnum,
+                    subObjectTypeSpecHandler,
+                    classBuilder
+                )
             }
         }
         classBuilder.primaryConstructor(constructorBuilder.build())
 
         return classBuilder.build()
+    }
+
+    private fun createSubObjectClass(
+        subObjectClassNameFactory: (ClassName, Field) -> ClassName,
+        className: ClassName,
+        field: Field,
+        typeOrItemType: Nameable,
+        useFutureProofEnum: Boolean,
+        subObjectTypeSpecHandler: (TypeSpec.Builder, ClassName, TypeSpec) -> Unit,
+        classBuilder: TypeSpec.Builder
+    ) {
+        val subObjectClassName = subObjectClassNameFactory(className, field)
+        val subObjectTypeSpec = when (typeOrItemType) {
+            is ObjectSpec -> {
+                processObjectToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
+            }
+
+            is EnumSpec<*> -> {
+                enumProcessor.processEnumToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
+            }
+
+            is BitSetSpec<*> -> {
+                bitSetProcessor.processBitSetToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
+            }
+        }
+
+        subObjectTypeSpecHandler(classBuilder, subObjectClassName, subObjectTypeSpec)
     }
 
     private fun getFieldOrItemType(type: com.giffardtechnologies.restdocs.domain.type.TypeSpec): com.giffardtechnologies.restdocs.domain.type.TypeSpec {
