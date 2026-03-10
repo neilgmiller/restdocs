@@ -37,15 +37,15 @@ enumerations:
           - value: array
             description: an array of objects
           - value: object
-            description: an object with in like field descriptions
+            description: an object with inline field descriptions
           - value: collection
             description: a collection of items with a key, aka a map
           - value: enum
-            description: an enumeration of allowed values 
+            description: an enumeration of allowed values
           - value: bitset
             description: a bitset with a list of defined values for the bits used
     - name:          KeyType
-      description:   An enumeration of types alowed for use as keys.
+      description:   An enumeration of types allowed for use as keys.
       key:           string
       values:
           - value: int
@@ -54,20 +54,48 @@ enumerations:
             description: a signed 64-bit integer
           - value: string
             description: a character string
+          - value: enum
+            description: an enumeration used as a key
+    - name:          FlagType
+      description:   The integer storage type used to hold a combined set of bitset flag values.
+      key:           string
+      values:
+          - value: int
+            description: a signed 32-bit integer
+          - value: long
+            description: a signed 64-bit integer
+    - name:          HTTPMethod
+      description:   The HTTP verb for an API method.
+      key:           string
+      values:
+          - value: GET
+          - value: PUT
+          - value: POST
+          - value: DELETE
+          - value: HEAD
+          - value: OPTIONS
+          - value: TRACE
+          - value: CONNECT
 data objects:
     - name: Document
       description: The top level node of a documentation YAML file
       fields:
           - name: title
-            description: The title of the document
+            description: The human-readable title of the API.
             required: no
             type: string
           - name: enumerations
-            description: A list of named enumerations
+            description: Top-level named enumerations that can be referenced by fields across the document.
             required: no
             type: array
             items:
                 typeref: NamedEnumeration
+          - name: bitsets
+            description: Top-level named bitsets that can be referenced by fields across the document.
+            required: no
+            type: array
+            items:
+                typeref: NamedBitSet
           - name: data objects
             description: A list of named, reusable data objects
             required: no
@@ -75,25 +103,48 @@ data objects:
             items:
                 typeref: DataObject
           - name: service
+            description: The service definition containing methods and common definitions, or null if the document only defines shared types.
             required: no
             typeref: Service
     - name: NamedEnumeration
       description: An enumeration that can be referenced by name.
       fields:
-          - name: name 
-            description: the name of the enumeration
+          - name: name
+            description: The unique identifier for this enumeration, used for type references.
             required: yes
             type: string
-          - name: description 
-            description: a description of the enumeration
-            required: yes
+          - name: description
+            description: Human-readable description of the enumeration's purpose.
+            required: no
             type: string
-          - name: key 
-            description: a key type of the enumeration
+          - name: key
+            description: The underlying key type used to represent enum values (e.g., integer or string).
             required: yes
             typeref: KeyType
-          - name: values 
+          - name: values
             description: A list of enumeration values
+            required: no
+            type: array
+            items:
+                typeref: EnumConstant
+    - name: NamedBitSet
+      description: A top-level named bitset that can be referenced by other fields in the document.
+                   Each constant represents a single bit flag; all constants must have a longName.
+      fields:
+          - name: name
+            description: The unique identifier for this bitset, used for type references.
+            required: yes
+            type: string
+          - name: description
+            description: Human-readable description of the bitset's purpose.
+            required: no
+            type: string
+          - name: key
+            description: The underlying integer key type used to store the combined flag value.
+            required: yes
+            typeref: KeyType
+          - name: values
+            description: The list of individual flag constants defined for this bitset.
             required: no
             type: array
             items:
@@ -101,18 +152,18 @@ data objects:
     - name: EnumConstant
       description: "An enum constant: a particular value for an enum (also used for bitset)"
       fields:
-          - name: value 
+          - name: value
             description: The key value for this constant. A string is used, which will be parsed to the key type.
             required: yes
             type: string
-          - name: longName 
-            description: A long name for this constant. Provided to give a human readable form of the key. In the case of
-                         string keys, this may be ommitted.
-            required: yes
+          - name: longName
+            description: A human-readable, alphanumeric name for this constant used in code generation. Should be
+                         camelCase. When omitted, value is used in its place for validation purposes.
+            required: no
             type: string
-          - name: description 
+          - name: description
             description: The description of this constant
-            required: yes
+            required: no
             type: string
     - name: DataObject
       description: A description of a named, reusable data object
@@ -134,27 +185,28 @@ data objects:
             items:
                 typeref: Field
           - name: discriminator
-            description:
+            description: An optional field whose value distinguishes between child types.
             required: no
             typeref: Field
           - name: child types
-            description:
+            description: Optional list of sub-types that extend this object via the discriminator.
             required: no
             type: array
             items:
                 typeref: DataObject
           - name: discriminator value
-            description:
+            description: The value of the parent's discriminator field that maps to this child type.
             required: no
             type: string
     - name: Field
       description: A description of a field in an object
       fields:
           - name: name
-            description: The name of the object, as serialized
+            description: The short (wire) name of the field as it appears in the JSON payload.
             type: string
           - name: longName
-            description: The name of the object, in long form
+            description: A human-readable, alphanumeric name used for code generation. Must start with a letter and
+                         contain only letters, digits, and underscores.
             type: string
           - name: description
             description: A description of the field, it's purpose, etc.
@@ -166,6 +218,10 @@ data objects:
             type: boolean
           - name: default
             description: The default value, if any, for optional fields, when they are not specified.
+            required: no
+            type: string
+          - name: clientDefault
+            description: The value that client code should send when the user has not explicitly set this field.
             required: no
             type: string
           - name: type
@@ -185,6 +241,10 @@ data objects:
             description: The key if the type is an enum or collection
             required: no
             typeref: KeyType
+          - name: flagType
+            description: The integer storage type for bitset fields.
+            required: no
+            typeref: FlagType
           - name: items
             description: The the type of items contained in an array or collection
             required: no
@@ -225,6 +285,24 @@ data objects:
             type: array
             items:
                 type: string
+          - name: overrideRequired
+            description: When set, overrides the isRequired value for included fields, except those listed in
+                         RequiredOverride.excluding.
+            required: no
+            typeref: RequiredOverride
+    - name: RequiredOverride
+      description: Overrides the required state for fields brought in by a FieldInclude element.
+      fields:
+          - name: required
+            description: The required state to apply to included fields.
+            required: yes
+            type: boolean
+          - name: excluding
+            description: Long-name paths of included fields that should keep their original required state.
+            required: no
+            type: array
+            items:
+                type: string
     - name: TypeSpec
       description: A description of a type
       fields:
@@ -245,6 +323,10 @@ data objects:
             description: The key if the type is an enum or collection
             required: no
             typeref: KeyType
+          - name: flagType
+            description: The integer storage type for bitset fields.
+            required: no
+            typeref: FlagType
           - name: items
             description: The the type of items contained in an array or collection
             required: no
@@ -262,7 +344,7 @@ data objects:
             items:
                 typeref: Field
           - name: values
-            description: A list of enum constants, required if this type is 'enum'.
+            description: A list of enum or bitset constants, required if this type is 'enum' or 'bitset'.
             required: no
             type: array
             items:
@@ -270,18 +352,32 @@ data objects:
     - name: Restriction
       description: A restriction on the allowed values
       fields:
-          - name: restriction 
-            description: The description of the restriction. I.e a string field might be restricted to valid BCP-47 
+          - name: restriction
+            description: The description of the restriction. I.e a string field might be restricted to valid BCP-47
                          language tags
             required: yes
             type: string
+          - name: value
+            description: The single restriction value when multiple values are not needed.
+            required: no
+            type: string
+          - name: values
+            description: The list of allowed values when the restriction accepts multiple entries.
+            required: no
+            type: array
+            items:
+                type: string
     - name: Service
       description: A description of the service, and the calls that can be made to it
       fields:
           - name: description
             description: A description of the service, it's purpose, etc.
             type: string
-          - name: commom 
+          - name: base path
+            description: The base URL path prepended to all method paths (e.g., /api/v1).
+            required: no
+            type: string
+          - name: common
             description: A description of common elements to all calls
             required: no
             type: object
@@ -292,10 +388,20 @@ data objects:
                   items:
                       typeref: Field
                 - name: parameters
-                  description: A list of query of form parameters
+                  description: A list of query or form parameters
                   type: array
                   items:
                       typeref: Field
+                - name: response objects
+                  description: Shared data objects used in method responses.
+                  type: array
+                  items:
+                      typeref: DataObject
+                - name: enums
+                  description: Enumerations scoped to the service.
+                  type: array
+                  items:
+                      typeref: NamedEnumeration
           - name: methods
             description: A description of calls that can be made to the service
             required: no
@@ -305,8 +411,24 @@ data objects:
     - name: Method
       description: A call that can be made to the service
       fields:
+          - name: method
+            description: The HTTP verb used to invoke this endpoint.
+            required: no
+            typeref: HTTPMethod
+          - name: path
+            description: The URL path of the endpoint, relative to the service base path. At least one of 'path' or
+                         'id' must be present.
+            required: no
+            type: string
+          - name: protocols allowed
+            description: The list of allowed protocols (e.g., 'http', 'https').
+            required: no
+            type: array
+            items:
+                type: string
           - name: id
-            description: The method id
+            description: An optional numeric identifier for the method. At least one of 'id' or 'path' must be present.
+            required: no
             type: int
           - name: name
             description: The name of the method
@@ -325,7 +447,7 @@ data objects:
             items:
                 typeref: Field
           - name: parameters
-            description: A list of query of form parameters, in Allego's case this is what goes inside the "p" block
+            description: A list of query or form parameters
             type: array
             items:
                 typeref: Field
@@ -348,45 +470,54 @@ data objects:
                       - multipart/mixed
           - name: response
             description: A description of the data returned in the response
-            type: object
-            fields:
-                - name: description
-                  description: A description of the reponse
-                  type: string
-                - name: type
-                  description: The type of this field, either this or 'typeref' must be present
-                  required: no
-                  typeref: DataType
-                - name: typeref
-                  description: The type of this field, referencing a named type. Either this or 'type' must be present.
-                  required: no
-                  type: string
-                - name: key
-                  description: The key if the type is an enum or collection
-                  required: no
-                  typeref: KeyType
-                - name: items
-                  description: The the type od items contained in an array or collection
-                  required: no
-                  typeref: TypeSpec
-                - name: restrictions
-                  description: A list of restrictions placed on the value of this field
-                  type: array
-                  items:
-                      typeref: Restriction
-                - name: fields
-                  description: A list of fields, if this field type is 'object'
-                  type: array
-                  items:
-                      typeref: Field
-                - name: values
-                  description: A list of enum constants, if this field type is 'enum'
-                  type: array
-                  items:
-                      typeref: EnumConstant
-
-#	private HTTPMethod method;
-#	@SerializedName("protocols allowed")
-#	private ArrayList<String> protocolsAllowed = new ArrayList<>();
-#	@SerializedName("request body")
-#	private RequestBody requestBody;
+            required: no
+            typeref: Response
+    - name: Response
+      description: Describes the JSON body returned by the server for a successful API method invocation. Extends TypeSpec.
+      fields:
+          - name: description
+            description: Human-readable description of the response payload.
+            required: no
+            type: string
+          - name: type
+            description: The type of this field, either this or 'typeref' must be present
+            required: no
+            typeref: DataType
+          - name: interpretedAs
+            description: An optional type describing how the raw type should be interpreted (e.g., a STRING interpreted as a date).
+            required: no
+            typeref: BasicType
+          - name: typeref
+            description: The type of this field, referencing a named type. Either this or 'type' must be present.
+            required: no
+            type: string
+          - name: key
+            description: The key if the type is an enum or collection
+            required: no
+            typeref: KeyType
+          - name: flagType
+            description: The integer storage type for bitset responses.
+            required: no
+            typeref: FlagType
+          - name: items
+            description: The type of items contained in an array or collection
+            required: no
+            typeref: TypeSpec
+          - name: restrictions
+            description: A list of restrictions placed on the value of this field
+            required: no
+            type: array
+            items:
+                typeref: Restriction
+          - name: fields
+            description: A list of fields, if this response type is 'object'
+            required: no
+            type: array
+            items:
+                typeref: Field
+          - name: values
+            description: A list of enum or bitset constants, if this response type is 'enum' or 'bitset'
+            required: no
+            type: array
+            items:
+                typeref: EnumConstant
