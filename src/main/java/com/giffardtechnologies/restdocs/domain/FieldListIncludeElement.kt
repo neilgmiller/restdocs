@@ -8,4 +8,10 @@ import io.vavr.collection.Array
 class FieldListIncludeElement(
     val include: DataObject,
     val excluding: Array<String> = Array.empty(),
+    val overrideRequired: RequiredOverride? = null,
 ) : FieldListElement
+
+class RequiredOverride(
+    val required: Boolean,
+    val excluding: Array<String> = Array.empty(),
+)

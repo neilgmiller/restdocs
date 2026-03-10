@@ -9,9 +9,6 @@ import com.giffardtechnologies.restdocs.model.FieldPathSet
 import com.giffardtechnologies.restdocs.model.FieldPathStem
 import com.giffardtechnologies.restdocs.storage.Document
 import io.vavr.collection.Array
-import io.vavr.collection.HashMap
-import io.vavr.collection.HashSet
-import java.util.stream.Stream
 
 /**
  * A marker interface for types that can go in a field list
@@ -23,7 +20,7 @@ sealed interface FieldListElement
 
 fun List<FieldListElement>.validateHasNoDuplicates(parentDocument: Document? = null) {
     val fields = if (parentDocument == null) {
-        this.filterIsInstance(Field::class.java).map { FieldDetails(it) }
+        this.filterIsInstance<Field>().map { FieldDetails(it) }
     } else {
         FieldElementList(parentDocument, this).getFieldDetails()
     }
@@ -56,7 +53,6 @@ data class DuplicateDetails(val name: String, val duplicateCount: Int, val dupli
     }
 }
 
-
 /**
  * A class for including the fields of data object inline with a list of fields
  */
@@ -65,7 +61,8 @@ class FieldListIncludeElement(
      * A reference to a DataObject, all fields of that object will be included
      */
     val include: String,
-    val excluding: ArrayList<String> = ArrayList()
+    val excluding: ArrayList<String> = ArrayList(),
+    val overrideRequired: RequiredOverride? = null,
 ) : FieldListElement, Validatable {
 
     fun excludingPathSet(): FieldPathSet {
@@ -83,62 +80,97 @@ class FieldListIncludeElement(
             val fields = dataObject.fields
             val excludingPathSet = excludingPathSet()
 
-            validateExclusions(fields, excludingPathSet, validationContext, Array.empty())
+            validateExclusions(fields, excludingPathSet, validationContext, elementName = "excluding")
+
+            overrideRequired?.validate(validationContext, fields)
         }
-    }
-
-    private fun validateExclusions(
-        fields: ArrayList<FieldListElement>,
-        excludingPathSet: FieldPathSet,
-        validationContext: DocValidator.FullContext,
-        parentPath: Array<String>
-    ) {
-        val fieldInstances = fields.filterIsInstance(Field::class.java)
-
-        // validate first level fields
-        val fieldNames = fieldInstances.stream().map { it.longName }.collect(HashSet.collector())
-        val excludedFieldNames = HashSet.ofAll(excludingPathSet.map { it.field })
-        if (!fieldNames.containsAll(excludedFieldNames)) {
-            val missedExcludes = excludedFieldNames.removeAll(fieldNames)
-            throw ValidationException(
-                "'excluding' element refers to unknown field${if (missedExcludes.size() > 1) "s" else ""}: ${
-                    missedExcludes.map { "'" + parentPath.joinToString(separator = ".", postfix = ".") + it + "'" }
-                        .joinToString(
-                            separator = ", "
-                        )
-                }"
-            )
-        }
-
-        // validate sub-objects
-        val excludedFieldInSubObjects = excludingPathSet.filterIsInstance(FieldPathStem::class.java).stream()
-            .collect(HashMap.collector { it.field })
-        fieldInstances.mapNotNull { field -> excludedFieldInSubObjects[field.longName].orNull?.let { Pair(field, it) } }
-            .forEach { pair ->
-                val (field, fieldPathStem) = pair
-                val newPath = parentPath.append(field.longName)
-                if (field.typeRef != null) {
-                    val dataObject = validationContext.document.dataObjects.first { it.name == field.typeRef }
-                    validateExclusions(dataObject.fields, fieldPathStem.childPathElements, validationContext, newPath)
-                } else if (field.type == DataType.ARRAY && field.items!!.typeRef != null) {
-                    val dataObject = validationContext.document.dataObjects.first { it.name == field.items.typeRef }
-                    validateExclusions(dataObject.fields, fieldPathStem.childPathElements, validationContext, newPath)
-                } else if (field.type == DataType.OBJECT) {
-                    validateExclusions(field.fields!!, fieldPathStem.childPathElements, validationContext, newPath)
-                } else if (field.type == DataType.ARRAY && field.items!!.type == DataType.OBJECT) {
-                    validateExclusions(field.items.fields!!, fieldPathStem.childPathElements, validationContext, newPath)
-                } else {
-                    throw ValidationException("Cannot exclude sub-fields of non-object type (type-ref or object): '${newPath.joinToString(separator = ".")}'")
-                }
-            }
     }
 }
 
-private fun <R> Stream<*>.filterIsInstance(klass: Class<R>): Stream<R> {
-    return this.filter { klass.isInstance(it) }.map {
-        @Suppress("UNCHECKED_CAST")
-        it as R
+class RequiredOverride(
+    val required: Boolean,
+    val excluding: ArrayList<String>? = null
+) {
+    fun validate(context: DocValidator.FullContext, fields: ArrayList<FieldListElement>) {
+        if (!excluding.isNullOrEmpty()) {
+            val excludingPathSet = FieldPathSet.ofAll(excluding.map { FieldPath(it) })
+            validateExclusions(
+                fields,
+                excludingPathSet,
+                context,
+                elementName = "override.excluding",
+            )
+        }
     }
+}
+
+private fun validateExclusions(
+    fields: ArrayList<FieldListElement>,
+    excludingPathSet: FieldPathSet,
+    validationContext: DocValidator.FullContext,
+    elementName: String,
+    parentPath: Array<String> = Array.empty(),
+) {
+    val fieldInstances = fields.filterIsInstance<Field>()
+
+    // validate first level fields
+    val fieldNames = fieldInstances.map { it.longName }.toSet()
+    val excludedFieldNames = excludingPathSet.map { it.field }.toSet()
+    if (!fieldNames.containsAll(excludedFieldNames)) {
+        val missedExcludes = excludedFieldNames - fieldNames
+        throw ValidationException(
+            "'$elementName' element refers to unknown field${if (missedExcludes.size > 1) "s" else ""}: ${
+                missedExcludes.joinToString(
+                    separator = ", "
+                ) { "'" + parentPath.joinToString(separator = ".", postfix = ".") + it + "'" }
+            }"
+        )
+    }
+
+    // validate sub-objects
+    val excludedFieldInSubObjects = excludingPathSet.filterIsInstance<FieldPathStem>().associateBy { it.field }
+    fieldInstances.mapNotNull { field -> excludedFieldInSubObjects[field.longName]?.let { Pair(field, it) } }
+        .forEach { pair ->
+            val (field, fieldPathStem) = pair
+            val newPath = parentPath.append(field.longName)
+            if (field.typeRef != null) {
+                val dataObject = validationContext.document.dataObjects.first { it.name == field.typeRef }
+                validateExclusions(
+                    dataObject.fields,
+                    fieldPathStem.childPathElements,
+                    validationContext,
+                    elementName,
+                    newPath
+                )
+            } else if (field.type == DataType.ARRAY && field.items!!.typeRef != null) {
+                val dataObject = validationContext.document.dataObjects.first { it.name == field.items.typeRef }
+                validateExclusions(
+                    dataObject.fields,
+                    fieldPathStem.childPathElements,
+                    validationContext,
+                    elementName,
+                    newPath
+                )
+            } else if (field.type == DataType.OBJECT) {
+                validateExclusions(
+                    field.fields!!,
+                    fieldPathStem.childPathElements,
+                    validationContext,
+                    elementName,
+                    newPath
+                )
+            } else if (field.type == DataType.ARRAY && field.items!!.type == DataType.OBJECT) {
+                validateExclusions(
+                    field.items.fields!!,
+                    fieldPathStem.childPathElements,
+                    validationContext,
+                    elementName,
+                    newPath
+                )
+            } else {
+                throw ValidationException("Cannot exclude sub-fields of non-object type (type-ref or object): '${newPath.joinToString(separator = ".")}'")
+            }
+        }
 }
 
 //class CombinedFieldListElement(

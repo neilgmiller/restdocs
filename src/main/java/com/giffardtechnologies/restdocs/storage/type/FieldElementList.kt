@@ -44,16 +44,30 @@ class FieldElementList(
                 } else if (fieldListElement is FieldListIncludeElement) {
                     val includedObject = dataObjectsByName[fieldListElement.include]
                         ?: throw IllegalStateException("Cannot find '" + fieldListElement.include)
-                    if (fieldListElement.excluding.isEmpty()) {
-                        newFields.addAll(includedObject.computedFields)
+                    val includedFields = if (fieldListElement.excluding.isEmpty()) {
+                        includedObject.computedFields
                     } else {
                         val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
                         val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
 
                         val fields = includedObject.computedFields
 
-                        newFields.addAll(getIncludedFields(fields, excludingPathSet, Array.empty()))
+                        getIncludedFields(fields, excludingPathSet, Array.empty())
                     }
+                    val overrideRequired = fieldListElement.overrideRequired
+                    val overriddenFields = if (overrideRequired == null) {
+                        includedFields
+                    } else {
+                        val overrideExcluding = HashSet.ofAll(overrideRequired.excluding)
+                        includedFields.map { field ->
+                            if (overrideExcluding.contains(field.longName)) {
+                                field
+                            } else {
+                                field.copy(isRequired = overrideRequired.required)
+                            }
+                        }
+                    }
+                    newFields.addAll(overriddenFields)
                 } else {
                     throw IllegalStateException("Unsupported element type: " + fieldListElement.javaClass.name)
                 }

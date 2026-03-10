@@ -1,11 +1,11 @@
 package com.giffardtechnologies.restdocs.storage.type
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import tools.jackson.databind.annotation.JsonDeserialize
 import com.giffardtechnologies.restdocs.jackson.TrueOnNullBooleanDeserializer
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.Restriction
+import tools.jackson.databind.annotation.JsonDeserialize
 
 open class Field(
     val name: String,
@@ -44,5 +44,26 @@ open class Field(
         if (!longName.matches(alphaNumericRegex)) {
             throw ValidationException("Field long name must be alphanumeric, and cannot start with a number: '$longName'")
         }
+    }
+
+    fun copy(isRequired: Boolean): Field {
+        return Field(
+            name = this.name,
+            longName = this.longName,
+            description = this.description,
+            defaultValue = this.defaultValue,
+            defaultValueToSendFromClient = this.defaultValueToSendFromClient,
+            isRequired = isRequired,
+            sampleValues = this.sampleValues,
+            type = this.type,
+            interpretedAs = this.interpretedAs,
+            typeRef = this.typeRef,
+            key = this.key,
+            flagType = this.flagType,
+            items = this.items,
+            restrictions = this.restrictions,
+            fields = this.fields,
+            values = this.values
+        )
     }
 }

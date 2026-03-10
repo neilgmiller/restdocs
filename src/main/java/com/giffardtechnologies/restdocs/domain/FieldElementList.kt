@@ -43,7 +43,19 @@ class FieldElementList(
 
                                 fieldsToAdd
                             }
-                            includedFields
+                            val overrideRequired = fieldListElement.overrideRequired
+                            if (overrideRequired == null) {
+                                includedFields
+                            } else {
+                                val overrideExcluding = HashSet.ofAll(overrideRequired.excluding)
+                                includedFields.map { field ->
+                                    if (overrideExcluding.contains(field.longName)) {
+                                        field
+                                    } else {
+                                        field.copy(isRequired = overrideRequired.required)
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -19,6 +19,7 @@ import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.FieldElementList
 import com.giffardtechnologies.restdocs.domain.FieldListElement
 import com.giffardtechnologies.restdocs.domain.FieldListIncludeElement
+import com.giffardtechnologies.restdocs.domain.RequiredOverride
 import com.giffardtechnologies.restdocs.domain.NamedBitSet
 import com.giffardtechnologies.restdocs.domain.RequestBody
 import com.giffardtechnologies.restdocs.domain.Response
@@ -194,6 +195,14 @@ private fun FieldListIncludeElementStorageModel.mapToModel(context: Context): Fi
     return FieldListIncludeElement(
         include = context.getTypeByName(include) as DataObject,
         excluding = Array.ofAll(excluding),
+        overrideRequired = overrideRequired?.mapToModel(),
+    )
+}
+
+private fun com.giffardtechnologies.restdocs.storage.type.RequiredOverride.mapToModel(): RequiredOverride {
+    return RequiredOverride(
+        required = required,
+        excluding = Array.ofAll(excluding ?: emptyList()),
     )
 }
 
