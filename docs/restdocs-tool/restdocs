@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# ===========================================================================
+# Copyright (c) 2024, Allego Corporation, MA USA
+#
+# This file and its contents are proprietary and confidential to and the sole
+# intellectual property of Allego Corporation.  Any use, reproduction,
+# redistribution or modification of this file is prohibited except as
+# explicitly defined by written license agreement with Allego Corporation.
+# ===========================================================================
+
+DIR="${BASH_SOURCE%/*}"
+
+if [ ! -e "$DIR/restdocs.properties" ]; then
+  1>&2 echo "Restdocs properties missing, expected at '$DIR/restdocs.properties'"
+  exit 1
+fi
+
+present=$( grep -c distributionVersion "$DIR"/restdocs.properties )
+
+if [ "$present" != 1 ]; then
+   1>&2 echo "Configure the restdocs versions in '$DIR/restdocs.properties' in 'distributionVersion' property"
+   exit 1
+fi
+
+version=$( grep distributionVersion "$DIR"/restdocs.properties | cut -d "=" -f 2 )
+
+if [ ! -d "$DIR/.restdocs" ]; then
+    mkdir "$DIR/.restdocs"
+fi
+
+if [ ! -d "$DIR/.restdocs/$version" ]; then
+    curl -L -u"tools-downloader:XXXX-XXXX-XXXX" "https://dev-artifactory.allego-dev.com/artifactory/tools/com.allego/restdocs/restdocs-$version.zip" -o "$DIR/.restdocs/$version.zip"
+    unzip -q "$DIR/.restdocs/$version.zip" -d "$DIR"/.restdocs/
+    mv "$DIR/.restdocs/restdocs-$version" "$DIR/.restdocs/$version"
+    rm "$DIR/.restdocs/$version.zip"
+fi
+
+echo "$version"

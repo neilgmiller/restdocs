@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# ===========================================================================
+# Copyright (c) 2024, Allego Corporation, MA USA
+#
+# This file and its contents are proprietary and confidential to and the sole
+# intellectual property of Allego Corporation.  Any use, reproduction,
+# redistribution or modification of this file is prohibited except as
+# explicitly defined by written license agreement with Allego Corporation.
+# ===========================================================================
+
+DIR="${BASH_SOURCE%/*}"
+
+version=$("$DIR"/restdocs-tool/restdocs)
+
+me=$(basename "$0")
+
+cd "$DIR" || exit
+
+./restdocs-tool/.restdocs/"$version"/bin/"$me" "$@"
