@@ -38,7 +38,8 @@ repositories {
 }
 
 dependencies {
-    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 
     implementation(fileTree(mapOf("dir" to "manual-libs", "include" to listOf("*.jar"))))
 
@@ -126,6 +127,10 @@ val processResources = tasks.named<ProcessResources>("processResources") {
 
 tasks.named("compileKotlin") {
     dependsOn(processResources)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.register<Copy>("getDeps") {

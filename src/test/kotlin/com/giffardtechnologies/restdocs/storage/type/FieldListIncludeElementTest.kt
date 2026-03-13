@@ -5,9 +5,9 @@ import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.DataObject
 import com.giffardtechnologies.restdocs.storage.Document
 import io.vavr.collection.HashSet as VavrHashSet
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Test
 
 class FieldListIncludeElementTest {
 

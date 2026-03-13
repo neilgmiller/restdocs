@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.20"
-junit = "4.13.1"
+junit-jupiter = "5.11.4"
 snakeyaml = "2.2"
 velocity = "2.3"
 velocity-tools = "3.1"
@@ -22,7 +22,8 @@ futureproofenum = "1.0-SNAPSHOT"
 mapstruct = "1.5.3.Final"
 
 [libraries]
-junit = { group = "junit", name = "junit", version.ref = "junit" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit-jupiter" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version = "1.11.4" }
 snakeyaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeyaml" }
 velocity-engine = { group = "org.apache.velocity", name = "velocity-engine-core", version.ref = "velocity" }
 velocity-tools = { group = "org.apache.velocity.tools", name = "velocity-tools-generic", version.ref = "velocity-tools" }
