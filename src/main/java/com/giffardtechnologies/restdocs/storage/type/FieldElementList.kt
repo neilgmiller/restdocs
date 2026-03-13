@@ -1,6 +1,5 @@
 package com.giffardtechnologies.restdocs.storage.type
 
-import com.giffardtechnologies.restdocs.model.FieldPath
 import com.giffardtechnologies.restdocs.model.FieldPathLeaf
 import com.giffardtechnologies.restdocs.model.FieldPathSet
 import com.giffardtechnologies.restdocs.model.FieldPathStem
@@ -63,15 +62,19 @@ class FieldElementList(
                 } else if (fieldListElement is FieldListIncludeElement) {
                     val includedObject = dataObjectsByName[fieldListElement.include]
                         ?: throw IllegalStateException("Cannot find '" + fieldListElement.include)
-                    val includedFields = if (fieldListElement.excluding.isEmpty()) {
-                        includedObject.computedFields
+                    val baseFields = if (fieldListElement.includeOnly.isNotEmpty()) {
+                        getIncludedOnlyFields(
+                            includedObject.computedFields,
+                            fieldListElement.includeOnlyPathSet(),
+                            Array.empty()
+                        )
                     } else {
-                        val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
-                        val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
-
-                        val fields = includedObject.computedFields
-
-                        getIncludedFields(fields, excludingPathSet, Array.empty())
+                        includedObject.computedFields
+                    }
+                    val includedFields = if (fieldListElement.excluding.isNotEmpty()) {
+                        getIncludedFields(baseFields, fieldListElement.excludingPathSet(), Array.empty())
+                    } else {
+                        baseFields
                     }
                     val overrideRequired = fieldListElement.overrideRequired
                     val overriddenFields = if (overrideRequired == null) {
@@ -110,16 +113,21 @@ class FieldElementList(
                 } else if (fieldListElement is FieldListIncludeElement) {
                     val includedObject = dataObjectsByName[fieldListElement.include]
                         ?: throw IllegalStateException("Cannot find '" + fieldListElement.include)
-                    if (fieldListElement.excluding.isEmpty()) {
-                        newFields.addAll(includedObject.computedFields.map { FieldDetails(it, fieldListElement) })
+                    val baseFields = if (fieldListElement.includeOnly.isNotEmpty()) {
+                        getIncludedOnlyFields(
+                            includedObject.computedFields,
+                            fieldListElement.includeOnlyPathSet(),
+                            Array.empty()
+                        )
                     } else {
-                        val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
-                        val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
-
-                        val fields = includedObject.computedFields
-
-                        newFields.addAll(getIncludedFields(fields, excludingPathSet, Array.empty()).map { FieldDetails(it, fieldListElement) })
+                        includedObject.computedFields
                     }
+                    val includedFields = if (fieldListElement.excluding.isNotEmpty()) {
+                        getIncludedFields(baseFields, fieldListElement.excludingPathSet(), Array.empty())
+                    } else {
+                        baseFields
+                    }
+                    newFields.addAll(includedFields.map { FieldDetails(it, fieldListElement) })
                 } else {
                     throw IllegalStateException("Unsupported element type: " + fieldListElement.javaClass.name)
                 }
@@ -127,6 +135,88 @@ class FieldElementList(
             fieldDetails = newFields
             newFields
         }
+    }
+
+    private fun getIncludedOnlyFields(
+        fields: ArrayList<Field>,
+        includeOnlyPathSet: FieldPathSet,
+        parentPath: Array<String>
+    ): ArrayList<Field> {
+        val includedFields = ArrayList<Field>()
+
+        val fieldNames = fields.stream().map { it.longName }.collect(HashSet.collector())
+        val includeOnlyFieldNames = HashSet.ofAll(includeOnlyPathSet.map { it.field })
+        if (!fieldNames.containsAll(includeOnlyFieldNames)) {
+            val missedIncludes = includeOnlyFieldNames.removeAll(fieldNames)
+            throw IllegalStateException(
+                "'includeOnly' element refers to unknown field${if (missedIncludes.size() > 1) "s" else ""}: ${
+                    missedIncludes.map { "'" + parentPath.joinToString(separator = ".", postfix = ".") + it + "'" }
+                        .joinToString(separator = ", ")
+                }"
+            )
+        }
+
+        fields.forEach { field ->
+            when (val node = includeOnlyPathSet[field.longName]) {
+                is FieldPathLeaf -> includedFields.add(field)
+                is FieldPathStem -> {
+                    val newPath = parentPath.append(field.longName)
+                    val subField = if (field.typeRef != null) {
+                        val dataObject = dataObjectsByName[field.typeRef]
+                        Field(
+                            name = field.name,
+                            longName = field.longName,
+                            type = DataType.OBJECT,
+                            fields = ArrayList(getIncludedOnlyFields(dataObject!!.computedFields, node.childPathElements, newPath))
+                        )
+                    } else if (field.type == DataType.ARRAY && field.items!!.typeRef != null) {
+                        val dataObject = dataObjectsByName[field.items.typeRef]
+                        Field(
+                            name = field.name,
+                            longName = field.longName,
+                            type = DataType.ARRAY,
+                            items = TypeSpec(
+                                type = DataType.OBJECT,
+                                fields = ArrayList(getIncludedOnlyFields(dataObject!!.computedFields, node.childPathElements, newPath))
+                            )
+                        )
+                    } else if (field.type == DataType.OBJECT) {
+                        Field(
+                            name = field.name,
+                            longName = field.longName,
+                            type = DataType.OBJECT,
+                            fields = ArrayList(getIncludedOnlyFields(field.computedFields, node.childPathElements, newPath)),
+                        )
+                    } else if (field.type == DataType.ARRAY && field.items!!.type == DataType.OBJECT) {
+                        Field(
+                            name = field.name,
+                            longName = field.longName,
+                            type = DataType.ARRAY,
+                            items = TypeSpec(
+                                type = DataType.OBJECT,
+                                fields = ArrayList(
+                                    getIncludedOnlyFields(
+                                        field.items.computedFields,
+                                        node.childPathElements,
+                                        newPath
+                                    )
+                                )
+                            )
+                        )
+                    } else {
+                        throw IllegalStateException(
+                            "Cannot include sub-fields of non-object type (type-ref or object): '${
+                                newPath.joinToString(separator = ".")
+                            }'"
+                        )
+                    }
+                    includedFields.add(subField)
+                }
+                null -> {}
+            }
+        }
+
+        return includedFields
     }
 
     private fun getIncludedFields(

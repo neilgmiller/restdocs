@@ -86,6 +86,7 @@ class FieldListIncludeElement(
      * A reference to a DataObject, all fields of that object will be included.
      */
     val include: String,
+    val includeOnly: ArrayList<String> = ArrayList(),
     val excluding: ArrayList<String> = ArrayList(),
     val overrideRequired: RequiredOverride? = null,
 ) : FieldListElement, Validatable {
@@ -100,9 +101,19 @@ class FieldListIncludeElement(
     }
 
     /**
+     * Returns the [includeOnly] paths as a [FieldPathSet] for efficient lookup during field
+     * resolution.
+     */
+    fun includeOnlyPathSet(): FieldPathSet {
+        val fieldPaths = includeOnly.map { FieldPath(it) }
+        return FieldPathSet.ofAll(fieldPaths)
+    }
+
+    /**
      * Validates this include element against a full context, checking that [include] refers to a
-     * known type and that all [excluding] paths and [overrideRequired] exclusions refer to
-     * existing fields.
+     * known type and that all [includeOnly] and [excluding] paths and [overrideRequired] exclusions
+     * refer to existing fields. When both [includeOnly] and [excluding] are set, also validates
+     * that each [excluding] path's first-segment field is covered by [includeOnly].
      */
     override fun validate(validationContext: Any?) {
         if (validationContext is DocValidator.FullContext) {
@@ -110,11 +121,26 @@ class FieldListIncludeElement(
                 throw ValidationException("'include' element reference refers to missing type: '$include'")
             }
             val dataObject = validationContext.document.dataObjects.first { it.name == include }
-
             val fields = dataObject.fields
-            val excludingPathSet = excludingPathSet()
 
-            validateExclusions(fields, excludingPathSet, validationContext, elementName = "excluding")
+            if (includeOnly.isNotEmpty()) {
+                val includeOnlyPathSet = includeOnlyPathSet()
+                validateExclusions(fields, includeOnlyPathSet, validationContext, elementName = "includeOnly")
+
+                if (excluding.isNotEmpty()) {
+                    val excludingPathSet = excludingPathSet()
+                    excludingPathSet.forEach { excludePath ->
+                        if (includeOnlyPathSet[excludePath.field] == null) {
+                            throw ValidationException(
+                                "'excluding' path '${excludePath.field}' refers to a field not included by 'includeOnly'"
+                            )
+                        }
+                    }
+                    validateExclusions(fields, excludingPathSet, validationContext, elementName = "excluding")
+                }
+            } else {
+                validateExclusions(fields, excludingPathSet(), validationContext, elementName = "excluding")
+            }
 
             overrideRequired?.validate(validationContext, fields)
         }
