@@ -194,6 +194,7 @@ private fun FieldStorageModel.mapToModel(context: Context): Field {
 private fun FieldListIncludeElementStorageModel.mapToModel(context: Context): FieldListIncludeElement {
     return FieldListIncludeElement(
         include = context.getTypeByName(include) as DataObject,
+        includeOnly = Array.ofAll(includeOnly),
         excluding = Array.ofAll(excluding),
         overrideRequired = overrideRequired?.mapToModel(),
     )

@@ -7,6 +7,7 @@ import io.vavr.collection.Array
  */
 class FieldListIncludeElement(
     val include: DataObject,
+    val includeOnly: Array<String> = Array.empty(),
     val excluding: Array<String> = Array.empty(),
     val overrideRequired: RequiredOverride? = null,
 ) : FieldListElement

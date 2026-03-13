@@ -31,17 +31,17 @@ class FieldElementList(
 
                         is FieldListIncludeElement -> {
                             val includedObject = fieldListElement.include
-                            val includedFields = if (fieldListElement.excluding.isEmpty) {
+                            val baseFields = if (fieldListElement.includeOnly.isEmpty) {
                                 includedObject.type.fields
                             } else {
-                                val fieldPaths = fieldListElement.excluding.map { FieldPath(it) }
-                                val excludingPathSet = FieldPathSet.ofAll(fieldPaths)
-
-                                val fields = includedObject.type.fields
-
-                                val fieldsToAdd = getIncludedFields(fields, excludingPathSet, Array.empty())
-
-                                fieldsToAdd
+                                val includeOnlyPathSet = FieldPathSet.ofAll(fieldListElement.includeOnly.map { FieldPath(it) })
+                                getIncludedOnlyFields(includedObject.type.fields, includeOnlyPathSet, Array.empty())
+                            }
+                            val includedFields = if (fieldListElement.excluding.isEmpty) {
+                                baseFields
+                            } else {
+                                val excludingPathSet = FieldPathSet.ofAll(fieldListElement.excluding.map { FieldPath(it) })
+                                getIncludedFields(baseFields, excludingPathSet, Array.empty())
                             }
                             val overrideRequired = fieldListElement.overrideRequired
                             if (overrideRequired == null) {
@@ -141,6 +141,79 @@ class FieldElementList(
                         newPath.joinToString(
                             separator = "."
                         )
+                    }'"
+                )
+            }
+        }
+    }
+
+    private fun getIncludedOnlyFields(
+        fields: Array<Field>,
+        includeOnlyPathSet: FieldPathSet,
+        parentPath: Array<String>
+    ): Array<Field> {
+        // validate first level fields
+        val fieldNames = fields.map { it.longName }.collect(HashSet.collector())
+        val includeOnlyFieldNames = HashSet.ofAll(includeOnlyPathSet.map { it.field })
+        if (!fieldNames.containsAll(includeOnlyFieldNames)) {
+            val missedIncludes = includeOnlyFieldNames.removeAll(fieldNames)
+            throw IllegalStateException(
+                "'includeOnly' element refers to unknown field${if (missedIncludes.size() > 1) "s" else ""}: ${
+                    missedIncludes.map { "'" + parentPath.joinToString(separator = ".", postfix = ".") + it + "'" }
+                        .joinToString(separator = ", ")
+                }"
+            )
+        }
+
+        return fields.mapNonNull { field ->
+            when (val node = includeOnlyPathSet[field.longName]) {
+                is FieldPathLeaf -> field
+                is FieldPathStem -> {
+                    val newPath = parentPath.append(field.longName)
+                    Field(
+                        name = field.name,
+                        longName = field.longName,
+                        type = getIncludedOnlyFieldTypeSpec(field.type, node.childPathElements, newPath),
+                        description = field.description,
+                        defaultValue = field.defaultValue,
+                        isRequired = field.isRequired,
+                        sampleValues = field.sampleValues,
+                    )
+                }
+                null -> null
+            }
+        }
+    }
+
+    private fun getIncludedOnlyFieldTypeSpec(
+        typeSpec: TypeSpec,
+        childPathElements: FieldPathSet,
+        newPath: Array<String>
+    ): TypeSpec {
+        return when (typeSpec) {
+            is TypeSpec.TypeRefSpec -> {
+                getIncludedOnlyFieldTypeSpec(typeSpec.typeRef.value.type, childPathElements, newPath)
+            }
+            is TypeSpec.ObjectSpec -> {
+                TypeSpec.ObjectSpec(
+                    fieldElementList = FieldElementList(
+                        fieldListElements = getIncludedOnlyFields(typeSpec.fields, childPathElements, newPath)
+                    )
+                )
+            }
+            is TypeSpec.ArraySpec -> {
+                TypeSpec.ArraySpec(
+                    getIncludedOnlyFieldTypeSpec(typeSpec.items, childPathElements, newPath)
+                )
+            }
+            is TypeSpec.BitSetSpec<*>,
+            is TypeSpec.DataSpec,
+            is TypeSpec.BooleanSpec,
+            is TypeSpec.MapSpec<*>,
+            is TypeSpec.EnumSpec<*> -> {
+                throw IllegalStateException(
+                    "Cannot include sub-fields of non-object type (type-ref or object): '${
+                        newPath.joinToString(separator = ".")
                     }'"
                 )
             }
