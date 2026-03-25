@@ -224,49 +224,7 @@ data objects:
             description: The value that client code should send when the user has not explicitly set this field.
             required: no
             type: string
-          - name: type
-            description: The type of this field, either this or 'typeref' must be present
-            required: no
-            typeref: DataType
-          - name: interpretedAs
-            description: The type this field should be interpretted as. E.g. type is `int`, but it is interpretted as
-                         `boolean`
-            required: no
-            typeref: BasicType
-          - name: typeref
-            description: The type of this field, referencing a named type. Either this or 'type' must be present.
-            required: no
-            type: string
-          - name: key
-            description: The key if the type is an enum or collection
-            required: no
-            typeref: KeyType
-          - name: flagType
-            description: The integer storage type for bitset fields.
-            required: no
-            typeref: FlagType
-          - name: items
-            description: The the type of items contained in an array or collection
-            required: no
-            typeref: TypeSpec
-          - name: restrictions
-            description: A list of restrictions placed on the value of this field
-            required: no
-            type: array
-            items:
-                typeref: Restriction
-          - name: fields
-            description: A list of fields, required if this field type is 'object'
-            required: no
-            type: array
-            items:
-                typeref: Field
-          - name: values
-            description: A list of enum or bitset constants, required if this field type is 'enum' or 'bitset'.
-            required: no
-            type: array
-            items:
-                typeref: EnumConstant
+          - include: TypeSpec
           - name: sampleValues
             description: A list of sample values, if this field type is 'enum', this will be ignored.
             required: no
