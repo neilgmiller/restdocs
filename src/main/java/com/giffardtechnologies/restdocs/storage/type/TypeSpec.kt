@@ -14,6 +14,8 @@ import com.giffardtechnologies.restdocs.storage.Restriction
  * instance must specify exactly one of [type] or [typeRef].
  *
  * @property type The explicit [DataType] of this element.
+ * @property parsedAs Used only when [type] is [DataType.STRING]; denotes the type the string
+ * should be parsed to. Can be combined with [interpretedAs].
  * @property interpretedAs An optional [BasicType] describing how the raw [type] should be
  * semantically interpreted (e.g., an INT that is actually a BOOLEAN).
  * @property typeRef A reference to a named type (data object, enumeration, or bitset) defined
@@ -28,6 +30,7 @@ import com.giffardtechnologies.restdocs.storage.Restriction
  */
 open class TypeSpec(
     val type: DataType? = null,
+    val parsedAs: BasicType? = null,
     val interpretedAs: BasicType? = null,
     @JsonProperty("typeref")
     val typeRef: String? = null,
@@ -42,6 +45,8 @@ open class TypeSpec(
     /**
      * Validates the type specification, enforcing rules such as:
      * - Exactly one of [type] or [typeRef] must be set.
+     * - [parsedAs] requires [type] to be [DataType.STRING] and cannot equal [BasicType.STRING].
+     * - [parsedAs] cannot be combined with [typeRef].
      * - [DataType.ARRAY] requires [items].
      * - [DataType.OBJECT] requires [fields].
      * - [DataType.COLLECTION] requires both [key] and [items].
@@ -55,14 +60,21 @@ open class TypeSpec(
             throw ValidationException("$classString cannot have both 'type' and 'typeref'")
         }
         if (type != null) {
+            if (parsedAs != null && type != DataType.STRING) {
+                throw ValidationException("$classString 'parsedAs' is only valid when 'type' is 'string'")
+            }
             when(type) {
                 DataType.INT,
                 DataType.LONG,
                 DataType.FLOAT,
                 DataType.DOUBLE,
-                DataType.STRING,
-                DataType.BOOLEAN ,
+                DataType.BOOLEAN,
                 DataType.DATE -> {}
+                DataType.STRING -> {
+                    if (parsedAs == BasicType.STRING) {
+                        throw ValidationException("$classString 'parsedAs' cannot be 'string' when 'type' is also 'string'")
+                    }
+                }
                 DataType.ARRAY -> {
                     if (items == null) {
                         throw ValidationException("$classString of 'array' type must define 'items'")
@@ -111,7 +123,7 @@ open class TypeSpec(
                         val valuesNameSet = mutableSetOf<String>()
                         values.forEach {
                             if (keyStringInvalid(it.value)) {
-                                throw ValidationException("Key '${it.value}' in '$classString' does not match key type: $key")
+                                throw ValidationException("UsableAsKey '${it.value}' in '$classString' does not match key type: $key")
                             }
                             if (valuesKeySet.contains(it.value)) {
                                 throw ValidationException("Duplicate key '${it.value}' found in '$classString'")
@@ -136,6 +148,9 @@ open class TypeSpec(
                 }
             }
         } else if (typeRef != null) {
+            if (parsedAs != null) {
+                throw ValidationException("$classString 'parsedAs' cannot be used with 'typeref'")
+            }
             if (validationContext is DocValidator.FullContext) {
                 if (!validationContext.referencableTypes.contains(typeRef)) {
                     throw ValidationException("$classString's type reference refers to missing type: '$typeRef'")

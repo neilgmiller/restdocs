@@ -80,6 +80,10 @@ class ObjectInspectionHelper(val document: Document) {
         return !field.defaultValue.isNullOrEmpty()
     }
 
+    fun hasParsedAs(field: Field): Boolean {
+        return field.parsedAs != null
+    }
+
     fun hasInterpretedAs(field: Field): Boolean {
         return field.interpretedAs != null
     }

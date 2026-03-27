@@ -5,7 +5,7 @@ import com.giffardtechnologies.restdocs.domain.type.EnumConstant
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import io.vavr.collection.Array
 
-fun <T> enumSpec(keyType: DataType.BasicKey<T>, configure: EnumSpecConfiguration<T>.() -> Unit): TypeSpec.EnumSpec<T> {
+fun <T> enumSpec(keyType: DataType.UsableAsKey<T>, configure: EnumSpecConfiguration<T>.() -> Unit): TypeSpec.EnumSpec<T> {
     val enumSpecBuilder = EnumSpecBuilder(keyType)
     enumSpecBuilder.configure()
     return enumSpecBuilder.build()
@@ -34,7 +34,7 @@ open class EnumSpecConfiguration<T> protected constructor() {
 
 }
 
-private class EnumSpecBuilder<T>(val keyType: DataType.BasicKey<T>) : EnumSpecConfiguration<T>() {
+private class EnumSpecBuilder<T>(val keyType: DataType.UsableAsKey<T>) : EnumSpecConfiguration<T>() {
 
     fun build(): TypeSpec.EnumSpec<T> {
         return TypeSpec.EnumSpec(keyType, Array.ofAll(values))

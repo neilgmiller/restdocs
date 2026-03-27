@@ -132,8 +132,10 @@ class FieldElementList(
                 )
             }
             is TypeSpec.BitSetSpec<*>,
-            is TypeSpec.DataSpec,
+            is TypeSpec.BasicSpec,
+            is TypeSpec.DateSpec,
             is TypeSpec.BooleanSpec,
+            is TypeSpec.StringSpec,
             is TypeSpec.MapSpec<*>,
             is TypeSpec.EnumSpec<*> -> {
                 throw IllegalStateException(
@@ -207,8 +209,10 @@ class FieldElementList(
                 )
             }
             is TypeSpec.BitSetSpec<*>,
-            is TypeSpec.DataSpec,
+            is TypeSpec.BasicSpec,
+            is TypeSpec.DateSpec,
             is TypeSpec.BooleanSpec,
+            is TypeSpec.StringSpec,
             is TypeSpec.MapSpec<*>,
             is TypeSpec.EnumSpec<*> -> {
                 throw IllegalStateException(

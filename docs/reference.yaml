@@ -268,6 +268,13 @@ data objects:
             description: The type being described, either this or 'typeref' must be present
             required: no
             typeref: DataType
+          - name: parsedAs
+            description: Used only when 'type' is 'string'. This field denotes the type that the string should be parsed 
+                         to. If the string cannot be parsed to that type a "no-value" fallback will be used instead (i.e.
+                         0, false, etc). This option can be used in conjunction with 'interpretedAs'. Setting this field
+                         to 'string' is considered an error.
+            required: no
+            typeref: BasicType
           - name: interpretedAs
             description: How to interpret type being described, for example the 'type' might be string but should be
                          treated as a long.

@@ -5,7 +5,7 @@ import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.NamedBitSet
 import com.giffardtechnologies.restdocs.domain.type.BooleanRepresentation
 import com.giffardtechnologies.restdocs.domain.type.DataType
-import com.giffardtechnologies.restdocs.domain.type.DataType.BasicKey
+import com.giffardtechnologies.restdocs.domain.type.DataType.UsableAsKey
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.ArraySpec
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec.MapSpec
@@ -61,20 +61,46 @@ class FieldAndTypeProcessor(
             )
         }
 
+        if (field.type is TypeSpec.StringSpec) {
+            var serializerName = when (field.type.parsedAs) {
+                DataType.IntType -> "StringToInt"
+                DataType.LongType -> "StringToLong"
+                DataType.FloatType -> "StringToFloat"
+                DataType.DoubleType -> "StringToDouble"
+                DataType.BooleanType -> "StringToBoolean"
+                DataType.StringType -> TODO("Fix type hierarchy, so parsing a string a a isn't allowed")
+            }
+            serializerName += when (field.type.representedAs) {
+                DataType.BooleanType -> "ToBoolean"
+                DataType.DoubleType -> "ToDouble"
+                DataType.FloatType -> "ToFloat"
+                DataType.IntType -> "ToInt"
+                DataType.LongType -> "ToLong"
+                DataType.StringType -> "ToString"
+                null -> ""
+            }
+            serializerName += "Serializer"
+            fieldBuilder.addAnnotation(
+                AnnotationSpec.builder(Serializable::class)
+                    .addMember("with = %T::class", ClassName("com.allego.api.client.support.serialization", serializerName))
+                    .build()
+            )
+        }
+
         // add initializers
         val type = getEffectiveFieldType(field)
 
         if (initializeWithDefault && !field.isRequired && field.defaultValue != null) {
             // add an initializer
             when (type) {
-                is TypeSpec.DataSpec -> {
+                is TypeSpec.BasicSpec -> {
                     when(type.type) {
                         DataType.IntType -> fieldBuilder.initializer("%L", field.defaultValue)
                         DataType.LongType -> fieldBuilder.initializer("%L", field.defaultValue)
                         DataType.StringType -> fieldBuilder.initializer("%S", field.defaultValue)
-                        DataType.DateType -> {}
                         DataType.DoubleType -> fieldBuilder.initializer("%L", field.defaultValue)
                         DataType.FloatType -> fieldBuilder.initializer("%L", field.defaultValue)
+                        DataType.BooleanType -> fieldBuilder.initializer("%L", field.defaultValue)
                     }
                 }
                 is ArraySpec -> fieldBuilder.initializer("listOf()")
@@ -107,8 +133,10 @@ class FieldAndTypeProcessor(
                         )
                     }
                 }
+                is TypeSpec.DateSpec -> {}
                 is TypeSpec.ObjectSpec -> {}
                 is TypeSpec.TypeRefSpec -> {}
+                is TypeSpec.StringSpec -> fieldBuilder.initializer("%S", field.defaultValue)
             }
         } else if (initializeWithDefault && initializeCollections && type is TypeSpec.CollectionSpec && !field.isRequired) {
             when (type) {
@@ -131,13 +159,29 @@ class FieldAndTypeProcessor(
     fun getEffectiveFieldType(field: Field): TypeSpec {
         return when(val type = field.type) {
             is TypeSpec.TypeRefSpec -> type.typeRef.value.type
-            is TypeSpec.DataSpec,
+            is TypeSpec.BasicSpec,
             is ArraySpec,
             is TypeSpec.BitSetSpec<*>,
             is TypeSpec.BooleanSpec,
+            is TypeSpec.DateSpec,
             is MapSpec<*>,
             is TypeSpec.EnumSpec<*>,
             is TypeSpec.ObjectSpec -> type
+            is TypeSpec.StringSpec -> {
+                if (type.representedAs == null) {
+                    when (type.parsedAs) {
+                        is DataType.ReRepresentableType -> TypeSpec.BasicSpec(type.parsedAs)
+                        is DataType.BooleanType -> TypeSpec.BooleanSpec()
+//                    null -> TypeSpec.BasicSpec(DataType.StringType)
+                    }
+                } else {
+                    when (type.representedAs) {
+                        is DataType.ReRepresentableType -> TypeSpec.BasicSpec(type.representedAs)
+                        DataType.BooleanType -> TypeSpec.BooleanSpec(BooleanRepresentation.AsInteger)
+                        DataType.StringType -> TODO("back to string, really??")
+                    }
+                }
+            }
         }
     }
 
@@ -188,6 +232,7 @@ class FieldAndTypeProcessor(
                 setClass.parameterizedBy(subObjectClassNameFactory(parentField))
             }
             is TypeSpec.BooleanSpec -> Boolean::class.asTypeName()
+            is TypeSpec.DateSpec -> LocalDate::class.asTypeName()
             is ArraySpec -> {
                 if (typeSpec.items is TypeSpec.BooleanSpec) {
                     throw IllegalArgumentException("Boolean not supported in array type")
@@ -219,7 +264,7 @@ class FieldAndTypeProcessor(
                     )
                 )
             }
-            is TypeSpec.DataSpec -> getBasicTypeName(typeSpec.type)
+            is TypeSpec.BasicSpec -> getBasicTypeName(typeSpec.type)
             is TypeSpec.EnumSpec<*> -> {
                 subObjectClassNameFactory(parentField)
             }
@@ -238,6 +283,14 @@ class FieldAndTypeProcessor(
                     setClass.parameterizedBy(ClassName(typeRefPackage, typeSpec.referenceName))
                 } else {
                     ClassName(typeRefPackage, typeSpec.referenceName)
+                }
+            }
+            is TypeSpec.StringSpec -> {
+//                typeSpec.parsedAs?.let { getBasicTypeName(typeSpec.parsedAs) } ?: String::class.asTypeName()
+                if (typeSpec.representedAs == null) {
+                    getBasicTypeName(typeSpec.parsedAs)
+                } else {
+                    getBasicTypeName(typeSpec.representedAs)
                 }
             }
 
@@ -292,14 +345,15 @@ class FieldAndTypeProcessor(
 
     private fun getBasicTypeName(type: DataType<*>): TypeName {
         return when (type) {
-            is BasicKey<*> -> getKeyTypeName(type)
+            is UsableAsKey<*> -> getKeyTypeName(type)
             DataType.DateType -> LocalDate::class.asTypeName()
             DataType.DoubleType -> Double::class.asTypeName()
             DataType.FloatType -> Float::class.asTypeName()
+            DataType.BooleanType -> Boolean::class.asTypeName()
         }
     }
 
-    private fun getKeyTypeName(key: BasicKey<*>): TypeName {
+    private fun getKeyTypeName(key: UsableAsKey<*>): TypeName {
         return when (key) {
             DataType.IntType -> Int::class.asTypeName()
             DataType.LongType -> Long::class.asTypeName()

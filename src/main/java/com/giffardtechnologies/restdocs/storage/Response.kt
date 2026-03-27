@@ -34,6 +34,7 @@ import com.giffardtechnologies.restdocs.storage.type.TypeSpec
 class Response(
     val description: String? = null,
     type: DataType? = null,
+    parsedAs: BasicType? = null,
     interpretedAs: BasicType? = null,
     @JsonProperty("typeref")
     typeRef: String? = null,
@@ -43,4 +44,4 @@ class Response(
     restrictions: ArrayList<Restriction>? = null,
     fields: ArrayList<FieldListElement>? = null,
     values: ArrayList<EnumConstant>? = null,
-) : TypeSpec(type, interpretedAs, typeRef, key, flagType, items, restrictions, fields, values)
+) : TypeSpec(type, parsedAs, interpretedAs, typeRef, key, flagType, items, restrictions, fields, values)

@@ -6,7 +6,7 @@ import com.giffardtechnologies.restdocs.domain.type.EnumConstant
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import io.vavr.collection.Array
 
-fun <T> namedEnumeration(name: String, keyType: DataType.BasicKey<T>, configure: NamedEnumerationConfiguration<T>.() -> Unit): NamedEnumeration {
+fun <T> namedEnumeration(name: String, keyType: DataType.UsableAsKey<T>, configure: NamedEnumerationConfiguration<T>.() -> Unit): NamedEnumeration {
     val namedEnumerationBuilder = NamedEnumerationBuilder(name, keyType)
     namedEnumerationBuilder.configure()
     return namedEnumerationBuilder.build()
@@ -36,7 +36,7 @@ open class NamedEnumerationConfiguration<T> protected constructor() {
 
 }
 
-private class NamedEnumerationBuilder<T>(private val name: String, val keyType: DataType.BasicKey<T>) : NamedEnumerationConfiguration<T>() {
+private class NamedEnumerationBuilder<T>(private val name: String, val keyType: DataType.UsableAsKey<T>) : NamedEnumerationConfiguration<T>() {
 
     fun build(): NamedEnumeration {
         return NamedEnumeration(

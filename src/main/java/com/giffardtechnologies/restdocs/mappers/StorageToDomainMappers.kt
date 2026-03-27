@@ -108,7 +108,7 @@ private fun NamedEnumerationStorageModel.mapToModel() : NamedEnumeration {
 
 private fun <T> mapEnumOfType(
     name: String,
-    keyType: DataType.BasicKey<T>,
+    keyType: DataType.UsableAsKey<T>,
     description: String?,
     values: ArrayList<EnumConstant>,
 ) = namedEnumeration(
@@ -210,34 +210,22 @@ private fun com.giffardtechnologies.restdocs.storage.type.RequiredOverride.mapTo
 private fun TypeSpecStorageModel.mapToModel(typeSpecIdentifier: String, context: Context): TypeSpec {
     return if (type != null) {
         if (interpretedAs != null) {
-            when (interpretedAs) {
-                BasicType.INT -> {
-                    when (type.mapToModel()) {
-                        DataType.StringType -> TypeSpec.DataSpec(DataType.LongType, DataType.StringType)
-                        DataType.IntType,
-                        DataType.LongType,
-                        DataType.DateType,
-                        DataType.DoubleType,
-                        DataType.FloatType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
+            if (parsedAs == null) {
+                convertToTypeSpec(type.toBasicType(), interpretedAs).let {
+                    if (it is TypeSpec.BasicSpec) {
+                        it.copy(restrictions = restrictions.mapRestrictions())
+                    } else {
+                        it
                     }
                 }
-                BasicType.LONG -> {
-                    when (type.mapToModel()) {
-                        DataType.IntType -> TypeSpec.DataSpec(DataType.LongType, DataType.IntType)
-                        DataType.StringType -> TypeSpec.DataSpec(DataType.LongType, DataType.StringType)
-                        DataType.LongType,
-                        DataType.DateType,
-                        DataType.DoubleType,
-                        DataType.FloatType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
-                    }
-                }
-                BasicType.FLOAT -> TODO()
-                BasicType.DOUBLE -> TODO()
-                BasicType.STRING -> TODO()
-                BasicType.BOOLEAN -> if (type == DataTypeStorageModel.INT) {
-                    TypeSpec.BooleanSpec(BooleanRepresentation.AsInteger)
+            } else {
+                val typeSpec = convertToTypeSpec(parsedAs, interpretedAs)
+                if (typeSpec is TypeSpec.BasicSpec) {
+                    TypeSpec.StringSpec(typeSpec.type, typeSpec.representedAs)
+                } else if (typeSpec is TypeSpec.BooleanSpec && typeSpec.representedAs == BooleanRepresentation.AsInteger) {
+                    TypeSpec.StringSpec(parsedAs = DataType.IntType, representedAs = DataType.BooleanType)
                 } else {
-                    throw IllegalArgumentException()
+                    throw IllegalArgumentException("cannot interpret as '$interpretedAs' after parsing from String")
                 }
             }
         } else {
@@ -246,36 +234,48 @@ private fun TypeSpecStorageModel.mapToModel(typeSpecIdentifier: String, context:
                     if (restrictions?.size == 1 && restrictions[0].restriction == "boolean") {
                         TypeSpec.BooleanSpec(BooleanRepresentation.AsInteger)
                     } else {
-                        TypeSpec.DataSpec(
+                        TypeSpec.BasicSpec(
                             DataType.IntType,
                             restrictions = restrictions.mapRestrictions(),
                         )
                     }
                 }
 
-                DataTypeStorageModel.LONG -> TypeSpec.DataSpec(
+                DataTypeStorageModel.LONG -> TypeSpec.BasicSpec(
                     DataType.LongType,
                     restrictions = restrictions.mapRestrictions(),
                 )
 
-                DataTypeStorageModel.FLOAT -> TypeSpec.DataSpec(
+                DataTypeStorageModel.FLOAT -> TypeSpec.BasicSpec(
                     DataType.FloatType,
                     restrictions = restrictions.mapRestrictions(),
                 )
 
-                DataTypeStorageModel.DOUBLE -> TypeSpec.DataSpec(
+                DataTypeStorageModel.DOUBLE -> TypeSpec.BasicSpec(
                     DataType.DoubleType,
                     restrictions = restrictions.mapRestrictions(),
                 )
 
-                DataTypeStorageModel.STRING -> TypeSpec.DataSpec(
-                    DataType.StringType,
-                    restrictions = restrictions.mapRestrictions(),
-                )
+                DataTypeStorageModel.STRING -> {
+                    when (parsedAs) {
+                        BasicType.BOOLEAN -> {
+                            // TODO valid this versus approach in else-clause
+                            TypeSpec.BooleanSpec(BooleanRepresentation.AsString)
+                        }
+                        null -> {
+                            TypeSpec.BasicSpec(
+                                DataType.StringType,
+                                restrictions = restrictions.mapRestrictions(),
+                            )
+                        }
+                        else -> {
+                            TypeSpec.StringSpec(parsedAs.mapToModel())
+                        }
+                    }
+                }
 
                 DataTypeStorageModel.BOOLEAN -> TypeSpec.BooleanSpec()
-                DataTypeStorageModel.DATE -> TypeSpec.DataSpec(
-                    DataType.DateType,
+                DataTypeStorageModel.DATE -> TypeSpec.DateSpec(
                     restrictions = restrictions.mapRestrictions(),
                 )
 
@@ -346,6 +346,68 @@ private fun TypeSpecStorageModel.mapToModel(typeSpecIdentifier: String, context:
     }
 }
 
+/**
+ * Converts a [BasicType] to a [TypeSpec] with a different underlying representation.
+ *
+ * This function is used when a field is defined as one type but needs to be interpreted as another. For example, a
+ * field might be a string that should be interpreted as an integer.
+ *
+ * @param type The original type of the field.
+ * @param interpretedAs The type that the field should be interpreted as.
+ * @return A [TypeSpec] that represents the interpreted type.
+ * @throws ValidationException if the `interpretedAs` type is not a valid interpretation of the `type`.
+ */
+private fun convertToTypeSpec(
+    type: BasicType,
+    interpretedAs: BasicType
+): TypeSpec = when (interpretedAs) {
+    BasicType.INT -> {
+        when (type.mapToModel()) {
+            DataType.StringType -> TypeSpec.BasicSpec(DataType.LongType, DataType.StringType)
+            DataType.IntType,
+            DataType.LongType,
+            DataType.DateType,
+            DataType.DoubleType,
+            DataType.FloatType,
+            DataType.BooleanType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
+        }
+    }
+
+    BasicType.LONG -> {
+        when (type.mapToModel()) {
+            DataType.IntType -> TypeSpec.BasicSpec(DataType.LongType, DataType.IntType)
+            DataType.StringType -> TypeSpec.BasicSpec(DataType.LongType, DataType.StringType)
+            DataType.LongType,
+            DataType.DateType,
+            DataType.DoubleType,
+            DataType.FloatType,
+            DataType.BooleanType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
+        }
+    }
+
+    BasicType.FLOAT -> TODO()
+    BasicType.DOUBLE -> TODO()
+    BasicType.STRING -> TODO()
+    BasicType.BOOLEAN -> if (type == BasicType.INT) {
+        TypeSpec.BooleanSpec(BooleanRepresentation.AsInteger)
+    } else {
+        throw IllegalArgumentException("'$interpretedAs' is not a valid interpretation target from '$type'")
+    }
+
+}
+
+private fun BasicType.mapToModel(): DataType.BasicType<*> {
+    return when (this) {
+        BasicType.INT -> DataType.IntType
+        BasicType.LONG -> DataType.LongType
+        BasicType.FLOAT -> DataType.FloatType
+        BasicType.DOUBLE -> DataType.DoubleType
+        BasicType.STRING -> DataType.StringType
+        BasicType.BOOLEAN -> DataType.BooleanType
+    }
+}
+
+@Suppress("unused")
 private fun DataTypeStorageModel.mapToModel() : DataType<*> {
     return when(this) {
         DataTypeStorageModel.INT -> DataType.IntType
@@ -364,7 +426,7 @@ private fun DataTypeStorageModel.mapToModel() : DataType<*> {
 }
 
 private fun <T> mapEnumOfType(
-    keyType: DataType.BasicKey<T>,
+    keyType: DataType.UsableAsKey<T>,
     values: ArrayList<EnumConstant>,
 ) = enumSpec(
     keyType = keyType,
@@ -409,8 +471,8 @@ private fun ServiceStorageModel?.mapToModel(context: Context, documentConfigurat
 private fun CommonStorageModel?.mapToModel(context: Context, documentConfiguration: DocumentConfiguration): Service.Common? {
     return if (this != null) {
         Service.Common(
-            headers.mapList { it.mapToModel() },
-            parameters.mapList { it.mapToModel() },
+            headers.mapList { it.mapToModelInHeaderContext() },
+            parameters.mapList { it.mapToModel(context) },
             responseDataObjects.mapList {
                 val dataObject = it.mapToModel(context)
                 documentConfiguration.addDataObject(dataObject)
@@ -422,9 +484,9 @@ private fun CommonStorageModel?.mapToModel(context: Context, documentConfigurati
     }
 }
 
-private fun FieldStorageModel.mapToModel(): Field {
+private fun FieldStorageModel.mapToModelInHeaderContext(): Field {
     return Field(
-        name, longName, TypeSpec.DataSpec(DataType.IntType), description, defaultValue, isRequired
+        name, longName, TypeSpec.BasicSpec(DataType.IntType), description, defaultValue, isRequired
     )
 }
 
@@ -445,7 +507,7 @@ private fun MethodStorageModel.mapToModel(context: Context): Method {
         successCodes = Array.ofAll(successCodes),
         response = response?.mapToModel(context),
         requestBody = requestBody.mapToModel(),
-        headers = headers.mapList { it.mapToModel() },
+        headers = headers.mapList { it.mapToModelInHeaderContext() },
         description = description,
 
         )

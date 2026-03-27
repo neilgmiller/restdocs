@@ -52,7 +52,7 @@ open class DocumentConfiguration {
         enumerationsByName[namedEnumeration.typeName] = namedEnumeration
     }
 
-    fun <T> enumeration(title: String, keyType: DataType.BasicKey<T>, configure: NamedEnumerationConfiguration<T>.() -> Unit) {
+    fun <T> enumeration(title: String, keyType: DataType.UsableAsKey<T>, configure: NamedEnumerationConfiguration<T>.() -> Unit) {
         val namedEnumeration = namedEnumeration(title, keyType, configure)
         enumerations.add(namedEnumeration)
         enumerationsByName[namedEnumeration.typeName] = namedEnumeration

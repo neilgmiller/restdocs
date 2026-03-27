@@ -28,6 +28,8 @@ import tools.jackson.databind.annotation.JsonDeserialize
  * the source document (handled by [TrueOnNullBooleanDeserializer]).
  * @property sampleValues Optional example values shown in generated documentation.
  * @param type The explicit [DataType] of this field.
+ * @param parsedAs Used only when [type] is [DataType.STRING]; denotes the type the string should
+ * be parsed to. Can be combined with [interpretedAs].
  * @param interpretedAs An optional [BasicType] describing a semantic re-interpretation of [type].
  * @param typeRef A reference to a named type defined elsewhere in the document.
  * @param key The key type for collection or enum fields.
@@ -51,6 +53,7 @@ open class Field(
     val isRequired: Boolean = true,
     val sampleValues: List<String>? = null,
     type: DataType? = null,
+    parsedAs: BasicType? = null,
     interpretedAs: BasicType? = null,
     @JsonProperty("typeref")
     typeRef: String? = null,
@@ -60,7 +63,7 @@ open class Field(
     restrictions: ArrayList<Restriction>? = null,
     fields: ArrayList<FieldListElement>? = null,
     values: ArrayList<EnumConstant>? = null,
-) : TypeSpec(type, interpretedAs, typeRef, key, flagType, items, restrictions, fields, values), FieldListElement, Validatable {
+) : TypeSpec(type, parsedAs, interpretedAs, typeRef, key, flagType, items, restrictions, fields, values), FieldListElement, Validatable {
 
     companion object {
         /** Regex for validating a [Field.longName] that does not allow spaces. */
@@ -124,6 +127,7 @@ open class Field(
             isRequired = isRequired,
             sampleValues = this.sampleValues,
             type = this.type,
+            parsedAs = this.parsedAs,
             interpretedAs = this.interpretedAs,
             typeRef = this.typeRef,
             key = this.key,

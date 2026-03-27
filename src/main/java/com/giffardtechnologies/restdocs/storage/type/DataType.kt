@@ -8,7 +8,24 @@ package com.giffardtechnologies.restdocs.storage.type
  * [ENUM] and [BITSET] represent enumerated value sets.
  */
 enum class DataType {
-    INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN, DATE, ARRAY, OBJECT, COLLECTION, ENUM, BITSET
+    INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN, DATE, ARRAY, OBJECT, COLLECTION, ENUM, BITSET;
+
+    fun toBasicType(): BasicType {
+        return when (this) {
+            INT -> BasicType.INT
+            LONG -> BasicType.LONG
+            FLOAT -> BasicType.FLOAT
+            DOUBLE -> BasicType.DOUBLE
+            STRING -> BasicType.STRING
+            BOOLEAN -> BasicType.BOOLEAN
+            DATE,
+            ARRAY,
+            OBJECT,
+            COLLECTION,
+            ENUM,
+            BITSET -> throw IllegalStateException("Cannot convert $this to a BasicType")
+        }
+    }
 }
 
 /**
