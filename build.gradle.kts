@@ -10,7 +10,7 @@ group = "org.giffardtechnologies"
 version = "2.3-SNAPSHOT"
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 val homePath: String = System.getProperty("user.home")
