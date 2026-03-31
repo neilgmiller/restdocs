@@ -16,6 +16,8 @@ enumerations:
             description: a character string
           - value: boolean
             description: a boolean value
+          - value: bit
+            description: a numeric with valid values of 0 or 1
     - name:          DataType
       description:   An enumeration of data types.
       key:           string
@@ -44,6 +46,8 @@ enumerations:
             description: an enumeration of allowed values
           - value: bitset
             description: a bitset with a list of defined values for the bits used
+          - value: bit
+            description: a numeric with valid values of 0 or 1
     - name:          KeyType
       description:   An enumeration of types allowed for use as keys.
       key:           string

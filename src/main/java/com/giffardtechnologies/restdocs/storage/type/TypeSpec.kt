@@ -69,6 +69,7 @@ open class TypeSpec(
                 DataType.FLOAT,
                 DataType.DOUBLE,
                 DataType.BOOLEAN,
+                DataType.BIT,
                 DataType.DATE -> {}
                 DataType.STRING -> {
                     if (parsedAs == BasicType.STRING) {

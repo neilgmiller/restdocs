@@ -223,7 +223,7 @@ private fun TypeSpecStorageModel.mapToModel(typeSpecIdentifier: String, context:
                 if (typeSpec is TypeSpec.BasicSpec) {
                     TypeSpec.StringSpec(typeSpec.type, typeSpec.representedAs)
                 } else if (typeSpec is TypeSpec.BooleanSpec && typeSpec.representedAs == BooleanRepresentation.AsInteger) {
-                    TypeSpec.StringSpec(parsedAs = DataType.IntType, representedAs = DataType.BooleanType)
+                    TypeSpec.StringSpec(parsedAs = parsedAs.mapToModel(), representedAs = DataType.BooleanType)
                 } else {
                     throw IllegalArgumentException("cannot interpret as '$interpretedAs' after parsing from String")
                 }
@@ -275,6 +275,10 @@ private fun TypeSpecStorageModel.mapToModel(typeSpecIdentifier: String, context:
                 }
 
                 DataTypeStorageModel.BOOLEAN -> TypeSpec.BooleanSpec()
+                DataTypeStorageModel.BIT -> TypeSpec.BasicSpec(
+                    DataType.BitType,
+                    restrictions = restrictions.mapRestrictions(),
+                )
                 DataTypeStorageModel.DATE -> TypeSpec.DateSpec(
                     restrictions = restrictions.mapRestrictions(),
                 )
@@ -369,7 +373,8 @@ private fun convertToTypeSpec(
             DataType.DateType,
             DataType.DoubleType,
             DataType.FloatType,
-            DataType.BooleanType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
+            DataType.BooleanType,
+            DataType.BitType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
         }
     }
 
@@ -381,18 +386,20 @@ private fun convertToTypeSpec(
             DataType.DateType,
             DataType.DoubleType,
             DataType.FloatType,
-            DataType.BooleanType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
+            DataType.BooleanType,
+            DataType.BitType -> throw ValidationException("'$interpretedAs' not a valid as interpretation of '$type'")
         }
     }
 
     BasicType.FLOAT -> TODO()
     BasicType.DOUBLE -> TODO()
     BasicType.STRING -> TODO()
-    BasicType.BOOLEAN -> if (type == BasicType.INT) {
+    BasicType.BOOLEAN -> if (type == BasicType.INT || type == BasicType.BIT) {
         TypeSpec.BooleanSpec(BooleanRepresentation.AsInteger)
     } else {
         throw IllegalArgumentException("'$interpretedAs' is not a valid interpretation target from '$type'")
     }
+    BasicType.BIT -> throw ValidationException("'$interpretedAs' is not a valid interpretation target")
 
 }
 
@@ -404,6 +411,7 @@ private fun BasicType.mapToModel(): DataType.BasicType<*> {
         BasicType.DOUBLE -> DataType.DoubleType
         BasicType.STRING -> DataType.StringType
         BasicType.BOOLEAN -> DataType.BooleanType
+        BasicType.BIT -> DataType.BitType
     }
 }
 
@@ -416,6 +424,7 @@ private fun DataTypeStorageModel.mapToModel() : DataType<*> {
         DataTypeStorageModel.DOUBLE -> DataType.DoubleType
         DataTypeStorageModel.STRING -> DataType.StringType
         DataTypeStorageModel.DATE -> DataType.DateType
+        DataTypeStorageModel.BIT -> DataType.BitType
         DataTypeStorageModel.BOOLEAN ,
         DataTypeStorageModel.ARRAY,
         DataTypeStorageModel.OBJECT,

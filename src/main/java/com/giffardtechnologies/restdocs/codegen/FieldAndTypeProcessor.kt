@@ -61,6 +61,12 @@ class FieldAndTypeProcessor(
             )
         }
 
+        if (field.type is TypeSpec.BasicSpec && field.type.type == DataType.BitType) {
+            fieldBuilder.addAnnotation(
+                AnnotationSpec.builder(Serializable::class).addMember("with = %T::class", ClassName("com.allego.api.client.support.serialization", "BitSerializer")).build()
+            )
+        }
+
         if (field.type is TypeSpec.StringSpec) {
             var serializerName = when (field.type.parsedAs) {
                 DataType.IntType -> "StringToInt"
@@ -68,6 +74,7 @@ class FieldAndTypeProcessor(
                 DataType.FloatType -> "StringToFloat"
                 DataType.DoubleType -> "StringToDouble"
                 DataType.BooleanType -> "StringToBoolean"
+                DataType.BitType -> "StringToBit"
                 DataType.StringType -> TODO("Fix type hierarchy, so parsing a string a a isn't allowed")
             }
             serializerName += when (field.type.representedAs) {
@@ -77,6 +84,7 @@ class FieldAndTypeProcessor(
                 DataType.IntType -> "ToInt"
                 DataType.LongType -> "ToLong"
                 DataType.StringType -> "ToString"
+                DataType.BitType -> "ToBit"
                 null -> ""
             }
             serializerName += "Serializer"
@@ -101,6 +109,7 @@ class FieldAndTypeProcessor(
                         DataType.DoubleType -> fieldBuilder.initializer("%L", field.defaultValue)
                         DataType.FloatType -> fieldBuilder.initializer("%L", field.defaultValue)
                         DataType.BooleanType -> fieldBuilder.initializer("%L", field.defaultValue)
+                        DataType.BitType -> fieldBuilder.initializer("%L", field.defaultValue)
                     }
                 }
                 is ArraySpec -> fieldBuilder.initializer("listOf()")
@@ -350,6 +359,7 @@ class FieldAndTypeProcessor(
             DataType.DoubleType -> Double::class.asTypeName()
             DataType.FloatType -> Float::class.asTypeName()
             DataType.BooleanType -> Boolean::class.asTypeName()
+            DataType.BitType -> Int::class.asTypeName()
         }
     }
 

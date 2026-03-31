@@ -8,7 +8,7 @@ package com.giffardtechnologies.restdocs.storage.type
  * [ENUM] and [BITSET] represent enumerated value sets.
  */
 enum class DataType {
-    INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN, DATE, ARRAY, OBJECT, COLLECTION, ENUM, BITSET;
+    INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN, BIT, DATE, ARRAY, OBJECT, COLLECTION, ENUM, BITSET;
 
     fun toBasicType(): BasicType {
         return when (this) {
@@ -18,6 +18,7 @@ enum class DataType {
             DOUBLE -> BasicType.DOUBLE
             STRING -> BasicType.STRING
             BOOLEAN -> BasicType.BOOLEAN
+            BIT -> BasicType.BIT
             DATE,
             ARRAY,
             OBJECT,
@@ -35,5 +36,5 @@ enum class DataType {
  * of a raw scalar (e.g., a [STRING] that is actually a date value).
  */
 enum class BasicType {
-    INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN
+    INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN, BIT
 }

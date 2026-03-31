@@ -41,6 +41,7 @@ class PlainTextTool(document: Document) {
                 DataType.DOUBLE,
                 DataType.STRING,
                 DataType.BOOLEAN,
+                DataType.BIT,
                 DataType.OBJECT,
                 DataType.DATE -> type.toString().lowercase()
                 DataType.COLLECTION -> "collection of ${typeSpec.key!!.type.toString().lowercase()} to ${

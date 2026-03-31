@@ -48,6 +48,8 @@ sealed interface DataType<T> {
 
     object BooleanType: BasicType<Boolean>
 
+    object BitType: ReRepresentableType<Int>
+
     object DateType: DataType<Instant>
 }
 
