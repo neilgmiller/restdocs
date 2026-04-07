@@ -133,7 +133,7 @@ class KotlinGenerator {
                                 .addAnnotation(
                                     AnnotationSpec.builder(ClassName("kotlin", "Throws"))
                                         .addMember("%T::class", ClassName(options.clientPackage, "APIException"))
-                                        .addMember("%T::class", ClassName("io.ktor.utils.io.errors", "IOException"))
+                                        .addMember("%T::class", ClassName("kotlinx.io", "IOException"))
                                         .addMember("%T::class", ClassName("kotlin.coroutines.cancellation", "CancellationException"))
                                         .build()
                                 )
@@ -148,7 +148,7 @@ class KotlinGenerator {
                                 .addAnnotation(
                                     AnnotationSpec.builder(ClassName("kotlin", "Throws"))
                                         .addMember("%T::class", ClassName(options.clientPackage, "APIException"))
-                                        .addMember("%T::class", ClassName("io.ktor.utils.io.errors", "IOException"))
+                                        .addMember("%T::class", ClassName("kotlinx.io", "IOException"))
                                         .addMember("%T::class", ClassName("kotlin.coroutines.cancellation", "CancellationException"))
                                         .build()
                                 )
