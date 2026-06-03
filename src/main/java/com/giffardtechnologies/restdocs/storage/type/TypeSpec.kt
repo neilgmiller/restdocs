@@ -124,7 +124,7 @@ open class TypeSpec(
                         val valuesNameSet = mutableSetOf<String>()
                         values.forEach {
                             if (keyStringInvalid(it.value)) {
-                                throw ValidationException("UsableAsKey '${it.value}' in '$classString' does not match key type: $key")
+                                throw ValidationException("Key value '${it.value}' in '$classString' does not match key type: $key")
                             }
                             if (valuesKeySet.contains(it.value)) {
                                 throw ValidationException("Duplicate key '${it.value}' found in '$classString'")
@@ -133,7 +133,8 @@ open class TypeSpec(
                             if (valuesNameSet.contains(it.longName)) {
                                 throw ValidationException("Duplicate longName '${it.longName}' found in '$classString'")
                             }
-                            valuesNameSet.add(it.value)
+                            // if longName is omitted, we fall back to value as the name
+                            valuesNameSet.add(it.longName ?: it.value)
                         }
                     }
                 }
