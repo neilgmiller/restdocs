@@ -480,7 +480,7 @@ private fun ServiceStorageModel?.mapToModel(context: Context, documentConfigurat
 private fun CommonStorageModel?.mapToModel(context: Context, documentConfiguration: DocumentConfiguration): Service.Common? {
     return if (this != null) {
         Service.Common(
-            headers.mapList { it.mapToModelInHeaderContext() },
+            headers.mapList { it.mapToModelInHeaderContext(context) },
             parameters.mapList { it.mapToModel(context) },
             responseDataObjects.mapList {
                 val dataObject = it.mapToModel(context)
@@ -493,10 +493,16 @@ private fun CommonStorageModel?.mapToModel(context: Context, documentConfigurati
     }
 }
 
-private fun FieldStorageModel.mapToModelInHeaderContext(): Field {
-    return Field(
-        name, longName, TypeSpec.BasicSpec(DataType.IntType), description, defaultValue, isRequired
-    )
+private fun FieldStorageModel.mapToModelInHeaderContext(context: Context): Field {
+    if (typeRef != null) {
+        throw ValidationException("Header field '$longName' cannot use a type reference")
+    }
+    val typeSpec = mapToModel(longName, context)
+    return field(name = name, longName = longName, type = typeSpec) {
+        description = this@mapToModelInHeaderContext.description
+        isRequired = this@mapToModelInHeaderContext.isRequired
+        defaultValue = this@mapToModelInHeaderContext.defaultValue
+    }
 }
 
 private fun HTTPMethod.toModel(): Method.HTTPMethod {
@@ -516,7 +522,7 @@ private fun MethodStorageModel.mapToModel(context: Context): Method {
         successCodes = Array.ofAll(successCodes),
         response = response?.mapToModel(context),
         requestBody = requestBody.mapToModel(),
-        headers = headers.mapList { it.mapToModelInHeaderContext() },
+        headers = headers.mapList { it.mapToModelInHeaderContext(context) },
         description = description,
 
         )
