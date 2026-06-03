@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.giffardtechnologies.restdocs.iml" filepath="$PROJECT_DIR$/.idea/modules/org.giffardtechnologies.restdocs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.giffardtechnologies.restdocs.main.iml" filepath="$PROJECT_DIR$/.idea/modules/org.giffardtechnologies.restdocs.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.giffardtechnologies.restdocs.test.iml" filepath="$PROJECT_DIR$/.idea/modules/org.giffardtechnologies.restdocs.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs.main.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/restdocs.test.iml" filepath="$PROJECT_DIR$/.idea/modules/restdocs.test.iml" />
