@@ -81,7 +81,15 @@ class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, priva
         intoValue: Any?
     ): Any? {
         @Suppress("UNCHECKED_CAST")
-        return (_delegatee as ValueDeserializer<Any?>).deserialize(p, ctxt, intoValue)
+        val deserializedObject = (_delegatee as ValueDeserializer<Any?>).deserialize(p, ctxt, intoValue) ?: return null
+        if (deserializedObject is Validatable) {
+            try {
+                deserializedObject.validate(validationContext)
+            } catch (e: Exception) {
+                throw ctxt.instantiationException(deserializedObject::class.java, e)
+            }
+        }
+        return deserializedObject
     }
 
     @Throws(IOException::class)
@@ -89,7 +97,15 @@ class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, priva
         p: JsonParser, ctxt: DeserializationContext,
         typeDeserializer: TypeDeserializer
     ): Any {
-        return _delegatee.deserializeWithType(p, ctxt, typeDeserializer)
+        val result = _delegatee.deserializeWithType(p, ctxt, typeDeserializer)
+        if (result is Validatable) {
+            try {
+                result.validate(validationContext)
+            } catch (e: Exception) {
+                throw ctxt.instantiationException(result::class.java, e)
+            }
+        }
+        return result
     }
 
     /*
