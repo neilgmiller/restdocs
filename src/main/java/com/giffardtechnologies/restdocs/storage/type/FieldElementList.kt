@@ -35,8 +35,6 @@ class FieldElementList(
 
     private var fields: ArrayList<Field>? = null
     private var fieldDetails: ArrayList<FieldDetails>? = null
-    private var parentType: NamedType? = null
-
     private val dataObjectsByName = parentDocument.dataObjects.associateBy { it.name }
 
     private val DataObject.computedFields: ArrayList<Field>
@@ -310,11 +308,4 @@ class FieldElementList(
     val hasFields: Boolean
         get() = fieldListElements.isNotEmpty()
 
-    /**
-     * Associates a [NamedType] as the logical owner of this field list, used for contextual
-     * error messages during code generation.
-     */
-    fun setParentType(parentType: NamedType?) {
-        this.parentType = parentType
-    }
 }
