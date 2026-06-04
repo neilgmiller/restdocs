@@ -139,6 +139,9 @@ open class TypeSpec(
                     }
                 }
                 DataType.BITSET -> {
+                    if (key != null && key !in setOf(KeyType.INT, KeyType.LONG)) {
+                        throw ValidationException("$classString of 'bitset' type: '$key' is not a supported key type")
+                    }
                     if (values == null) {
                         throw ValidationException("$classString of 'bitset' type must define 'values'")
                     }
