@@ -306,11 +306,6 @@ class FieldElementList(
         return includedFields
    }
 
-    /** Returns `true` if the underlying [fieldListElements] list is non-empty. */
-    fun hasFields(): Boolean {
-        return fieldListElements.isNotEmpty()
-    }
-
     /** `true` if the underlying [fieldListElements] list is non-empty. */
     val hasFields: Boolean
         get() = fieldListElements.isNotEmpty()
