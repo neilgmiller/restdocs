@@ -310,7 +310,7 @@ private fun TypeSpecStorageModel.mapToModel(typeSpecIdentifier: String, context:
                             KeyType.INT -> DataType.IntType
                             KeyType.LONG -> DataType.LongType
                             KeyType.STRING -> DataType.StringType
-                            KeyType.ENUM -> TODO()
+                            KeyType.ENUM -> throw ValidationException("$typeSpecIdentifier of 'collection' type cannot use 'enum' as a key type")
                         },
                         items = items.mapToModel("collection entries of '$typeSpecIdentifier'", context),
                     )
@@ -391,9 +391,9 @@ private fun convertToTypeSpec(
         }
     }
 
-    BasicType.FLOAT -> TODO()
-    BasicType.DOUBLE -> TODO()
-    BasicType.STRING -> TODO()
+    BasicType.FLOAT -> throw ValidationException("'$interpretedAs' as an interpretation target is not yet supported")
+    BasicType.DOUBLE -> throw ValidationException("'$interpretedAs' as an interpretation target is not yet supported")
+    BasicType.STRING -> throw ValidationException("'$interpretedAs' as an interpretation target is not yet supported")
     BasicType.BOOLEAN -> if (type == BasicType.INT || type == BasicType.BIT) {
         TypeSpec.BooleanSpec(BooleanRepresentation.AsInteger)
     } else {
