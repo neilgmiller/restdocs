@@ -52,6 +52,9 @@ class DocValidator(val validationOptions: ValidationOptions = ValidationOptions(
         val referencableTypes = VavrHashSet.ofAll(dataObjectNames + enumerationNames + responseTypeNames + bitSetNames)
 
         val contextMapper = createMapper(FullContext(referencableTypes, document, validationOptions), warningEmitter)
+        // Second pass is run for its validation side effects only (FullContext type-ref checks).
+        // The resulting document is discarded because validation does not mutate storage models,
+        // so the first-pass document is structurally identical.
         contextMapper.readValue(
             BufferedInputStream(FileInputStream(sourceFile)),
             DocumentStorageModel::class.java
