@@ -218,20 +218,24 @@ class MethodProcessor(
      */
     fun processMethod(method: Method) {
         val (requestClassName, responseClassName, asyncResponseClassName) = getClassNames(method)
+        // Path-only methods (no id) are not yet supported — see PROJECT.md Out of Scope
+        val methodId = requireNotNull(method.id) {
+            "Method '${method.name}' has no id — path-based dispatch is not yet supported in MethodProcessor"
+        }
 
         val superClassName = getSuperClassName(method)
         val superClassType = superClassName.parameterizedBy(responseClassName)
 
         val requestClassBuilder = TypeSpec.classBuilder(requestClassName)
             .superclass(superClassType)
-            .addSuperclassConstructorParameter("%L", method.id!!)
+            .addSuperclassConstructorParameter("%L", methodId)
             .addModifiers(KModifier.PUBLIC)
 
         if (method.parameters.isEmpty) {
             requestClassBuilder.addSuperclassConstructorParameter("%N", "Unit")
             deserializeWhenBlock.addStatement(
                 "%L -> %T()",
-                method.id,
+                methodId,
                 requestClassName,
             )
             serializeWhenBlock.addStatement(
@@ -349,7 +353,7 @@ class MethodProcessor(
 
             deserializeWhenBlock.addStatement(
                 "%L -> %T.deserializeFromParams(json, jsonString)",
-                method.id,
+                methodId,
                 requestClassName,
             )
             serializeWhenBlock.addStatement(
