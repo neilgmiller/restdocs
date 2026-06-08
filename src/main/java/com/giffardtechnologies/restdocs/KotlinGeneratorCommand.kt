@@ -76,9 +76,16 @@ class KotlinGeneratorCommand : Callable<Unit> {
 
         val clientPackage: String = properties.getProperty("clientPackage")
 
+        val asyncJobStatusConfig = properties.getProperty("asyncJobStatus.methodID")?.let { value ->
+            KotlinGenerator.AsyncJobStatusConfig(
+                value.trim().toIntOrNull()
+                    ?: error("asyncJobStatus.methodID must be an integer, got: '$value'")
+            )
+        }
+
         KotlinGenerator().generate(
             sourceFile,
-            Options(codeDir, iOSCodeDir, clientPackage, false, forceTopLevel, excludedFields)
+            Options(codeDir, iOSCodeDir, clientPackage, false, forceTopLevel, excludedFields, asyncJobStatusConfig)
         )
     }
 

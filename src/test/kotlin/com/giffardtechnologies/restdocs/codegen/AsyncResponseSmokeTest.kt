@@ -113,6 +113,28 @@ class AsyncResponseSmokeTest {
         )
     }
 
+    // -- iOS client --
+
+    @Test
+    fun `SwiftAPIServerClient is generated for all three methods`() {
+        val clientFile = File(iOSCodeDir, clientPackage.replace('.', '/') + "/SwiftAPIServerClient.kt")
+        assertTrue(clientFile.exists(), "SwiftAPIServerClient.kt should be generated in iOSCodeDir")
+
+        val content = clientFile.readText()
+        assertTrue(
+            content.contains("PureAsyncMethodRequest"),
+            "Should contain execute function for pureAsyncMethod.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("MixedAsyncMethodRequest"),
+            "Should contain execute function for mixedAsyncMethod.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("SyncMethodRequest"),
+            "Should contain execute function for syncMethod.\nContent:\n$content"
+        )
+    }
+
     // -- helper --
 
     private fun findGeneratedFile(fileName: String): File {
