@@ -19,3 +19,4 @@
 .idea/libraries/**
 /.claude
 /docs/restdocs-tool/restdocs.config
+/.idea/.name
