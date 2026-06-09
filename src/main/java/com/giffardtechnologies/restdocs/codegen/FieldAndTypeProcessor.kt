@@ -142,9 +142,9 @@ class FieldAndTypeProcessor(
                         )
                     }
                 }
-                is TypeSpec.DateSpec -> {}
-                is TypeSpec.ObjectSpec -> {}
-                is TypeSpec.TypeRefSpec -> {}
+                is TypeSpec.DateSpec -> error("Default value '${field.defaultValue}' for DateSpec field '${field.name}' is not supported")
+                is TypeSpec.ObjectSpec -> error("Default value '${field.defaultValue}' for ObjectSpec field '${field.name}' is not supported")
+                is TypeSpec.TypeRefSpec -> error("Default value '${field.defaultValue}' for TypeRefSpec field '${field.name}' is not supported")
                 is TypeSpec.StringSpec -> fieldBuilder.initializer("%S", field.defaultValue)
             }
         } else if (initializeWithDefault && initializeCollections && type is TypeSpec.CollectionSpec && !field.isRequired) {
