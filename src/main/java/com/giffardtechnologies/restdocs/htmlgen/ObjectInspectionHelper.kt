@@ -68,10 +68,6 @@ class ObjectInspectionHelper(val document: Document) {
         return FieldElementList(document, typeSpec.fields!!).getFields()
     }
 
-    fun getEffectiveFields(typeSpec: TypeSpec) : Boolean {
-        return !typeSpec.fields.isNullOrEmpty()
-    }
-
     fun isTypeRef(typeSpec: TypeSpec?): Boolean {
         return !typeSpec?.typeRef.isNullOrEmpty()
     }
