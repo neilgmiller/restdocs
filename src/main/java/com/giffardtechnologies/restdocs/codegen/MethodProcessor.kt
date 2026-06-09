@@ -78,6 +78,7 @@ class MethodProcessor(
     private val serializeWhenBlock = CodeBlock.builder()
 
     private val encodeToString = MemberName("kotlinx.serialization", "encodeToString")
+    private val decodeFromJsonElement = MemberName("kotlinx.serialization.json", "decodeFromJsonElement")
 
 
     /**
@@ -368,7 +369,7 @@ class MethodProcessor(
                 .addParameter("json", Json::class.asClassName())
                 .addParameter("jsonElement", JsonElement::class.asClassName())
                 .returns(responseClassName)
-                .addCode("return json.%T(jsonElement)", ClassName("kotlinx.serialization.json", "decodeFromJsonElement"))
+                .addCode("return json.%M(jsonElement)", decodeFromJsonElement)
                 .build()
         )
 
