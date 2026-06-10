@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-06-09T23:03:54Z",
+  "phase": "03",
+  "phase_name": "html-rendering",
+  "phase_dir": ".planning/phases/03-html-rendering",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "milestone_complete",
+  "completed_tasks": [
+    {"id": 1, "name": "Phase 01 — Storage model + validation foundation", "status": "done", "commit": "see git log"},
+    {"id": 2, "name": "Phase 02 — Kotlin codegen", "status": "done", "commit": "see git log"},
+    {"id": 3, "name": "Phase 03 — HTML rendering", "status": "done", "commit": "168938f"},
+    {"id": 4, "name": "Phase 03 code review (CR-01 fix)", "status": "done", "commit": "168938f"},
+    {"id": 5, "name": "Phase 03 code review docs update", "status": "done", "commit": "779dfd3"}
+  ],
+  "remaining_tasks": [
+    {"id": 6, "name": "Address WR-03: add asyncResponse typeRef smoke-test fixture", "status": "not_started"},
+    {"id": 7, "name": "Address IN-01: remove unused assertFalse import in DocGeneratorAsyncHtmlTest", "status": "not_started"},
+    {"id": 8, "name": "Address IN-02: strengthen sync-method absence assertion in test", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {
+      "decision": "Replace stub Velocity template with canonical live template from allego1.0/doc/api-docs/rest_api_doc.vm",
+      "rationale": "The stub template diverged from production (wrong loop variable, missing nav sidebar, broken response rendering). Grafting asyncResponse onto the live template is the correct approach.",
+      "phase": "03"
+    },
+    {
+      "decision": "asyncResponse block uses $method loop variable, not $resource",
+      "rationale": "Live template uses #foreach($method in $document.service.methods) — variable renamed from $resource in the stub.",
+      "phase": "03"
+    }
+  ],
+  "uncommitted_files": [],
+  "next_action": "Milestone is complete. Open items are minor: WR-03 (typeRef test coverage), IN-01 (unused import), IN-02 (weak assertion). These can be addressed in a follow-up pass or deferred.",
+  "context_notes": "All 3 phases of the asyncResponse milestone are done and verified. The Velocity template is now the canonical live version with asyncResponse support grafted in. Code review resolved 4 of 6 findings; 3 remain (1 warning, 2 info)."
+}
