@@ -16,7 +16,7 @@ import java.io.IOException
  * (possibly forming a chain of deserializers delegating functionality
  * in some cases)
  */
-class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, private val validationContext: Any?) : StdDeserializer<Any?>(
+class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, private val validationContext: Any?, private val warningEmitter: (String) -> Unit = {}) : StdDeserializer<Any?>(
     _delegatee.handledType()
 ) {
 
@@ -41,7 +41,7 @@ class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, priva
         return if (del === _delegatee) {
             this
         } else {
-            ValidatingDeserializer(del, validationContext)
+            ValidatingDeserializer(del, validationContext, warningEmitter)
         }
     }
 
@@ -49,7 +49,7 @@ class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, priva
         return if (delegatee === _delegatee) {
             this
         } else {
-            ValidatingDeserializer(delegatee, validationContext)
+            ValidatingDeserializer(delegatee, validationContext, warningEmitter)
         }
     }
 
@@ -59,37 +59,14 @@ class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, priva
     / **********************************************************************
      */
     @Throws(IOException::class)
-    override fun deserialize(
-        p: JsonParser,
-        ctxt: DeserializationContext
-    ): Any? {
-        val deserializedObject: Any = _delegatee.deserialize(p, ctxt) ?: return null
-        if (deserializedObject is Validatable) {
-            try {
-                deserializedObject.validate(validationContext)
-            } catch (e: Exception) {
-                throw ctxt.instantiationException(deserializedObject::class.java, e)
-            }
-        }
-        return deserializedObject
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Any? {
+        return validateAndReturn(_delegatee.deserialize(p, ctxt), ctxt)
     }
 
     @Throws(IOException::class)
-    override fun deserialize(
-        p: JsonParser,
-        ctxt: DeserializationContext,
-        intoValue: Any?
-    ): Any? {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext, intoValue: Any?): Any? {
         @Suppress("UNCHECKED_CAST")
-        val deserializedObject = (_delegatee as ValueDeserializer<Any?>).deserialize(p, ctxt, intoValue) ?: return null
-        if (deserializedObject is Validatable) {
-            try {
-                deserializedObject.validate(validationContext)
-            } catch (e: Exception) {
-                throw ctxt.instantiationException(deserializedObject::class.java, e)
-            }
-        }
-        return deserializedObject
+        return validateAndReturn((_delegatee as ValueDeserializer<Any?>).deserialize(p, ctxt, intoValue), ctxt)
     }
 
     @Throws(IOException::class)
@@ -97,15 +74,18 @@ class ValidatingDeserializer(private val _delegatee: ValueDeserializer<*>, priva
         p: JsonParser, ctxt: DeserializationContext,
         typeDeserializer: TypeDeserializer
     ): Any {
-        val result = _delegatee.deserializeWithType(p, ctxt, typeDeserializer)
-        if (result is Validatable) {
+        return validateAndReturn(_delegatee.deserializeWithType(p, ctxt, typeDeserializer), ctxt)!!
+    }
+
+    private fun validateAndReturn(obj: Any?, ctxt: DeserializationContext): Any? {
+        if (obj is Validatable) {
             try {
-                result.validate(validationContext)
+                obj.validate(validationContext, warningEmitter)
             } catch (e: Exception) {
-                throw ctxt.instantiationException(result::class.java, e)
+                throw ctxt.instantiationException(obj::class.java, e)
             }
         }
-        return result
+        return obj
     }
 
     /*

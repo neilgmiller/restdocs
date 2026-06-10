@@ -5,7 +5,7 @@ import tools.jackson.databind.deser.ValueDeserializerModifier
 import tools.jackson.databind.type.*
 import java.io.IOException
 
-class ValidatingBeanDeserializerModifier(private val validationContext: Any?) : ValueDeserializerModifier() {
+class ValidatingBeanDeserializerModifier(private val validationContext: Any?, private val warningEmitter: (String) -> Unit) : ValueDeserializerModifier() {
     override fun modifyDeserializer(
         config: DeserializationConfig,
         beanDescRef: BeanDescription.Supplier,
@@ -87,7 +87,7 @@ class ValidatingBeanDeserializerModifier(private val validationContext: Any?) : 
             override fun deserializeKey(key: String, ctxt: DeserializationContext): Any {
                 val deserializedKey = deserializer.deserializeKey(key, ctxt)
                 if (deserializedKey is Validatable) {
-                    deserializedKey.validate(validationContext)
+                    deserializedKey.validate(validationContext, warningEmitter)
                 }
                 return deserializedKey
             }
@@ -95,6 +95,6 @@ class ValidatingBeanDeserializerModifier(private val validationContext: Any?) : 
     }
 
     private fun createDelegate(type: JavaType, target: ValueDeserializer<*>): ValueDeserializer<*> {
-        return ValidatingDeserializer(target, validationContext)
+        return ValidatingDeserializer(target, validationContext, warningEmitter)
     }
 }

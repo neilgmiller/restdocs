@@ -36,7 +36,7 @@ class NamedBitSet(
      * referencable types.
      */
     override fun validate(validationContext: Any?) {
-        super.validate(validationContext)
+        super<TypeSpec>.validate(validationContext)
         if (name.isBlank()) {
             throw ValidationException("Enumeration must have a name")
         }

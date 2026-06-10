@@ -97,7 +97,7 @@ open class Field(
      * and the long name is blank.
      */
     override fun validate(validationContext: Any?) {
-        super.validate(validationContext)
+        super<TypeSpec>.validate(validationContext)
         if (name.isBlank()) {
             throw ValidationException("Field must have a name")
         }

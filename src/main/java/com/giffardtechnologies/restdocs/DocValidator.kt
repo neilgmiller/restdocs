@@ -34,8 +34,10 @@ class DocValidator(val validationOptions: ValidationOptions = ValidationOptions(
     fun getValidatedDocument(sourceFile: File, messageHandler: (String) -> Unit = {}): Document {
         println("Validating '${sourceFile.absolutePath}'...")
 
+        val warningEmitter: (String) -> Unit = { message -> messageHandler(message) }
+
         // Jackson Mapper
-        val mapper = createMapper(AccumulatingContext(validationOptions))
+        val mapper = createMapper(AccumulatingContext(validationOptions), warningEmitter)
         val document = mapper.readValue(
             BufferedInputStream(FileInputStream(sourceFile)),
             DocumentStorageModel::class.java
@@ -49,7 +51,7 @@ class DocValidator(val validationOptions: ValidationOptions = ValidationOptions(
         val responseTypeNames = document.service?.common?.responseDataObjects?.map { it.name } ?: emptyList()
         val referencableTypes = VavrHashSet.ofAll(dataObjectNames + enumerationNames + responseTypeNames + bitSetNames)
 
-        val contextMapper = createMapper(FullContext(referencableTypes, document, validationOptions))
+        val contextMapper = createMapper(FullContext(referencableTypes, document, validationOptions), warningEmitter)
         contextMapper.readValue(
             BufferedInputStream(FileInputStream(sourceFile)),
             DocumentStorageModel::class.java
