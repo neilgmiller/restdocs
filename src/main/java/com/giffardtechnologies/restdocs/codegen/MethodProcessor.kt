@@ -161,12 +161,18 @@ class MethodProcessor(
     private data class ResponseClassDefinition(val className: ClassName, val typeSpec: TypeSpec? = null)
 
     /**
-     * Holds the generated class names for a method's request and response.
+     * Holds the generated class names for a method's request, response, and async response.
      *
      * @property requestClassName The [ClassName] for the generated request class.
      * @property responseClassName The [ClassName] for the generated response class.
+     * @property asyncResponseClassName The [ClassName] for the generated async response class,
+     *   or null when the method has no `asyncResponse` block.
      */
-    data class MethodClassNames(val requestClassName: ClassName, val responseClassName: ClassName)
+    data class MethodClassNames(
+        val requestClassName: ClassName,
+        val responseClassName: ClassName,
+        val asyncResponseClassName: ClassName? = null,
+    )
 
     /**
      * Generates the class names for a given [Method].
@@ -192,8 +198,17 @@ class MethodProcessor(
             }
         } ?: Unit::class.asClassName()
 
+        val asyncResponseClassName = method.asyncResponse?.let { asyncResponse ->
+            when (asyncResponse.typeSpec) {
+                is DomainTypeSpec.ObjectSpec -> {
+                    ClassName(requestsPackage, methodName + "AsyncResponse")
+                }
 
-        return MethodClassNames(requestClassName, responseClassName)
+                else -> null
+            }
+        }
+
+        return MethodClassNames(requestClassName, responseClassName, asyncResponseClassName)
     }
 
     /**
@@ -202,7 +217,7 @@ class MethodProcessor(
      * @param method The method to process.
      */
     fun processMethod(method: Method) {
-        val (requestClassName, responseClassName) = getClassNames(method)
+        val (requestClassName, responseClassName, asyncResponseClassName) = getClassNames(method)
 
         val superClassName = getSuperClassName(method)
         val superClassType = superClassName.parameterizedBy(responseClassName)
@@ -367,11 +382,17 @@ class MethodProcessor(
             )
 
         val responseClassTypeSpec = createResponseClassDefinition(method.response, responseClassName)
+        val asyncResponseClassTypeSpec = asyncResponseClassName?.let {
+            createAsyncResponseClassDefinition(method.asyncResponse, it)
+        }
 
         file(requestClassName) {
             addType(requestClassBuilder.build())
             responseClassTypeSpec?.let {
                 addType(responseClassTypeSpec)
+            }
+            asyncResponseClassTypeSpec?.let {
+                addType(asyncResponseClassTypeSpec)
             }
         }
             .writeTo(codeDirectory)
@@ -402,6 +423,26 @@ class MethodProcessor(
                             response.typeSpec,
                             useFutureProofEnum = true,
                             forceTopLevel = false,
+                    )
+                }
+
+                else -> null
+            }
+        }
+    }
+
+    private fun createAsyncResponseClassDefinition(
+        asyncResponse: Response?,
+        asyncResponseClassName: ClassName
+    ): TypeSpec? {
+        return asyncResponse?.let {
+            when (asyncResponse.typeSpec) {
+                is DomainTypeSpec.ObjectSpec -> {
+                    objectProcessor.processObjectToTypeSpec(
+                        asyncResponseClassName,
+                        asyncResponse.typeSpec,
+                        useFutureProofEnum = true,
+                        forceTopLevel = false,
                     )
                 }
 

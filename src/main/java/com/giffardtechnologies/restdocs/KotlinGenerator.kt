@@ -123,7 +123,7 @@ class KotlinGenerator {
                     classBuilder.addProperty(propertySpecBuilder.build())
 
                     document.service?.methods?.forEach {
-                        val (requestClassName, responseClassName) = methodProcessor.getClassNames(it)
+                        val (requestClassName, responseClassName, _) = methodProcessor.getClassNames(it)
 
                         classBuilder.addFunction(
                             FunSpec.builder("execute")

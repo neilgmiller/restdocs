@@ -1,0 +1,65 @@
+title: Async Response Smoke Test
+data objects:
+    - name: AsyncJobResponse
+      fields:
+          - name: jobID
+            longName: jobID
+            type: int
+            description: The job identifier
+service:
+    description: Test service for async response generation
+    base path: /api/test
+    methods:
+        # Case 1: pure async — response is a typeref to AsyncJobResponse, asyncResponse is inline object
+        - name: pureAsyncMethod
+          id: 1
+          authentication required: yes
+          description: A pure async method
+          response:
+              typeref: AsyncJobResponse
+          asyncResponse:
+              type: object
+              fields:
+                  - name: resultUrl
+                    longName: resultUrl
+                    type: string
+                    description: URL to download result
+                  - name: completedAt
+                    longName: completedAt
+                    type: long
+                    description: Completion timestamp
+        # Case 2: mixed — response has job field + other fields, asyncResponse is inline object
+        - name: mixedAsyncMethod
+          id: 2
+          authentication required: yes
+          description: A mixed async method
+          response:
+              type: object
+              fields:
+                  - name: job
+                    longName: job
+                    type: int
+                    description: The job ID
+                  - name: immediateData
+                    longName: immediateData
+                    type: string
+                    description: Data available immediately
+          asyncResponse:
+              type: object
+              fields:
+                  - name: analysisResult
+                    longName: analysisResult
+                    type: string
+                    description: The analysis result
+        # Case 3: sync — no asyncResponse block (regression)
+        - name: syncMethod
+          id: 3
+          authentication required: yes
+          description: A sync method
+          response:
+              type: object
+              fields:
+                  - name: data
+                    longName: data
+                    type: string
+                    description: The data
