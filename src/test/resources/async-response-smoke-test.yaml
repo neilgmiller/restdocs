@@ -51,6 +51,15 @@ service:
                     longName: analysisResult
                     type: string
                     description: The analysis result
+        # Case 4: typeRef async response — asyncResponse refers to a named data object
+        - name: typeRefAsyncMethod
+          id: 4
+          authentication required: yes
+          description: An async method with a typeRef async response
+          response:
+              typeref: AsyncJobResponse
+          asyncResponse:
+              typeref: AsyncJobResponse
         # Case 3: sync — no asyncResponse block (regression)
         - name: syncMethod
           id: 3

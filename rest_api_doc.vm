@@ -1,8 +1,14 @@
 #macro( fieldheaders )
-<tr><th style="width: 25%">field</th><th style="width: 20%">type</th><th>description</th></tr>
+<tr><th style="width: 15%">field</th><th style="width: 20%">long name</th><th style="width: 20%">type</th><th>description</th></tr>
+#end
+#macro( enumheaders )
+<tr><th style="width: 20%">enum name</th><th style="width: 15%">key</th><th>description</th></tr>
+#end
+#macro( bitsetheaders )
+<tr><th style="width: 20%">flag name</th><th style="width: 15%">value</th><th>description</th></tr>
 #end
 #macro( parameterheaders )
-<tr><th style="width: 25%">parameter</th><th style="width: 20%">type</th><th>description</th></tr>
+<tr><th style="width: 15%">parameter</th><th style="width: 20%">long name</th><th style="width: 20%">type</th><th>description</th></tr>
 #end
 #macro( fieldrow $field )
                     <tr>
@@ -12,13 +18,30 @@
                 #if ($field.required)
                             required
                 #else
-                            optional
+                            optional#if ($helper.hasDefaultValue($field)), defaults to '$field.defaultValue'#end
                 #end
                             </span>
                         </td>
                         <td>
-                            <span class="type" id="type">$link.type( $field.type )</span>
-                #if ($field.hasRestrictions)
+                            <span class="fieldname">$field.longName</span><br>
+                        </td>
+                        <td>
+	                        <span class="type" id="type">
+                	#if ($helper.isTypeRef($field))
+                            	$link.typeSimple($field.typeRef)
+                    #elseif ($field.type.name() == "ARRAY" && $helper.isTypeRef($field.items))
+                            	array of $link.typeSimple($field.items.typeRef)
+                    #else
+                            	$link.type( $text.fieldClass($field) )
+                    #end
+                            </span>
+                #if ($helper.hasParsedAs($field))
+                            <br><span>parsed as $text.stringFor( $field.parsedAs )</span>
+                #end
+                #if ($helper.hasInterpretedAs($field))
+                            <br><span>interpreted as $text.stringFor( $field.interpretedAs )</span>
+                #end
+                #if ($helper.hasRestrictions($field))
                     #foreach( $restriction in $field.restrictions)
                             <br><span>$restriction.restriction</span>
                         #if ($restriction.hasMultipleValues)
@@ -37,49 +60,221 @@
                             $field.description
                         </td>
                     </tr>
+                #if ($field.type.name() == "OBJECT" || ($field.type.name() == "ARRAY" && $field.items.type.name() == "OBJECT"))
+	                #if ($field.type.name() == "OBJECT")
+		              	#set ($object = $field)
+		              #else
+		              	#set ($object = $field.items)
+		              #end
+
+                    <tr>
+                        <td colspan=4 style="padding: 0.25em 0 0 2em">
+                            <table>
+                    			#fieldheaders
+        			#foreach( $inner_field in $helper.getFields($object) )
+                    			#fieldrow( $inner_field )
+        			#end
+                			</table>
+                        </td>
+                    </tr>
+                #elseif ($field.type.name() == "ENUM")
+                    <tr>
+                        <td colspan=4 style="padding: 0.25em 0 0 2em">
+                            <table>
+                    			#enumheaders
+        			#foreach( $constant in $field.values )
+                    			#enumConstantRow( $constant )
+        			#end
+                			</table>
+                        </td>
+                    </tr>
+                #elseif ($field.type.name() == "BITSET")
+                    <tr>
+                        <td colspan=4 style="padding: 0.25em 0 0 2em">
+                            <table>
+                    			#bitsetheaders
+        			#foreach( $constant in $field.values )
+                    			#enumConstantRow( $constant )
+        			#end
+                			</table>
+                        </td>
+                    </tr>
+                #end
+
+#end
+#macro( enumConstantRow $constant )
+                    <tr>
+                        <td>
+                            <span class="fieldname">$helper.getLongName($constant)</span><br>
+                        </td>
+                        <td>
+                            <span class="fieldname">$constant.value</span>
+                        </td>
+                        <td>
+                            #if ($helper.hasDescription($constant))
+                            $constant.description
+                            #end
+                        </td>
+                    </tr>
 #end
 <html>
 <head>
     <title>$document.title</title>
     <link href="css/api.css" rel="stylesheet">
 </head>
+<meta charset="utf-8"/>
 <body>
+	<script>
+		function toggleNav() {
+			var siderBar = document.getElementById("sidebar");
+			if (siderBar.classList.toggle("collapsed")) {
+				var navWidth = "300px";
+				siderBar.style.width = navWidth;
+				document.getElementById("main").style.marginLeft = navWidth;
+				document.getElementById("nav-button").style.left = navWidth;
+				document.getElementById("collapseIcon").style.display = null;
+				document.getElementById("hamburgerIcon").style.display = "none";
+			} else {
+				siderBar.style.width = null;
+				document.getElementById("main").style.marginLeft= null;
+				document.getElementById("nav-button").style.left = null;
+				document.getElementById("collapseIcon").style.display = "none";
+				document.getElementById("hamburgerIcon").style.display = null;
+			}
+		}
+	</script>
+	<nav id="sidebar">
+		<button id="nav-button" class="nav-button" onclick="toggleNav()">
+			<span id="hamburgerIcon"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" role="presentation"><path d="M6 12c0-.552.456-1 1.002-1h9.996a.999.999 0 1 1 0 2H7.002A.999.999 0 0 1 6 12zm0 4c0-.552.456-1 1.002-1h9.996a.999.999 0 1 1 0 2H7.002A.999.999 0 0 1 6 16zm0-8c0-.552.456-1 1.002-1h9.996a.999.999 0 1 1 0 2H7.002A.999.999 0 0 1 6 8z" fill="currentColor"></path></svg></span>
+			<span id="collapseIcon" style="display: none"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" role="presentation"><path d="M13.706 9.698a.988.988 0 0 0 0-1.407 1.01 1.01 0 0 0-1.419 0l-2.965 2.94a1.09 1.09 0 0 0 0 1.548l2.955 2.93a1.01 1.01 0 0 0 1.42 0 .988.988 0 0 0 0-1.407l-2.318-2.297 2.327-2.307z" fill="currentColor" fill-rule="evenodd"></path></svg></span>
+		</button>
+		<ul id="navItems">
+			<li><a href="#toc">Table of Contents</a></li>
+      <li>Data Objects</li>
+          <ul>
+    #if ($helper.hasVisibleDataObjects($document))
+              <li>Data Objects
+                  <ul>
+        #foreach( $dataObject in $helper.getVisibleDataObjects($document) )
+                      <li><a href="#$dataObject.name">$dataObject.name</a></li>
+        #end
+                  </ul>
+              </li>
+    #end
+              <li>Service
+                  <ul>
+        #if ($helper.hasResponseDataObjects($document.service))
+                      <li>Common Response Objects
+                          <ul>
+            #foreach( $dataObject in $document.service.common.responseDataObjects )
+                                <li><a href="#$dataObject.name">$dataObject.name</a></li>
+            #end
+                          </ul>
+                      </li>
+        #end
+                      <li>Methods
+                          <ul>
+            #foreach( $resource in $document.service.methods )
+                              <li><a href="#$resource.name">$resource.name</a></li>
+            #end
+                          </ul>
+                      </li>
+                  </ul>
+              </li>
+    #if ($helper.hasEnumerations($document))
+              <li>Enumerations
+                  <ul>
+        #foreach( $enumeration in $document.enumerations )
+                      <li><a href="#$enumeration.name">$enumeration.name</a></li>
+        #end
+                  </ul>
+              </li>
+    #end
+    #if ($helper.hasBitSets($document))
+              <li>Bit Sets
+                  <ul>
+        #foreach( $bitset in $document.bitsets )
+                      <li><a href="#$bitset.name">$bitset.name</a></li>
+        #end
+                  </ul>
+              </li>
+    #end
+        </ul>
+        <!-- need or this doesn't scroll far enough -->
+        <p>&nbsp;</p>
+        <p>&nbsp;</p>
+	</nav>
+	<div id="main">
     <section id="toc" role="directory">
+
         <h1>Table of Contents</h1>
         <ul>
-#if ($document.hasDataObjects)
-            <li>Data Objects</li>
+#if ($helper.hasVisibleDataObjects($document))
+            <li>Data Objects
                 <ul>
-    #foreach( $dataObject in $document.dataObjects )
+    #foreach( $dataObject in $helper.getVisibleDataObjects($document))
                     <li><a href="#$dataObject.name">$dataObject.name</a></li>
     #end
                 </ul>
+            </li>
 #end
-            <li>Resources</li>
+            <li>Service
                 <ul>
-#foreach( $resource in $document.service.methods )
-                    <li><a href="#$resource.uri">$resource.uri</a></li>
-#end
+    #if ($helper.hasResponseDataObjects($document.service))
+                    <li>Common Response Objects
+                        <ul>
+        #foreach( $dataObject in $document.service.common.responseDataObjects )
+                              <li><a href="#$dataObject.name">$dataObject.name</a></li>
+        #end
+                        </ul>
+                    </li>
+    #end
+                    <li>Methods
+                        <ul>
+        #foreach( $resource in $document.service.methods )
+                            <li><a href="#$resource.name">$resource.name</a></li>
+        #end
+                        </ul>
+                    </li>
                 </ul>
+            </li>
+#if ($helper.hasEnumerations($document))
+            <li>Enumerations
+                <ul>
+    #foreach( $enumeration in $document.enumerations )
+                    <li><a href="#$enumeration.name">$enumeration.name</a></li>
+    #end
+                </ul>
+            </li>
+#end
+    #if ($helper.hasBitSets($document))
+              <li>Bit Sets
+                  <ul>
+        #foreach( $bitset in $document.bitsets )
+                      <li><a href="#$bitset.name">$bitset.name</a></li>
+        #end
+                  </ul>
+              </li>
+    #end
         </ul>
     </section>
     <section id="api" role="main">
-#if ($document.hasDataObjects)
+#if ($helper.hasVisibleDataObjects($document))
         <section>
             <h2>Data Objects</h2>
-#foreach( $dataObject in $document.dataObjects )
+#foreach( $dataObject in $helper.getVisibleDataObjects($document) )
             <section>
                 <h3 id="$dataObject.name">$dataObject.name</h3>
                 <p>$dataObject.description</p>
-    #if ($dataObject.hasFields)
+    #if ($helper.hasFields($dataObject))
                 <table>
                     #fieldheaders
-        #foreach( $field in $dataObject.fields )
+        #foreach( $field in $helper.getFields($dataObject) )
                     #fieldrow( $field )
         #end
                 </table>
     #end
-    #if ($dataObject.hasChildren)
+    #if ($helper.hasChildren($dataObject))
                 <h4>Discriminator</h4>
                 <table>
                     #fieldheaders
@@ -91,7 +286,7 @@
                 <p>$child.description</p>
                 <table>
                     #fieldheaders
-            #foreach( $field in $child.fields )
+            #foreach( $field in $helper.getFields($child) )
                     #fieldrow( $field )
             #end
                 </table>
@@ -103,9 +298,9 @@
 #end
         <section>
             <h1>Service</h1>
-#if ($document.service.hasCommon)
+#if ($helper.hasCommon($document.service))
                 <h2>Common Request Components</h2>
-    #if ($document.service.common.hasHeaders)
+    #if ($helper.hasHeaders($document.service.common))
                 <h3>Headers</h3>
                     <table>
                         #parameterheaders
@@ -114,7 +309,7 @@
             #end
                     </table>
     #end
-    #if ($document.service.common.hasParameters)
+    #if ($helper.hasParameters($document.service.common))
                 <h3>Parameters</h3>
                     <table>
                         #parameterheaders
@@ -123,41 +318,99 @@
             #end
                     </table>
     #end
-#end
-            <section id="methods">
-            <h2>Resources</h2>
-#foreach( $resource in $document.service.methods )
+    #if ($helper.hasResponseDataObjects($document.service))
             <section>
-                <h3 id="$resource.uri">$resource.uri</h3>
-                <p>$resource.description</p>
-					<div class="methods">
-    #foreach( $method in $resource.actions )
-                <section class="method">
-                    <h4>$method.methodString</h4>
-                    <p>$method.description</p>
+                <h3>Response Objects</h3>
+        #foreach( $dataObject in $document.service.common.responseDataObjects )
+                <section>
+                    <h4 id="$dataObject.name">$dataObject.name</h4>
+                        <p>$dataObject.description</p>
+            #if ($helper.hasFields($dataObject))
+                        <table>
+                            #fieldheaders
+                #foreach( $field in $helper.getFields($dataObject) )
+                            #fieldrow( $field )
+                #end
+                        </table>
+            #end
+            #if ($helper.hasChildren($dataObject))
+                        <h4>Discriminator</h4>
+                        <table>
+                            #fieldheaders
+                            #fieldrow( $dataObject.discriminator )
+                        </table>
+                        <h4>Child Types</h4>
+                #foreach( $child in $dataObject.childTypes )
+                        <h5>$child.name</h5>
+                        <p>$child.description</p>
+                        <table>
+                            #fieldheaders
+                    #foreach( $field in $helper.getFields($child) )
+                            #fieldrow( $field )
+                    #end
+                        </table>
+                #end
+            #end
+                </section>
+        #end
+            </section>
+    #end
+#end
+            <section id="resources">
+            <h2>Methods</h2>
+#foreach( $method in $document.service.methods )
+                <section class="methods">
+                    <h4 id="$method.name">$method.name<span style="font-size: 0.6em; font-weight: normal; margin-bottom: .8em; margin-left: .4em;">(id: $method.id)</span></h4>
+                    <p>$helper.getDescription($method)</p>
                     <h5>Allowed Protocols</h5>
                         <ul>
         #foreach( $code in $method.protocolsAllowed )
                             <li>$code</li>
         #end
                         </ul>
-        #if ($method.hasParameters)
+        #if ($helper.hasParameters($method))
                     <h5>Parameters</h5>
                     <table>
                         #parameterheaders
-            #foreach( $parameter in $method.parameters )
+            #foreach( $parameter in $helper.getParameters($method) )
                     #fieldrow( $parameter )
             #end
                     </table>
         #end
-        #if ($method.hasRequestBody)
+        #if ($helper.hasRequestBody($method))
                     <h5>Request Body</h5>
                     <p style="font-weight: bold">$method.requestBody.encoding</p>
                     <p>$link.type($method.requestBody.description)</p>
         #end
                     <h5>Response</h5>
-                    <p>$link.type($method.response)</p>
-                    <h5>Success Codes</h5>
+        #if ($helper.hasDescription($method.response))
+                    <p>$method.response.description</p>
+        #end
+        #if ($helper.isTypeRef($method.response))
+                    <p>$link.typeSimple($method.response.typeRef)</p>
+        #elseif ($method.response.type.name() == "OBJECT")
+                    <table>
+                        #parameterheaders
+            #foreach( $field in $helper.getFields($method.response) )
+                    #fieldrow( $field )
+            #end
+                    </table>
+        #end
+        #if ($method.asyncResponse)
+                    <h5>Async Response (via getAsyncJobStatus)</h5>
+                    <p>Content appears in the <code>jr</code> field when <code>jobStatus</code> is <code>0</code>.</p>
+            #if ($helper.hasFields($method.asyncResponse))
+                    <table>
+                        #fieldheaders
+                #foreach( $field in $helper.getFields($method.asyncResponse) )
+                        #fieldrow( $field )
+                #end
+                    </table>
+            #elseif ($helper.isTypeRef($method.asyncResponse))
+                    <p>$link.typeSimple($method.asyncResponse.typeRef)</p>
+            #end
+        #end
+<!--                    <h5>Success Codes</h5>
                         <ul>
         #foreach( $code in $method.successCodes )
                             <li>$code</li>
@@ -169,12 +422,48 @@
                             <li>$code</li>
         #end
                     </ul>
+-->
                 </section>
-    #end
-                </div>
-            </section>
 #end
             </section>
         </section>
+#if ($helper.hasEnumerations($document))
+        <section>
+            <h2>Enumerations</h2>
+    #foreach( $enumeration in $document.enumerations )
+            <section>
+                <h3 id="$enumeration.name">$enumeration.name</h3>
+                <p>$enumeration.description</p>
+        #if ($helper.hasEnumValues($enumeration))
+                <table>
+                    #enumheaders
+            #foreach( $constant in $enumeration.values )
+                    #enumConstantRow( $constant )
+            #end
+                </table>
+        #end
+            </section>
+    #end
+#end
+#if ($helper.hasBitSets($document))
+        <section>
+            <h2>Bit Sets</h2>
+    #foreach( $bitset in $document.bitsets )
+            <section>
+                <h3 id="$bitset.name">$bitset.name</h3>
+                <p>$bitset.description</p>
+        #if ($helper.hasBitSetValues($bitset))
+                <table>
+                    #bitsetheaders
+            #foreach( $constant in $bitset.values )
+                    #enumConstantRow( $constant )
+            #end
+                </table>
+        #end
+            </section>
+    #end
+        </section>
+#end
     </section>
+    </div>
 </body></html>
