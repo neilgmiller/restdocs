@@ -441,6 +441,24 @@ data objects:
             description: A description of the data returned in the response
             required: no
             typeref: Response
+          - name: asyncResponse
+            description: The eventual async payload returned when the immediate response carries a job ID.
+                         Present only when the response has a 'job' field indicating an async result.
+                         Uses the same structure as 'response'.
+            required: no
+            typeref: Response
+          - name: successful codes
+            description: HTTP status codes that indicate success for this method.
+            required: no
+            type: array
+            items:
+                type: string
+          - name: failure codes
+            description: HTTP status codes that indicate failure for this method.
+            required: no
+            type: array
+            items:
+                type: string
     - name: Response
       description: Describes the JSON body returned by the server for a successful API method invocation. Extends TypeSpec.
       fields:
@@ -452,6 +470,11 @@ data objects:
             description: The type of this field, either this or 'typeref' must be present
             required: no
             typeref: DataType
+          - name: parsedAs
+            description: Used only when 'type' is 'string'. The type the string value should be parsed to;
+                         a no-value fallback is used if parsing fails. Setting this to 'string' is an error.
+            required: no
+            typeref: BasicType
           - name: interpretedAs
             description: An optional type describing how the raw type should be interpreted (e.g., a STRING interpreted as a date).
             required: no
