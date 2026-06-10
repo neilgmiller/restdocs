@@ -521,6 +521,7 @@ private fun MethodStorageModel.mapToModel(context: Context): Method {
         failureCodes = Array.ofAll(failureCodes),
         successCodes = Array.ofAll(successCodes),
         response = response?.mapToModel(context),
+        asyncResponse = asyncResponse?.mapToModel(context),
         requestBody = requestBody.mapToModel(),
         headers = headers.mapList { it.mapToModelInHeaderContext(context) },
         description = description,

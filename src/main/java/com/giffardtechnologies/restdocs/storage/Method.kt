@@ -48,6 +48,7 @@ data class Method(
     @JsonProperty("request body")
     val requestBody: RequestBody? = null,
     val response: Response? = null,
+    val asyncResponse: Response? = null,
     @JsonProperty("successful codes")
     val successCodes: ArrayList<String> = ArrayList(),
     @JsonProperty("failure codes")
@@ -73,5 +74,21 @@ data class Method(
             parameters?.validateHasNoDuplicates(validationContext.documentIfAvailable)
         }
 
+    }
+
+    override fun validate(validationContext: Any?, warningEmitter: (String) -> Unit) {
+        validate(validationContext)
+        if (validationContext !is DocValidator.AccumulatingContext) {
+            val ctx = validationContext as DocValidator.ValidationContext
+            val responseIsAsync = response?.let { ctx.responseIsAsync(it) } ?: false
+            // VALID-04: asyncResponse present but response has no job field
+            if (asyncResponse != null && !responseIsAsync) {
+                throw ValidationException("Method '$name': asyncResponse is present but response has no 'job' field")
+            }
+            // VALID-03: response has job field but no asyncResponse
+            if (responseIsAsync && asyncResponse == null) {
+                warningEmitter("WARNING: Method '$name': response has a job field but no asyncResponse block")
+            }
+        }
     }
 }

@@ -3,6 +3,8 @@ package com.giffardtechnologies.restdocs
 import tools.jackson.core.JacksonException
 import com.giffardtechnologies.restdocs.jackson.createMapper
 import com.giffardtechnologies.restdocs.storage.Document
+import com.giffardtechnologies.restdocs.storage.Response
+import com.giffardtechnologies.restdocs.storage.type.Field
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -65,7 +67,12 @@ class DocValidator(val validationOptions: ValidationOptions = ValidationOptions(
         return document
     }
 
-    abstract class ValidationContext(val validationOptions: ValidationOptions)
+    abstract class ValidationContext(val validationOptions: ValidationOptions) {
+        fun responseIsAsync(response: Response): Boolean {
+            if (response.typeRef in validationOptions.asyncCapableResponseTypes) return true
+            return response.fields?.any { it is Field && it.name == "job" } == true
+        }
+    }
 
     class AccumulatingContext(validationOptions: ValidationOptions) : ValidationContext(validationOptions) {
         val referencableTypes: MutableSet<String> = HashSet()
@@ -81,6 +88,7 @@ class DocValidator(val validationOptions: ValidationOptions = ValidationOptions(
     data class ValidationOptions(
         val longNameIsOptional: Boolean = false,
         val longNameAllowsSpaces: Boolean = false,
+        val asyncCapableResponseTypes: Set<String> = setOf("AsyncJobResponse", "AsyncCapableResponse"),
     )
 
 }
