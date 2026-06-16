@@ -44,11 +44,11 @@ open class Field(
     val name: String,
     val longName: String = "",
     val description: String? = null,
-    @JsonProperty("default")
+    @field:JsonProperty("default")
     val defaultValue: String? = null,
-    @JsonProperty("clientDefault")
+    @field:JsonProperty("clientDefault")
     val defaultValueToSendFromClient: String? = null,
-    @JsonProperty("required")
+    @field:JsonProperty("required")
     @JsonDeserialize(using = TrueOnNullBooleanDeserializer::class)
     val isRequired: Boolean = true,
     val sampleValues: List<String>? = null,

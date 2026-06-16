@@ -32,7 +32,7 @@ open class TypeSpec(
     val type: DataType? = null,
     val parsedAs: BasicType? = null,
     val interpretedAs: BasicType? = null,
-    @JsonProperty("typeref")
+    @field:JsonProperty("typeref")
     val typeRef: String? = null,
     val key: KeyType? = null,
     val flagType: FlagType? = null,

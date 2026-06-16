@@ -19,5 +19,5 @@ data class Document(
         val service: Service?,
         val enumerations: ArrayList<NamedEnumeration> = ArrayList(),
         val bitsets: ArrayList<NamedBitSet> = ArrayList(),
-        @JsonProperty("data objects") val dataObjects: ArrayList<DataObject> = ArrayList()
+        @field:JsonProperty("data objects") val dataObjects: ArrayList<DataObject> = ArrayList()
 )

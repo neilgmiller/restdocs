@@ -13,7 +13,7 @@ import com.giffardtechnologies.restdocs.storage.type.Field
  */
 data class Service(
     val description: String? = null,
-    @JsonProperty("base path") val basePath: String? = null,
+    @field:JsonProperty("base path") val basePath: String? = null,
     val common: Common? = null,
     val methods: ArrayList<Method>? = null
 )
@@ -29,7 +29,7 @@ data class Service(
 class Common(
     val headers: ArrayList<Field>? = null,
     val parameters: ArrayList<Field>? = null,
-    @JsonProperty("response objects")
+    @field:JsonProperty("response objects")
     val responseDataObjects: ArrayList<DataObject> = ArrayList(),
     val enums: ArrayList<NamedEnumeration>? = null,
 )

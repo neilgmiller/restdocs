@@ -31,8 +31,8 @@ class DataObject(
     val description: String? = null,
     val fields: ArrayList<FieldListElement>,
     val discriminator: Field? = null,
-    @JsonProperty("child types") val childTypes: ArrayList<DataObject>? = null,
-    @JsonProperty("discriminator value") val discriminatorValue: String? = null,
+    @field:JsonProperty("child types") val childTypes: ArrayList<DataObject>? = null,
+    @field:JsonProperty("discriminator value") val discriminatorValue: String? = null,
 ) : Validatable {
     /**
      * Validates this data object, checking for a non-blank name and no duplicate field names.

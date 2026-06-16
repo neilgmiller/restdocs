@@ -36,22 +36,22 @@ enum class HTTPMethod {
 data class Method(
     val method: HTTPMethod? = null,
     val path: String? = null,
-    @JsonProperty("protocols allowed")
+    @field:JsonProperty("protocols allowed")
     val protocolsAllowed: ArrayList<String> = ArrayList(),
     val id: Int? = null,
     val name: String = "",
     val description: String? = "",
-    @JsonProperty("authentication required")
+    @field:JsonProperty("authentication required")
     val isAuthenticationRequired: Boolean = true,
     val headers: ArrayList<Field>? = ArrayList(),
     val parameters: ArrayList<FieldListElement>? = null,
-    @JsonProperty("request body")
+    @field:JsonProperty("request body")
     val requestBody: RequestBody? = null,
     val response: Response? = null,
     val asyncResponse: Response? = null,
-    @JsonProperty("successful codes")
+    @field:JsonProperty("successful codes")
     val successCodes: ArrayList<String> = ArrayList(),
-    @JsonProperty("failure codes")
+    @field:JsonProperty("failure codes")
     val failureCodes: ArrayList<String> = ArrayList(),
 ) : Validatable {
     /**
