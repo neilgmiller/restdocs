@@ -3,6 +3,7 @@ package com.giffardtechnologies.restdocs
 import com.giffardtechnologies.meter.file
 import com.giffardtechnologies.restdocs.codegen.BitSetProcessor
 import com.giffardtechnologies.restdocs.codegen.DataObjectProcessor
+import com.giffardtechnologies.restdocs.codegen.DataObjectUsageClassifier
 import com.giffardtechnologies.restdocs.codegen.EnumProcessor
 import com.giffardtechnologies.restdocs.codegen.FieldAndTypeProcessor
 import com.giffardtechnologies.restdocs.codegen.MethodProcessor
@@ -65,6 +66,7 @@ class KotlinGenerator {
 
         val dtoPackage = options.clientPackage + ".dto"
         val requestsPackage = options.clientPackage + ".requests"
+        val requestsDtoPackage = requestsPackage + ".dto"
 
         // clean out old generated code
         val dtoDir = File(options.codeDirectory.absolutePath + "/" + dtoPackage.replace('.', '/'))
@@ -85,10 +87,11 @@ class KotlinGenerator {
             bitSetProcessor.processBitSet(namedBitSet)
         }
 
-        val fieldAndTypeProcessor = FieldAndTypeProcessor(dtoPackage, dtoPackage)
+        val classifier = DataObjectUsageClassifier(document)
+        val fieldAndTypeProcessor = FieldAndTypeProcessor(dtoPackage, dtoPackage, classifier = classifier, requestsDtoPackage = requestsDtoPackage)
         val objectProcessor =
             ObjectProcessor(options.codeDirectory, fieldAndTypeProcessor, enumProcessor, bitSetProcessor)
-        val dataObjectProcessor = DataObjectProcessor(dtoPackage, objectProcessor)
+        val dataObjectProcessor = DataObjectProcessor(dtoPackage, requestsDtoPackage, objectProcessor, classifier)
 
         document.dataObjects.filter { !it.isHidden }.forEach { dataObject ->
             dataObjectProcessor.generateDataObjectClassFile(dataObject)

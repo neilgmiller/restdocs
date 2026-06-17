@@ -44,12 +44,14 @@ class ObjectProcessor(
         useFutureProofEnum: Boolean,
         forceTopLevel: Boolean = false,
         completeConstructor: Boolean = false,
+        initializeWithDefault: Boolean = true,
     ): TypeSpec {
         return processObjectToTypeSpec(
             className,
             objectSpec.fields,
             useFutureProofEnum,
             completeConstructor,
+            initializeWithDefault = initializeWithDefault,
             subObjectClassNameFactory = { parentClassName, field ->
                 getSubObjectClassName(
                     parentClassName,

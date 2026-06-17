@@ -25,6 +25,8 @@ class FieldAndTypeProcessor(
     private val objectPackage: String,
     private val typeRefPackage: String,
     private val subObjectPackage: String = objectPackage,
+    private val classifier: DataObjectUsageClassifier? = null,
+    private val requestsDtoPackage: String? = null,
 ) {
 
     fun createPropertySpec(
@@ -47,6 +49,7 @@ class FieldAndTypeProcessor(
                 useFutureProofEnum,
                 subObjectClassNameFactory = { soField -> subObjectClassNameFactory(objectClassName, soField) },
                 parentField = field,
+                parameterContext = !initializeWithDefault,
             ),
         )
             .addAnnotation(
@@ -231,6 +234,7 @@ class FieldAndTypeProcessor(
         futureProofEnum: Boolean = true,
         subObjectClassNameFactory: (Field) -> ClassName,
         parentField: Field,
+        parameterContext: Boolean = false,
     ): TypeName {
         val typeName: TypeName = when (typeSpec) {
             is TypeSpec.BitSetSpec<*> -> {
@@ -253,7 +257,8 @@ class FieldAndTypeProcessor(
                         convertIntBoolean,
                         futureProofEnum,
                         subObjectClassNameFactory,
-                        parentField
+                        parentField,
+                        parameterContext,
                     )
                 )
             }
@@ -269,7 +274,8 @@ class FieldAndTypeProcessor(
                         convertIntBoolean,
                         futureProofEnum,
                         subObjectClassNameFactory,
-                        parentField
+                        parentField,
+                        parameterContext,
                     )
                 )
             }
@@ -290,6 +296,13 @@ class FieldAndTypeProcessor(
                         DataType.LongType -> ClassName("com.allego.api.client.support.bitset", "BitSet")
                     }
                     setClass.parameterizedBy(ClassName(typeRefPackage, typeSpec.referenceName))
+                } else if (parameterContext && referencedType is DataObject) {
+                    val classification = classifier?.classify(typeSpec.referenceName)
+                    if (classification == DataObjectClassification.Mixed || classification == DataObjectClassification.ParameterOnly) {
+                        ClassName(requireNotNull(requestsDtoPackage), typeSpec.referenceName + "Input")
+                    } else {
+                        ClassName(typeRefPackage, typeSpec.referenceName)
+                    }
                 } else {
                     ClassName(typeRefPackage, typeSpec.referenceName)
                 }
