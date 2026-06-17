@@ -116,7 +116,8 @@ class ObjectProcessor(
                     typeOrItemType,
                     useFutureProofEnum,
                     subObjectTypeSpecHandler,
-                    classBuilder
+                    classBuilder,
+                    initializeWithDefault,
                 )
             }
         }
@@ -132,12 +133,13 @@ class ObjectProcessor(
         typeOrItemType: Nameable,
         useFutureProofEnum: Boolean,
         subObjectTypeSpecHandler: (TypeSpec.Builder, ClassName, TypeSpec) -> Unit,
-        classBuilder: TypeSpec.Builder
+        classBuilder: TypeSpec.Builder,
+        initializeWithDefault: Boolean = true,
     ) {
         val subObjectClassName = subObjectClassNameFactory(className, field)
         val subObjectTypeSpec = when (typeOrItemType) {
             is ObjectSpec -> {
-                processObjectToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum)
+                processObjectToTypeSpec(subObjectClassName, typeOrItemType, useFutureProofEnum, initializeWithDefault = initializeWithDefault)
             }
 
             is EnumSpec<*> -> {

@@ -229,6 +229,74 @@ class DataObjectProcessorTest {
     }
 
     @Test
+    fun `Mixed FooInput uses BarInput for a TypeRef inside an inline nested object field`() {
+        val doc = document("test") {
+            val ctx = context
+            addDataObject(dataObject("Bar") {
+                add(Field(name = "value", longName = "value", type = TypeSpec.BasicSpec(DataType.StringType), isRequired = false))
+            })
+            addDataObject(dataObject("Foo") {
+                add(Field(
+                    name = "filter",
+                    longName = "filter",
+                    type = TypeSpec.ObjectSpec(FieldElementList(Array.of(
+                        Field(name = "bar", longName = "bar", type = TypeSpec.TypeRefSpec("Bar", ctx), isRequired = false)
+                    ))),
+                    isRequired = false,
+                ))
+            })
+            service = Service(
+                methods = Array.of(
+                    method(
+                        params = listOf(Field(name = "fooParam", longName = "fooParam", type = TypeSpec.TypeRefSpec("Foo", ctx))),
+                        response = Response(TypeSpec.TypeRefSpec("Foo", ctx)),
+                    )
+                )
+            )
+        }
+        val processor = buildProcessor(doc)
+        doc.dataObjects.forEach { processor.generateDataObjectClassFile(it) }
+
+        val fooInputContent = requestsDtoFile("FooInput").readText()
+        assertTrue(fooInputContent.contains("BarInput"), "FooInput's inline nested object should reference BarInput. Content:\n$fooInputContent")
+        assertFalse(fooInputContent.contains(": Bar?"), "FooInput's inline nested object should not reference plain Bar. Content:\n$fooInputContent")
+    }
+
+    @Test
+    fun `Mixed Foo response variant uses Bar for a TypeRef inside an inline nested object field`() {
+        val doc = document("test") {
+            val ctx = context
+            addDataObject(dataObject("Bar") {
+                add(Field(name = "value", longName = "value", type = TypeSpec.BasicSpec(DataType.StringType), isRequired = false))
+            })
+            addDataObject(dataObject("Foo") {
+                add(Field(
+                    name = "filter",
+                    longName = "filter",
+                    type = TypeSpec.ObjectSpec(FieldElementList(Array.of(
+                        Field(name = "bar", longName = "bar", type = TypeSpec.TypeRefSpec("Bar", ctx), isRequired = false)
+                    ))),
+                    isRequired = false,
+                ))
+            })
+            service = Service(
+                methods = Array.of(
+                    method(
+                        params = listOf(Field(name = "fooParam", longName = "fooParam", type = TypeSpec.TypeRefSpec("Foo", ctx))),
+                        response = Response(TypeSpec.TypeRefSpec("Foo", ctx)),
+                    )
+                )
+            )
+        }
+        val processor = buildProcessor(doc)
+        doc.dataObjects.forEach { processor.generateDataObjectClassFile(it) }
+
+        val fooContent = dtoFile("Foo").readText()
+        assertTrue(fooContent.contains(": Bar?"), "Foo response variant's inline nested object should reference Bar. Content:\n$fooContent")
+        assertFalse(fooContent.contains("BarInput"), "Foo response variant should not reference BarInput. Content:\n$fooContent")
+    }
+
+    @Test
     fun `ParameterOnly FooInput uses BarInput for a field typed as a ParameterOnly Bar`() {
         val doc = document("test") {
             val ctx = context
