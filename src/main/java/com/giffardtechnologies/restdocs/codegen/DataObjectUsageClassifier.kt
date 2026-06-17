@@ -23,10 +23,15 @@ enum class DataObjectClassification {
  * Analyses the document's service methods to classify each [DataObject]
  * by how it is used: on the parameter side, the response side, or both.
  *
- * The traversal walks [com.giffardtechnologies.restdocs.domain.Method.parameters] (already-flattened fields)
- * and recurses transitively through any [TypeSpec.TypeRefSpec]
- * it encounters. Include-elements are not walked separately because their fields are already inlined into
- * the flat parameter list and will be seen during that traversal.
+ * **Pass 1** walks [com.giffardtechnologies.restdocs.domain.Method.parameters] (already-flattened fields)
+ * and recurses transitively through any [TypeSpec.TypeRefSpec] it encounters.
+ *
+ * **Pass 2** walks each DataObject that is not in `parameterUsed` (i.e. ResponseOnly or never-seen
+ * as a direct TypeRef) through its canonical field list in response context. This catches the case
+ * where a DataObject is only ever referenced via `include:` (so it never appears as a TypeRef in
+ * method responses and defaults to ResponseOnly), but itself owns a TypeRef field to a DataObject
+ * that pass 1 saw only in parameter context. Without pass 2 that inner DataObject would be
+ * misclassified as ParameterOnly instead of Mixed.
  */
 class DataObjectUsageClassifier(document: Document) {
 
@@ -34,6 +39,7 @@ class DataObjectUsageClassifier(document: Document) {
     private val responseUsed = mutableSetOf<String>()
 
     init {
+        // Pass 1: walk method params and responses
         document.service?.let { service ->
             service.common?.parameters?.forEach { field ->
                 walkParamContext(field.type)
@@ -46,6 +52,16 @@ class DataObjectUsageClassifier(document: Document) {
                 method.asyncResponse?.typeSpec?.let { walkResponseContext(it) }
             }
         }
+
+        // Pass 2: DataObjects that are ResponseOnly (not in parameterUsed) may own TypeRef fields
+        // that pass 1 only saw in parameter context. Walk their canonical fields in response context
+        // so those referenced types are not left as ParameterOnly when they are actually reachable
+        // through a response-side DataObject.
+        document.dataObjects
+            .filter { it.typeName !in parameterUsed }
+            .forEach { dataObject ->
+                dataObject.type.fields.forEach { walkResponseContext(it.type) }
+            }
     }
 
     private fun walkParamContext(typeSpec: TypeSpec) {

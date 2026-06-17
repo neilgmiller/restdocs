@@ -325,6 +325,37 @@ class DataObjectProcessorTest {
         assertTrue(fooInputContent.contains("BarInput"), "ParameterOnly FooInput field typed as ParameterOnly Bar should reference BarInput. Content:\n$fooInputContent")
     }
 
+    // -- Two-pass classifier --
+
+    @Test
+    fun `ParameterOnly type referenced by ResponseOnly DataObject is promoted to Mixed`() {
+        // Models the MailCustomization/CoBranding scenario:
+        // - Inner is used only as a direct TypeRef param → ParameterOnly after pass 1
+        // - Wrapper is never referenced as a TypeRef anywhere → ResponseOnly by default
+        // - Wrapper owns a field typed as TypeRef("Inner")
+        // Pass 2 walks Wrapper's canonical fields in response context, discovers Inner,
+        // and adds it to responseUsed → Inner becomes Mixed.
+        val doc = document("test") {
+            val ctx = context
+            addDataObject(dataObject("Inner") {
+                add(Field(name = "value", longName = "value", type = TypeSpec.BasicSpec(DataType.StringType), isRequired = false))
+            })
+            addDataObject(dataObject("Wrapper") {
+                add(Field(name = "inner", longName = "inner", type = TypeSpec.TypeRefSpec("Inner", ctx), isRequired = false))
+            })
+            service = Service(
+                methods = Array.of(
+                    method(params = listOf(Field(name = "innerParam", longName = "innerParam", type = TypeSpec.TypeRefSpec("Inner", ctx))))
+                )
+            )
+        }
+        val processor = buildProcessor(doc)
+        doc.dataObjects.forEach { processor.generateDataObjectClassFile(it) }
+
+        assertTrue(dtoFile("Inner").exists(), "Inner should have a response variant (Mixed). Files: ${tempDir.listFiles()?.map { it.name }}")
+        assertTrue(requestsDtoFile("InnerInput").exists(), "Inner should have an input variant (Mixed).")
+    }
+
     // -- helpers --
 
     private fun buildProcessor(doc: com.giffardtechnologies.restdocs.domain.Document): DataObjectProcessor {
