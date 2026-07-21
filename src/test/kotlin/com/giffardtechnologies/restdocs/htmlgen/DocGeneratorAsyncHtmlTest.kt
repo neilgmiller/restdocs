@@ -58,6 +58,19 @@ class DocGeneratorAsyncHtmlTest {
     }
 
     @Test
+    fun `scalar async response renders a field row named jr with the configured long name and type`() {
+        val methodSection = html.substringAfter("""id="scalarAsyncMethod"""")
+        val asyncSection = methodSection.substringAfter("Async Response (via getAsyncJobStatus)")
+            .substringBefore("<h4 ")
+        assertTrue(asyncSection.contains("jr"),
+            "scalarAsyncMethod async section should render a field named 'jr'.\nSection:\n$asyncSection")
+        assertTrue(asyncSection.contains("analysisScore"),
+            "scalarAsyncMethod async section should render the configured long name.\nSection:\n$asyncSection")
+        assertTrue(asyncSection.contains("long"),
+            "scalarAsyncMethod async section should render the scalar type 'long'.\nSection:\n$asyncSection")
+    }
+
+    @Test
     fun `async response section does not appear for sync method`() {
         val syncSection = html
             .substringAfter("""id="syncMethod"""")

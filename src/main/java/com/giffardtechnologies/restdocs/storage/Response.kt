@@ -17,6 +17,8 @@ import com.giffardtechnologies.restdocs.storage.type.TypeSpec
  * human-readable [description].
  *
  * @property description Human-readable description of the response payload.
+ * @property longName An optional human-readable name used in documentation, e.g. for a scalar
+ * `asyncResponse` rendered as a single field row named "jr".
  * @param type The primitive or structural [DataType] of the response body.
  * @param interpretedAs An optional [BasicType] that describes how the raw type should be
  * interpreted (e.g., a STRING interpreted as a date).
@@ -33,6 +35,7 @@ import com.giffardtechnologies.restdocs.storage.type.TypeSpec
  */
 class Response(
     val description: String? = null,
+    val longName: String? = null,
     type: DataType? = null,
     parsedAs: BasicType? = null,
     interpretedAs: BasicType? = null,

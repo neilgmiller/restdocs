@@ -71,6 +71,17 @@ class MethodProcessorAsyncResponseTest {
     }
 
     @Test
+    fun `getClassNames returns scalar ClassName for BasicSpec asyncResponse`() {
+        val asyncResponse = Response(
+            typeSpec = TypeSpec.BasicSpec(DataType.LongType)
+        )
+        val method = createMethod(asyncResponse = asyncResponse)
+        val classNames = methodProcessor.getClassNames(method)
+
+        assertEquals(ClassName("kotlin", "Long"), classNames.asyncResponseClassName)
+    }
+
+    @Test
     fun `getClassNames returns null asyncResponseClassName for TypeRefSpec asyncResponse`() {
         val asyncResponse = Response(
             typeSpec = TypeSpec.TypeRefSpec("SomeType", object : com.giffardtechnologies.restdocs.domain.Context {
@@ -190,6 +201,27 @@ class MethodProcessorAsyncResponseTest {
         assertTrue(
             content.contains("data class TestMethodAsyncResponse"),
             "Output should contain TestMethodAsyncResponse. Content:\n$content"
+        )
+    }
+
+    @Test
+    fun `processMethod resolves without error and generates no nested class for BasicSpec asyncResponse`() {
+        val asyncResponse = Response(
+            typeSpec = TypeSpec.BasicSpec(DataType.LongType)
+        )
+        val method = createMethod(asyncResponse = asyncResponse)
+        methodProcessor.processMethod(method)
+
+        val outputFile = File(
+            tempDir,
+            testPackage.replace('.', '/') + "/TestMethodRequest.kt"
+        )
+        assertTrue(outputFile.exists(), "Output file should exist")
+
+        val content = outputFile.readText()
+        assertTrue(
+            !content.contains("data class TestMethodAsyncResponse"),
+            "Output should not contain a nested AsyncResponse data class for a scalar type. Content:\n$content"
         )
     }
 

@@ -466,6 +466,11 @@ data objects:
             description: Human-readable description of the response payload.
             required: no
             type: string
+          - name: longName
+            description: An optional human-readable name used in documentation, e.g. for a scalar
+                         'asyncResponse' rendered as a single field row named 'jr'.
+            required: no
+            type: string
           - name: type
             description: The type of this field, either this or 'typeref' must be present
             required: no

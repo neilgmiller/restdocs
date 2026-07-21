@@ -60,6 +60,16 @@ service:
               typeref: AsyncJobResponse
           asyncResponse:
               typeref: AsyncJobResponse
+        # Case 5: scalar async response — asyncResponse is a bare scalar type
+        - name: scalarAsyncMethod
+          id: 5
+          authentication required: yes
+          description: An async method with a scalar async response
+          response:
+              typeref: AsyncJobResponse
+          asyncResponse:
+              type: long
+              longName: analysisScore
         # Case 3: sync — no asyncResponse block (regression)
         - name: syncMethod
           id: 3

@@ -190,12 +190,12 @@ class MethodProcessor(
         } ?: Unit::class.asClassName()
 
         val asyncResponseClassName = method.asyncResponse?.let { asyncResponse ->
-            when (asyncResponse.typeSpec) {
+            when (val spec = asyncResponse.typeSpec) {
                 is DomainTypeSpec.ObjectSpec -> {
                     ClassName(requestsPackage, methodName + "AsyncResponse")
                 }
 
-                else -> null
+                else -> fieldAndTypeProcessor.getScalarTypeName(spec)
             }
         }
 

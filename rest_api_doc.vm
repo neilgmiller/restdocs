@@ -408,6 +408,11 @@
                     </table>
             #elseif ($helper.isTypeRef($method.asyncResponse))
                     <p>$link.typeSimple($method.asyncResponse.typeRef)</p>
+            #else
+                    <table>
+                        #fieldheaders
+                        #fieldrow( $helper.asyncResponseAsField($method.asyncResponse) )
+                    </table>
             #end
         #end
 <!--                    <h5>Success Codes</h5>

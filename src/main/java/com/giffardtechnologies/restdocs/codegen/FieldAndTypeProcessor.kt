@@ -365,6 +365,22 @@ class FieldAndTypeProcessor(
         }
     }
 
+    /**
+     * Maps a scalar (non-object, non-collection) [TypeSpec] to its Kotlin [ClassName].
+     * Returns null for types that need a generated body or a name factory (ObjectSpec,
+     * TypeRefSpec, collections, enums, bitsets) — those are handled elsewhere.
+     */
+    fun getScalarTypeName(typeSpec: TypeSpec): ClassName? = when (typeSpec) {
+        is TypeSpec.BasicSpec -> getBasicTypeName(typeSpec.type) as ClassName
+        is TypeSpec.BooleanSpec -> Boolean::class.asClassName()
+        is TypeSpec.DateSpec -> LocalDate::class.asClassName()
+        is TypeSpec.StringSpec -> (
+            if (typeSpec.representedAs == null) getBasicTypeName(typeSpec.parsedAs)
+            else getBasicTypeName(typeSpec.representedAs)
+        ) as ClassName
+        else -> null
+    }
+
     private fun getBasicTypeName(type: DataType<*>): TypeName {
         return when (type) {
             is UsableAsKey<*> -> getKeyTypeName(type)

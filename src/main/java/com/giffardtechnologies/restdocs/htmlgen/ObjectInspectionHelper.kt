@@ -132,4 +132,28 @@ class ObjectInspectionHelper(val document: Document) {
         return !response?.description.isNullOrEmpty()
     }
 
+    /**
+     * Builds a synthetic [Field] representing a scalar `asyncResponse`, so it can be rendered
+     * through the same `#fieldrow` table as object-shaped responses. The name is always "jr" —
+     * the field the async job result is delivered in — since [Response] has no wire name of its
+     * own, only an optional [Response.longName] for documentation.
+     */
+    fun asyncResponseAsField(response: Response): Field {
+        return Field(
+            name = "jr",
+            longName = response.longName ?: "",
+            description = response.description ?: "",
+            type = response.type,
+            parsedAs = response.parsedAs,
+            interpretedAs = response.interpretedAs,
+            typeRef = response.typeRef,
+            key = response.key,
+            flagType = response.flagType,
+            items = response.items,
+            restrictions = response.restrictions,
+            fields = response.fields,
+            values = response.values,
+        )
+    }
+
 }
