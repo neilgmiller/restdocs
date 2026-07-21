@@ -16,6 +16,7 @@
 /docs/html/reference.html
 /.idea/jarRepositories.xml
 /local.properties
+/tools/copy-doc-template.properties
 .idea/libraries/**
 /.claude
 /docs/restdocs-tool/restdocs.config
