@@ -78,6 +78,9 @@ application {
 distributions {
     main {
         distributionBaseName = project.name
+        contents {
+            from("docs/reference.yaml")
+        }
     }
 }
 
