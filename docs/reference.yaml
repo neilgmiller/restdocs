@@ -471,6 +471,14 @@ data objects:
                          'asyncResponse' rendered as a single field row named 'jr'.
             required: no
             type: string
+          - name: noPayload
+            description: No value is ever written for this response. Set this instead of 'type'/'typeref'
+                         to positively document a job (or a synchronous method) that produces no payload,
+                         as distinct from a response/asyncResponse block that simply hasn't been written
+                         yet.
+            required: no
+            type: boolean
+            default: false
           - name: type
             description: The type of this field, either this or 'typeref' must be present
             required: no

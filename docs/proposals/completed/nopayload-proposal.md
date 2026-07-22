@@ -26,7 +26,7 @@ to silence the warning is dishonest: it implies a value exists to parse when non
 statement, not the absence of an `asyncResponse` block, so the validator can tell "checked,
 there's nothing" apart from "not yet documented."
 
-See [history.md](history.md) for the rejected
+See [history.md](../history.md) for the rejected
 `DataType: none` approach this proposal started from.
 
 ---

@@ -540,7 +540,8 @@ private fun RequestBodyStorageModel?.mapToModel(): RequestBody? {
 
 private fun ResponseStorageModel.mapToModel(context: Context) : Response {
     return Response(
-        typeSpec = this.mapToModel("response", context), // TODO better ID
+        typeSpec = if (noPayload) null else this.mapToModel("response", context), // TODO better ID
         description = description,
+        noPayload = noPayload,
     )
 }

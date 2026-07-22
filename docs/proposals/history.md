@@ -1,7 +1,7 @@
 # History: `noPayload`/`deprecated` Proposals
 
 Rejected approaches considered on the way to the current proposals. See
-[nopayload-proposal.md](nopayload-proposal.md) and [deprecated-proposal.md](docs/proposals/deprecated-proposal.md)
+[nopayload-proposal.md](completed/nopayload-proposal.md) and [deprecated-proposal.md](docs/proposals/deprecated-proposal.md)
 for the accepted designs.
 
 ---
@@ -23,4 +23,4 @@ inside an `object`) where "this field has no type" isn't a coherent statement.
 
 Replaced by: a `noPayload` boolean field on `Response` (covering both `response` and
 `asyncResponse`, but not `Field`/nested `object` members) — see
-[nopayload-proposal.md](nopayload-proposal.md).
+[nopayload-proposal.md](completed/nopayload-proposal.md).

@@ -386,7 +386,9 @@
         #if ($helper.hasDescription($method.response))
                     <p>$method.response.description</p>
         #end
-        #if ($helper.isTypeRef($method.response))
+        #if ($helper.hasNoPayload($method.response))
+                    <p>No payload.</p>
+        #elseif ($helper.isTypeRef($method.response))
                     <p>$link.typeSimple($method.response.typeRef)</p>
         #elseif ($method.response.type.name() == "OBJECT")
                     <table>
@@ -399,7 +401,9 @@
         #if ($method.asyncResponse)
                     <h5>Async Response (via getAsyncJobStatus)</h5>
                     <p>Content appears in the <code>jr</code> field when <code>jobStatus</code> is <code>0</code>.</p>
-            #if ($helper.hasFields($method.asyncResponse))
+            #if ($helper.hasNoPayload($method.asyncResponse))
+                    <p>No payload.</p>
+            #elseif ($helper.hasFields($method.asyncResponse))
                     <table>
                         #fieldheaders
                 #foreach( $field in $helper.getFields($method.asyncResponse) )

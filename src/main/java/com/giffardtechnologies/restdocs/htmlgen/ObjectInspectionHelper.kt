@@ -132,6 +132,10 @@ class ObjectInspectionHelper(val document: Document) {
         return !response?.description.isNullOrEmpty()
     }
 
+    fun hasNoPayload(response: Response?): Boolean {
+        return response?.noPayload == true
+    }
+
     /**
      * Builds a synthetic [Field] representing a scalar `asyncResponse`, so it can be rendered
      * through the same `#fieldrow` table as object-shaped responses. The name is always "jr" —

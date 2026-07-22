@@ -195,6 +195,8 @@ class MethodProcessor(
                     ClassName(requestsPackage, methodName + "AsyncResponse")
                 }
 
+                null -> Unit::class.asClassName()
+
                 else -> fieldAndTypeProcessor.getScalarTypeName(spec)
             }
         }
