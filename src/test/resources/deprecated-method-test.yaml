@@ -1,0 +1,46 @@
+title: Deprecated Method Test
+service:
+    description: Test service for deprecated method fields
+    base path: /api/test
+    methods:
+        # Case 1: deprecated with a recorded deprecatedSince date
+        - name: deprecatedWithDateMethod
+          id: 1
+          authentication required: yes
+          description: A method deprecated with a known date
+          deprecated: true
+          deprecationNote: Superseded by newMethod.
+          deprecatedSince: 2020-01-01
+          response:
+              type: object
+              fields:
+                  - name: data
+                    longName: data
+                    type: string
+                    description: The data
+        # Case 2: deprecated with no recorded deprecatedSince date (warning case)
+        - name: deprecatedNoDateMethod
+          id: 2
+          authentication required: yes
+          description: A method deprecated with no known date
+          deprecated: true
+          deprecationNote: Retired no-op handler.
+          response:
+              type: object
+              fields:
+                  - name: data
+                    longName: data
+                    type: string
+                    description: The data
+        # Case 3: not deprecated (regression)
+        - name: activeMethod
+          id: 3
+          authentication required: yes
+          description: A normal, non-deprecated method
+          response:
+              type: object
+              fields:
+                  - name: data
+                    longName: data
+                    type: string
+                    description: The data

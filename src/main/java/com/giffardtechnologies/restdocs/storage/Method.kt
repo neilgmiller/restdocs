@@ -8,6 +8,8 @@ import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
 import com.giffardtechnologies.restdocs.storage.type.Field
 import com.giffardtechnologies.restdocs.storage.type.FieldListElement
 import com.giffardtechnologies.restdocs.storage.type.validateHasNoDuplicates
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toKotlinLocalDate
 
 /** The HTTP verb for an API method. */
 enum class HTTPMethod {
@@ -53,6 +55,9 @@ data class Method(
     val successCodes: ArrayList<String> = ArrayList(),
     @field:JsonProperty("failure codes")
     val failureCodes: ArrayList<String> = ArrayList(),
+    val deprecated: Boolean = false,
+    val deprecationNote: String? = null,
+    val deprecatedSince: String? = null,
 ) : Validatable {
     /**
      * Validates this method, ensuring it has at least one of [id] or [path], and that parameter
@@ -74,6 +79,33 @@ data class Method(
             parameters?.validateHasNoDuplicates(validationContext.documentIfAvailable)
         }
 
+        if (!deprecated) {
+            if (deprecationNote != null) {
+                throw ValidationException("Method '$name': 'deprecationNote' can only be set when 'deprecated' is true")
+            }
+            if (deprecatedSince != null) {
+                throw ValidationException("Method '$name': 'deprecatedSince' can only be set when 'deprecated' is true")
+            }
+        } else {
+            if (deprecationNote.isNullOrBlank()) {
+                throw ValidationException("Method '$name': 'deprecationNote' is required when 'deprecated' is true")
+            }
+            if (deprecatedSince != null) {
+                val parsedDeprecatedSince = try {
+                    LocalDate.parse(deprecatedSince)
+                } catch (e: IllegalArgumentException) {
+                    throw ValidationException(
+                        "Method '$name': 'deprecatedSince' must be an ISO-8601 date (yyyy-MM-dd), got: '$deprecatedSince'"
+                    )
+                }
+                val today = java.time.LocalDate.now().toKotlinLocalDate()
+                if (parsedDeprecatedSince > today) {
+                    throw ValidationException(
+                        "Method '$name': 'deprecatedSince' ($deprecatedSince) cannot be a future date"
+                    )
+                }
+            }
+        }
     }
 
     override fun validate(validationContext: Any?, warningEmitter: (String) -> Unit) {
@@ -88,6 +120,10 @@ data class Method(
             // VALID-03: response has job field but no asyncResponse
             if (responseIsAsync && asyncResponse == null) {
                 warningEmitter("WARNING: Method '$name': response has a job field but no asyncResponse block")
+            }
+            // deprecated but no deprecatedSince recorded
+            if (deprecated && deprecatedSince == null) {
+                warningEmitter("WARNING: Method '$name': deprecated but has no 'deprecatedSince' date")
             }
         }
     }

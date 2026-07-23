@@ -3,6 +3,7 @@ package com.giffardtechnologies.restdocs.codegen
 import com.giffardtechnologies.meter.file
 import com.giffardtechnologies.restdocs.domain.Method
 import com.giffardtechnologies.restdocs.domain.Response
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -223,6 +224,14 @@ class MethodProcessor(
             .superclass(superClassType)
             .addSuperclassConstructorParameter("%L", methodId)
             .addModifiers(KModifier.PUBLIC)
+
+        if (method.deprecated) {
+            requestClassBuilder.addAnnotation(
+                AnnotationSpec.builder(Deprecated::class)
+                    .addMember("message = %S", method.deprecationNote ?: "")
+                    .build()
+            )
+        }
 
         if (method.parameters.isEmpty) {
             requestClassBuilder.addSuperclassConstructorParameter("%N", "Unit")

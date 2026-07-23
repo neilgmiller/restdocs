@@ -136,6 +136,18 @@ class ObjectInspectionHelper(val document: Document) {
         return response?.noPayload == true
     }
 
+    fun isDeprecated(method: Method): Boolean {
+        return method.deprecated
+    }
+
+    fun hasDeprecationNote(method: Method): Boolean {
+        return !method.deprecationNote.isNullOrBlank()
+    }
+
+    fun hasDeprecatedSince(method: Method): Boolean {
+        return !method.deprecatedSince.isNullOrBlank()
+    }
+
     /**
      * Builds a synthetic [Field] representing a scalar `asyncResponse`, so it can be rendered
      * through the same `#fieldrow` table as object-shaped responses. The name is always "jr" —

@@ -459,6 +459,26 @@ data objects:
             type: array
             items:
                 type: string
+          - name: deprecated
+            description: Indicates that this method is deprecated and should not be used for new
+                         integrations. When true, 'deprecationNote' is required.
+            required: no
+            type: boolean
+            default: false
+          - name: deprecationNote
+            description: Human-readable explanation of the deprecation, e.g. what to use instead.
+                         Required when 'deprecated' is true; must not be set otherwise.
+            required: no
+            type: string
+          - name: deprecatedSince
+            description: The ISO-8601 date ('yyyy-MM-dd') the method was deprecated. Must not be a
+                         future date. Only valid when 'deprecated' is true. Strongly recommended
+                         when known — an absent date is treated as "arbitrarily old" by codegen's
+                         skip-cutoff filter.
+            required: no
+            type: string
+            sampleValues:
+                - 2026-08-01
     - name: Response
       description: Describes the JSON body returned by the server for a successful API method invocation. Extends TypeSpec.
       fields:

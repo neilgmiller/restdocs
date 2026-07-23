@@ -8,8 +8,10 @@ import com.giffardtechnologies.restdocs.codegen.EnumProcessor
 import com.giffardtechnologies.restdocs.codegen.FieldAndTypeProcessor
 import com.giffardtechnologies.restdocs.codegen.MethodProcessor
 import com.giffardtechnologies.restdocs.codegen.ObjectProcessor
+import com.giffardtechnologies.restdocs.domain.Document
 import com.giffardtechnologies.restdocs.domain.FieldReference
-import com.giffardtechnologies.restdocs.mappers.mapToModel
+import com.giffardtechnologies.restdocs.domain.Method
+import com.giffardtechnologies.restdocs.domain.Service
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
@@ -19,6 +21,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
+import kotlinx.datetime.LocalDate
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.io.FileUtils
 import java.io.File
@@ -33,12 +36,13 @@ class KotlinGenerator {
         val forceTopLevel: Set<FieldReference>,
         val excludedFields: Set<FieldReference>,
         val asyncJobStatusConfig: AsyncJobStatusConfig? = null,
+        val skipDeprecatedBefore: LocalDate? = null,
     )
 
     data class AsyncJobStatusConfig(val methodID: Int)
 
-    fun generate(sourceFile: File, options: Options) {
-        val document = DocValidator().getValidatedDocument(sourceFile).mapToModel()
+    fun generate(document: Document, options: Options) {
+        val document = document.filterDeprecatedMethods(options.skipDeprecatedBefore, options.verboseLogging)
 
 //        val typeVariable = TypeVariableName.invoke("T")
 //        val typeSpec = TypeSpec.interfaceBuilder(
@@ -287,6 +291,27 @@ class KotlinGenerator {
                 }
             }
         }.writeTo(options.iOSCodeDirectory)
+    }
+
+    private fun Document.filterDeprecatedMethods(skipDeprecatedBefore: LocalDate?, verboseLogging: Boolean): Document {
+        val service = this.service ?: return this
+        if (skipDeprecatedBefore == null) return this
+        if (verboseLogging) {
+            service.methods.filter { it.shouldSkipForCodegen(skipDeprecatedBefore) }.forEach { method ->
+                println("Skipping deprecated method '${method.name}' (deprecatedSince=${method.deprecatedSince ?: "unknown"})")
+            }
+        }
+        val kept = service.methods.filter { !it.shouldSkipForCodegen(skipDeprecatedBefore) }
+        return Document(
+            title, bitsets, enumerations, dataObjects,
+            Service(service.description, service.basePath, service.common, kept)
+        )
+    }
+
+    private fun Method.shouldSkipForCodegen(skipDeprecatedBefore: LocalDate): Boolean {
+        if (!deprecated) return false
+        val since = deprecatedSince ?: return true
+        return since < skipDeprecatedBefore
     }
 
 }

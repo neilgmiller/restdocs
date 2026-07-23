@@ -2,6 +2,8 @@ package com.giffardtechnologies.restdocs
 
 import com.giffardtechnologies.restdocs.KotlinGenerator.Options
 import com.giffardtechnologies.restdocs.domain.FieldReference
+import com.giffardtechnologies.restdocs.mappers.mapToModel
+import kotlinx.datetime.LocalDate
 import picocli.CommandLine
 import java.io.BufferedInputStream
 import java.io.File
@@ -83,9 +85,19 @@ class KotlinGeneratorCommand : Callable<Unit> {
             )
         }
 
+        val skipDeprecatedBefore: LocalDate? = properties.getProperty("skipDeprecatedBefore.date")?.let { value ->
+            try {
+                LocalDate.parse(value.trim())
+            } catch (e: IllegalArgumentException) {
+                error("skipDeprecatedBefore.date must be an ISO-8601 date (yyyy-MM-dd), got: '$value'")
+            }
+        }
+
+        val document = DocValidator().getValidatedDocument(sourceFile).mapToModel()
+
         KotlinGenerator().generate(
-            sourceFile,
-            Options(codeDir, iOSCodeDir, clientPackage, false, forceTopLevel, excludedFields, asyncJobStatusConfig)
+            document,
+            Options(codeDir, iOSCodeDir, clientPackage, false, forceTopLevel, excludedFields, asyncJobStatusConfig, skipDeprecatedBefore)
         )
     }
 

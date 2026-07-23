@@ -1,7 +1,9 @@
 package com.giffardtechnologies.restdocs.codegen
 
+import com.giffardtechnologies.restdocs.DocValidator
 import com.giffardtechnologies.restdocs.KotlinGenerator
 import com.giffardtechnologies.restdocs.domain.FieldReference
+import com.giffardtechnologies.restdocs.mappers.mapToModel
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -37,7 +39,8 @@ class AsyncResponseSmokeTest {
             forceTopLevel = emptySet<FieldReference>(),
             excludedFields = emptySet<FieldReference>(),
         )
-        KotlinGenerator().generate(sourceFile, options)
+        val document = DocValidator().getValidatedDocument(sourceFile).mapToModel()
+        KotlinGenerator().generate(document, options)
     }
 
     // -- Case 1: Pure async method --

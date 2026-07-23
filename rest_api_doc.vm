@@ -360,8 +360,11 @@
             <h2>Methods</h2>
 #foreach( $method in $document.service.methods )
                 <section class="methods">
-                    <h4 id="$method.name">$method.name<span style="font-size: 0.6em; font-weight: normal; margin-bottom: .8em; margin-left: .4em;">(id: $method.id)</span></h4>
+                    <h4 id="$method.name">$method.name#if($helper.isDeprecated($method)) <span style="background-color:#c0392b;color:#fff;padding:2px 6px;border-radius:3px;font-size:0.7em;margin-left:6px;">DEPRECATED</span>#end<span style="font-size: 0.6em; font-weight: normal; margin-bottom: .8em; margin-left: .4em;">(id: $method.id)</span></h4>
                     <p>$helper.getDescription($method)</p>
+#if ($helper.isDeprecated($method))
+                    <p><strong>Deprecated</strong>#if($helper.hasDeprecatedSince($method)) since $method.deprecatedSince#end#if($helper.hasDeprecationNote($method)): $method.deprecationNote#end</p>
+#end
                     <h5>Allowed Protocols</h5>
                         <ul>
         #foreach( $code in $method.protocolsAllowed )

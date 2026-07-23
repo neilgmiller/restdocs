@@ -2,6 +2,7 @@ package com.giffardtechnologies.restdocs.domain
 
 import com.giffardtechnologies.restdocs.vavr.isNotEmpty
 import io.vavr.collection.Array
+import kotlinx.datetime.LocalDate
 
 class Method(
     val method: HTTPMethod,
@@ -17,7 +18,10 @@ class Method(
     var asyncResponse: Response? = null,
     var requestBody: RequestBody? = null,
     val headers: Array<Field> = Array.empty(),
-    val description: String? = null
+    val description: String? = null,
+    val deprecated: Boolean = false,
+    val deprecationNote: String? = null,
+    val deprecatedSince: LocalDate? = null,
 ) {
     enum class HTTPMethod {
         GET,

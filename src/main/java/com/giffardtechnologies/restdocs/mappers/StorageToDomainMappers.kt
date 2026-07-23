@@ -34,6 +34,7 @@ import com.giffardtechnologies.restdocs.storage.type.BasicType
 import com.giffardtechnologies.restdocs.storage.type.EnumConstant
 import com.giffardtechnologies.restdocs.storage.type.KeyType
 import io.vavr.collection.Array
+import kotlinx.datetime.LocalDate
 import com.giffardtechnologies.restdocs.storage.Common as CommonStorageModel
 import com.giffardtechnologies.restdocs.storage.DataObject as DataObjectStorageModel
 import com.giffardtechnologies.restdocs.storage.Document as DocumentStorageModel
@@ -525,7 +526,9 @@ private fun MethodStorageModel.mapToModel(context: Context): Method {
         requestBody = requestBody.mapToModel(),
         headers = headers.mapList { it.mapToModelInHeaderContext(context) },
         description = description,
-
+        deprecated = deprecated,
+        deprecationNote = deprecationNote,
+        deprecatedSince = deprecatedSince?.let { LocalDate.parse(it) },
         )
 }
 
