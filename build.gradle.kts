@@ -80,6 +80,7 @@ distributions {
         distributionBaseName = project.name
         contents {
             from("docs/reference.yaml")
+            from("rest_api_doc.vm")
         }
     }
 }
