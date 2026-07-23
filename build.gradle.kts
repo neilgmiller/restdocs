@@ -81,8 +81,26 @@ distributions {
         contents {
             from("docs/reference.yaml")
             from("rest_api_doc.vm")
+            from("docs/html") {
+                into("reference-docs")
+            }
         }
     }
+}
+
+val generateReferenceDocs by tasks.registering(JavaExec::class) {
+    group = "documentation"
+    description = "Generates the HTML reference docs from docs/reference.yaml"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.giffardtechnologies.restdocs.DocGeneratorCommand")
+    args("-f", "docs/docbuild.properties", "--reference")
+    inputs.file("docs/reference.yaml")
+    inputs.file("docs/rest_api_doc.vm")
+    outputs.file("docs/html/reference.html")
+}
+
+tasks.named("clean") {
+    delete("docs/html/reference.html")
 }
 
 val createKotlinGeneratorStartScript by tasks.registering(Copy::class) {
@@ -116,6 +134,7 @@ tasks.named<Sync>("installDist") {
 tasks.forEach { task ->
     if (task.name.startsWith("dist")) {
         task.dependsOn(createValidatorStartScript)
+        task.dependsOn(generateReferenceDocs)
     }
 }
 
