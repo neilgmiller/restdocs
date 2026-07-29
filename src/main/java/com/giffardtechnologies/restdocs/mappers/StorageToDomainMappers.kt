@@ -29,6 +29,7 @@ import com.giffardtechnologies.restdocs.domain.dsl.field
 import com.giffardtechnologies.restdocs.domain.dsl.namedBitSet
 import com.giffardtechnologies.restdocs.domain.type.TypeSpec
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
+import com.giffardtechnologies.restdocs.storage.AsyncMode
 import com.giffardtechnologies.restdocs.storage.HTTPMethod
 import com.giffardtechnologies.restdocs.storage.type.BasicType
 import com.giffardtechnologies.restdocs.storage.type.EnumConstant
@@ -487,7 +488,8 @@ private fun CommonStorageModel?.mapToModel(context: Context, documentConfigurati
                 val dataObject = it.mapToModel(context)
                 documentConfiguration.addDataObject(dataObject)
                 dataObject
-            }
+            },
+            asyncControlParameterName = asyncControlParameterName,
         )
     } else {
         null
@@ -510,6 +512,10 @@ private fun HTTPMethod.toModel(): Method.HTTPMethod {
     return Method.HTTPMethod.valueOf(this.name)
 }
 
+private fun AsyncMode.toModel(): Method.AsyncMode {
+    return Method.AsyncMode.valueOf(this.name)
+}
+
 private fun MethodStorageModel.mapToModel(context: Context): Method {
     return Method(
         method = this.method?.toModel() ?: Method.HTTPMethod.POST,
@@ -522,14 +528,17 @@ private fun MethodStorageModel.mapToModel(context: Context): Method {
         failureCodes = Array.ofAll(failureCodes),
         successCodes = Array.ofAll(successCodes),
         response = response?.mapToModel(context),
-        asyncResponse = asyncResponse?.mapToModel(context),
+        payloadResponse = payloadResponse?.mapToModel(context),
+        jobResponse = jobResponse?.mapToModel(context),
         requestBody = requestBody.mapToModel(),
         headers = headers.mapList { it.mapToModelInHeaderContext(context) },
         description = description,
         deprecated = deprecated,
         deprecationNote = deprecationNote,
         deprecatedSince = deprecatedSince?.let { LocalDate.parse(it) },
-        )
+        asyncMode = asyncMode?.toModel(),
+        asyncControlParameter = asyncControlParameter,
+    )
 }
 
 private fun RequestBodyStorageModel?.mapToModel(): RequestBody? {

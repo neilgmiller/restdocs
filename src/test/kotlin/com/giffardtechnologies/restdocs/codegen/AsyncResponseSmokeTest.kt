@@ -116,6 +116,108 @@ class AsyncResponseSmokeTest {
         )
     }
 
+    // -- Case 6: async control parameter (service-level default) --
+
+    @Test
+    fun `Case 6 - conditional async method generates nested Async and Sync classes in one file`() {
+        val requestFile = findGeneratedFile("ConditionalAsyncMethodRequest.kt")
+        assertTrue(requestFile.exists(), "ConditionalAsyncMethodRequest.kt should be generated")
+
+        val content = requestFile.readText()
+        assertTrue(
+            content.contains("class ConditionalAsyncMethodRequest private constructor()"),
+            "Container class should have a private no-arg constructor.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("class Async"),
+            "Should contain nested Async class.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("class Sync"),
+            "Should contain nested Sync class.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("public constructor() : this(Params(false,))"),
+            "Sync variant's public constructor should take no arguments and hardcode the control parameter to false.\nContent:\n$content"
+        )
+    }
+
+    @Test
+    fun `Case 6 - conditional async method hides the control parameter from callers`() {
+        val requestFile = findGeneratedFile("ConditionalAsyncMethodRequest.kt")
+        val content = requestFile.readText()
+        // The public forwarding constructor takes no arguments and hardcodes the control
+        // parameter to true — it's forced internally, never supplied by the caller.
+        assertTrue(
+            content.contains("public constructor() : this(Params(true,))"),
+            "Public constructor should take no arguments and force the control parameter to true.\nContent:\n$content"
+        )
+    }
+
+    // -- Case 7: async control parameter (method-level override) --
+
+    @Test
+    fun `Case 7 - method-level override generates nested Async and Sync classes`() {
+        val requestFile = findGeneratedFile("ConditionalAsyncMethodOverrideRequest.kt")
+        assertTrue(requestFile.exists(), "ConditionalAsyncMethodOverrideRequest.kt should be generated")
+
+        val content = requestFile.readText()
+        assertTrue(
+            content.contains("class Async"),
+            "Should contain nested Async class.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("class Sync"),
+            "Should contain nested Sync class.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("public constructor() : this(Params(true,))"),
+            "Public constructor should take no arguments and force the overridden control parameter to true.\nContent:\n$content"
+        )
+    }
+
+    // -- Case 8: async control parameter interpreted as boolean (non-boolean underlying type) --
+
+    @Test
+    fun `Case 8 - control parameter interpreted as boolean generates nested Async and Sync classes`() {
+        val requestFile = findGeneratedFile("ConditionalAsyncMethodInterpretedBooleanRequest.kt")
+        assertTrue(requestFile.exists(), "ConditionalAsyncMethodInterpretedBooleanRequest.kt should be generated")
+
+        val content = requestFile.readText()
+        assertTrue(
+            content.contains("class Async"),
+            "Should contain nested Async class.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("class Sync"),
+            "Should contain nested Sync class.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("public constructor() : this(Params(true,))"),
+            "Public constructor should take no arguments and force the interpreted-as-boolean control parameter to true.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("public constructor() : this(Params(false,))"),
+            "Sync variant's public constructor should force the interpreted-as-boolean control parameter to false.\nContent:\n$content"
+        )
+    }
+
+    @Test
+    fun `executeSync and executeAsync are generated for conditional async methods`() {
+        val clientFile = File(iOSCodeDir, clientPackage.replace('.', '/') + "/SwiftAPIServerClient.kt")
+        val content = clientFile.readText()
+        assertTrue(content.contains("executeAsync"), "Should contain executeAsync.\nContent:\n$content")
+        assertTrue(content.contains("executeSync"), "Should contain executeSync.\nContent:\n$content")
+        assertTrue(
+            content.contains("ConditionalAsyncMethodRequest.Sync"),
+            "executeSync should reference the nested Sync request variant.\nContent:\n$content"
+        )
+        assertTrue(
+            content.contains("ConditionalAsyncMethodRequest.Async"),
+            "executeAsync should reference the nested Async request variant.\nContent:\n$content"
+        )
+    }
+
     // -- iOS client --
 
     @Test

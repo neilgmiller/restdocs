@@ -108,7 +108,8 @@ class KotlinGenerator {
             fieldAndTypeProcessor,
             enumProcessor,
             bitSetProcessor,
-            supportPackage = options.clientPackage + ".support.request"
+            supportPackage = options.clientPackage + ".support.request",
+            asyncControlParameterName = document.service?.common?.asyncControlParameterName,
         )
 
         document.service?.methods?.forEach {
@@ -175,62 +176,78 @@ class KotlinGenerator {
                     }
 
                     document.service?.methods?.forEach { method ->
-                        val (requestClassName, responseClassName, asyncResponseClassName) = methodProcessor.getClassNames(method)
+                        val classNames = methodProcessor.getClassNames(method)
+                        val (requestClassName, responseClassName, asyncResponseClassName) = classNames
                         val methodName = StringUtils.capitalize(method.name)
-
-                        classBuilder.addFunction(
-                            FunSpec.builder("execute")
-                                .addParameter("request", requestClassName)
-                                .addModifiers(KModifier.SUSPEND)
-                                .returns(responseClassName)
-                                .addAnnotation(
-                                    AnnotationSpec.builder(ClassName("kotlin", "Throws"))
-                                        .addMember("%T::class", ClassName(options.clientPackage, "APIException"))
-                                        .addMember("%T::class", ClassName("kotlinx.io", "IOException"))
-                                        .addMember("%T::class", ClassName("kotlin.coroutines.cancellation", "CancellationException"))
-                                        .build()
-                                )
-                                .addCode("return apiServerClient.execute(request)")
+                        val throwsAnnotationBuilder = {
+                            AnnotationSpec.builder(ClassName("kotlin", "Throws"))
+                                .addMember("%T::class", ClassName(options.clientPackage, "APIException"))
+                                .addMember("%T::class", ClassName("kotlinx.io", "IOException"))
+                                .addMember("%T::class", ClassName("kotlin.coroutines.cancellation", "CancellationException"))
                                 .build()
-                        )
+                        }
 
-                        classBuilder.addFunction(
-                            FunSpec.builder("executeBlocking")
-                                .addParameter("request", requestClassName)
-                                .returns(responseClassName)
-                                .addAnnotation(
-                                    AnnotationSpec.builder(ClassName("kotlin", "Throws"))
-                                        .addMember("%T::class", ClassName(options.clientPackage, "APIException"))
-                                        .addMember("%T::class", ClassName("kotlinx.io", "IOException"))
-                                        .addMember("%T::class", ClassName("kotlin.coroutines.cancellation", "CancellationException"))
-                                        .build()
-                                )
-                                .addCode("""
-                                    | return %T {
-                                    |   apiServerClient.execute(request)
-                                    | }
-                                """.trimMargin("|"), ClassName("kotlinx.coroutines", "runBlocking")
-                                )
-                                .build()
-                        )
+                        // executeName/requestType/responseType vary depending on whether this method has a
+                        // resolved async control parameter: normally a single `execute*` trio is generated;
+                        // when the control parameter is present, callers instead get `executeAsync*` (returns
+                        // the job container, via the nested `Async` class which forces the parameter to
+                        // `true` internally) and `executeSync*` (returns the payload directly, via the
+                        // nested `Sync` class which forces it to `false`) — the parameter itself is never
+                        // exposed to callers.
+                        data class ExecuteVariant(val namePrefix: String, val requestType: ClassName, val responseType: ClassName)
+                        val syncRequestClassName = classNames.syncRequestClassName
+                        val executeVariants = if (syncRequestClassName != null && asyncResponseClassName != null) {
+                            listOf(
+                                ExecuteVariant("executeAsync", classNames.asyncRequestClassName, responseClassName),
+                                ExecuteVariant("executeSync", syncRequestClassName, asyncResponseClassName),
+                            )
+                        } else {
+                            listOf(ExecuteVariant("execute", classNames.asyncRequestClassName, responseClassName))
+                        }
 
-                        classBuilder.addFunction(
-                            FunSpec.builder("executeForResult")
-                                .addParameter("request", requestClassName)
-                                .returns(Result::class.asClassName().parameterizedBy(responseClassName))
-                                .addCode("""
-                                    | return try {
-                                    |     val response = %T {
-                                    |         apiServerClient.execute(request)
-                                    |     }
-                                    |     Result.success(response)
-                                    | } catch (e: Exception) {
-                                    |     Result.failure(e)
-                                    | }
-                                """.trimMargin("|"), ClassName("kotlinx.coroutines", "runBlocking")
-                                )
-                                .build()
-                        )
+                        executeVariants.forEach { variant ->
+                            classBuilder.addFunction(
+                                FunSpec.builder(variant.namePrefix)
+                                    .addParameter("request", variant.requestType)
+                                    .addModifiers(KModifier.SUSPEND)
+                                    .returns(variant.responseType)
+                                    .addAnnotation(throwsAnnotationBuilder())
+                                    .addCode("return apiServerClient.execute(request)")
+                                    .build()
+                            )
+
+                            classBuilder.addFunction(
+                                FunSpec.builder("${variant.namePrefix}Blocking")
+                                    .addParameter("request", variant.requestType)
+                                    .returns(variant.responseType)
+                                    .addAnnotation(throwsAnnotationBuilder())
+                                    .addCode("""
+                                        | return %T {
+                                        |   apiServerClient.execute(request)
+                                        | }
+                                    """.trimMargin("|"), ClassName("kotlinx.coroutines", "runBlocking")
+                                    )
+                                    .build()
+                            )
+
+                            classBuilder.addFunction(
+                                FunSpec.builder("${variant.namePrefix}ForResult")
+                                    .addParameter("request", variant.requestType)
+                                    .returns(Result::class.asClassName().parameterizedBy(variant.responseType))
+                                    .addCode("""
+                                        | return try {
+                                        |     val response = %T {
+                                        |         apiServerClient.execute(request)
+                                        |     }
+                                        |     Result.success(response)
+                                        | } catch (e: Exception) {
+                                        |     Result.failure(e)
+                                        | }
+                                    """.trimMargin("|"), ClassName("kotlinx.coroutines", "runBlocking")
+                                    )
+                                    .build()
+                            )
+                        }
 
                         if (asyncResponseClassName != null && asyncJobStatusClassNames != null) {
                             val statusRequestClassName = asyncJobStatusClassNames.requestClassName

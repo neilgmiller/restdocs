@@ -12,7 +12,8 @@ class Service(
     data class Common(
         val headers: Array<Field> = Array.empty(),
         val parameters: Array<Field> = Array.empty(),
-        var responseDataObjects: Array<DataObject> = Array.empty()
+        var responseDataObjects: Array<DataObject> = Array.empty(),
+        val asyncControlParameterName: String? = null,
     )
 
 }

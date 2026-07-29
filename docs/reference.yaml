@@ -80,6 +80,17 @@ enumerations:
           - value: OPTIONS
           - value: TRACE
           - value: CONNECT
+    - name:          AsyncMode
+      description:   How a method's async response shape behaves. Required on a method whenever
+                      'jobResponse' or 'payloadResponse' is set; must not be set otherwise.
+      key:           string
+      values:
+          - value: always
+            description: the method unconditionally returns its async shape (both 'jobResponse'
+                         and 'payloadResponse' are always relevant) - no runtime switch.
+          - value: conditional
+            description: the method's sync/async behavior is chosen at runtime by a boolean
+                         parameter - see 'async control parameter'.
 data objects:
     - name: Document
       description: The top level node of a documentation YAML file
@@ -371,6 +382,15 @@ data objects:
                   type: array
                   items:
                       typeref: NamedEnumeration
+                - name: async control parameter
+                  description: The default name of the boolean parameter that switches a method between
+                               returning its payload synchronously and returning an async job to poll
+                               instead. Only meaningful for a method whose own 'async mode' is
+                               'conditional'; a method may override this via its own
+                               'async control parameter'. The named parameter must be of type
+                               'boolean', or another type with 'interpretedAs' set to 'boolean'.
+                  required: no
+                  type: string
           - name: methods
             description: A description of calls that can be made to the service
             required: no
@@ -421,7 +441,7 @@ data objects:
             items:
                 typeref: Field
           - name: request body
-            description: Speicifies what are valid request bodies.
+            description: Specifies what are valid request bodies.
             type: object
             fields:
                 - name: description
@@ -438,15 +458,29 @@ data objects:
                       - application/JSON
                       - multipart/mixed
           - name: response
-            description: A description of the data returned in the response
+            description: A description of the data returned in the response for a plain synchronous
+                         method. Not used for async methods - see 'jobResponse'/'payloadResponse'.
             required: no
             typeref: Response
-          - name: asyncResponse
-            description: The eventual async payload returned when the immediate response carries a job ID.
-                         Present only when the response has a 'job' field indicating an async result.
-                         Uses the same structure as 'response'.
+          - name: jobResponse
+            description: For an async method (pure, mixed, or conditional), the job envelope returned
+                         immediately by async-mode calls, to be polled until 'payloadResponse' is
+                         available.
             required: no
             typeref: Response
+          - name: payloadResponse
+            description: For an async method (pure, mixed, or conditional), the real data payload -
+                         returned directly by sync-mode calls, or obtained by polling after
+                         'jobResponse' is returned by async-mode calls.
+            required: no
+            typeref: Response
+          - name: async mode
+            description: Required whenever 'jobResponse' or 'payloadResponse' is set; must not be
+                         set otherwise. Whether this method's async shape is unconditional
+                         ('always') or chosen at runtime by a boolean parameter ('conditional') -
+                         see 'async control parameter'.
+            required: no
+            typeref: AsyncMode
           - name: successful codes
             description: HTTP status codes that indicate success for this method.
             required: no
@@ -479,6 +513,17 @@ data objects:
             type: string
             sampleValues:
                 - 2026-08-01
+          - name: async control parameter
+            description: "Only valid on a method whose 'async mode' is 'conditional' - setting it
+                         otherwise is an error. Overrides the service-level common.async control
+                         parameter default for this method - the name of the boolean parameter that
+                         switches this method between returning its payload synchronously and
+                         returning an async job to poll instead. The resolved parameter (from this
+                         or the service default) must be present in this method's parameters, of
+                         type boolean (or another type with interpretedAs: boolean); both
+                         jobResponse and payloadResponse are required."
+            required: no
+            type: string
     - name: Response
       description: Describes the JSON body returned by the server for a successful API method invocation. Extends TypeSpec.
       fields:
@@ -488,14 +533,14 @@ data objects:
             type: string
           - name: longName
             description: An optional human-readable name used in documentation, e.g. for a scalar
-                         'asyncResponse' rendered as a single field row named 'jr'.
+                         'jobResponse'/'payloadResponse' rendered as a single field row named 'jr'.
             required: no
             type: string
           - name: noPayload
             description: No value is ever written for this response. Set this instead of 'type'/'typeref'
                          to positively document a job (or a synchronous method) that produces no payload,
-                         as distinct from a response/asyncResponse block that simply hasn't been written
-                         yet.
+                         as distinct from a response/jobResponse/payloadResponse block that simply hasn't
+                         been written yet.
             required: no
             type: boolean
             default: false

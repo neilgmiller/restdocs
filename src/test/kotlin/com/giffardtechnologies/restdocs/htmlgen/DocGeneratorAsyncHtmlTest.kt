@@ -26,9 +26,11 @@ class DocGeneratorAsyncHtmlTest {
     }
 
     @Test
-    fun `async response section heading appears for async method`() {
-        assertTrue(html.contains("Async Response (via getAsyncJobStatus)"),
-            "HTML should contain the async section heading.\nHTML:\n$html")
+    fun `async response section headings appear for async method`() {
+        assertTrue(html.contains("Response (async — job to poll)"),
+            "HTML should contain the async job section heading.\nHTML:\n$html")
+        assertTrue(html.contains("Response (sync — direct payload)"),
+            "HTML should contain the sync payload section heading.\nHTML:\n$html")
     }
 
     @Test
@@ -52,7 +54,7 @@ class DocGeneratorAsyncHtmlTest {
     @Test
     fun `typeRef async response renders a link to the referenced type`() {
         val methodSection = html.substringAfter("""id="typeRefAsyncMethod"""")
-        val asyncSection = methodSection.substringAfter("Async Response (via getAsyncJobStatus)")
+        val asyncSection = methodSection.substringAfter("Response (async — job to poll)")
         assertTrue(asyncSection.contains("""href="#AsyncJobResponse">AsyncJobResponse</a>"""),
             "typeRefAsyncMethod async section should contain a link to AsyncJobResponse.\nSection:\n$asyncSection")
     }
@@ -60,7 +62,7 @@ class DocGeneratorAsyncHtmlTest {
     @Test
     fun `scalar async response renders a field row named jr with the configured long name and type`() {
         val methodSection = html.substringAfter("""id="scalarAsyncMethod"""")
-        val asyncSection = methodSection.substringAfter("Async Response (via getAsyncJobStatus)")
+        val asyncSection = methodSection.substringAfter("Response (async — job to poll)")
             .substringBefore("<h4 ")
         assertTrue(asyncSection.contains("jr"),
             "scalarAsyncMethod async section should render a field named 'jr'.\nSection:\n$asyncSection")
@@ -75,7 +77,48 @@ class DocGeneratorAsyncHtmlTest {
         val syncSection = html
             .substringAfter("""id="syncMethod"""")
             .substringBefore("<h4 ")
-        assertFalse(syncSection.contains("Async Response (via getAsyncJobStatus)"),
+        assertFalse(syncSection.contains("Response (async — job to poll)"),
             "syncMethod section should not contain an async response heading.\nSection:\n$syncSection")
+    }
+
+    @Test
+    fun `sync method shows neither SYNC-ASYNC nor ASYNC badge`() {
+        val syncSection = html
+            .substringAfter("""id="syncMethod"""")
+            .substringBefore("<h4 ")
+        assertFalse(syncSection.contains("SYNC/ASYNC"),
+            "syncMethod section should not contain a SYNC/ASYNC badge.\nSection:\n$syncSection")
+        assertFalse(syncSection.contains(">ASYNC<"),
+            "syncMethod section should not contain an ASYNC badge.\nSection:\n$syncSection")
+    }
+
+    @Test
+    fun `always-mode async method shows a plain ASYNC badge and payload-after-completion wording`() {
+        val section = html
+            .substringAfter("""id="pureAsyncMethod"""")
+            .substringBefore("<h4 ")
+        assertTrue(section.contains(">ASYNC<"),
+            "pureAsyncMethod section should contain a plain ASYNC badge.\nSection:\n$section")
+        assertFalse(section.contains("SYNC/ASYNC"),
+            "pureAsyncMethod section should not contain a SYNC/ASYNC badge.\nSection:\n$section")
+        assertFalse(section.contains("parameter controls whether"),
+            "pureAsyncMethod section should not describe a control parameter.\nSection:\n$section")
+        assertTrue(section.contains("Response (payload — after job completes)"),
+            "pureAsyncMethod section should use the always-mode payload heading.\nSection:\n$section")
+        assertFalse(section.contains("Response (sync — direct payload)"),
+            "pureAsyncMethod section should not use the conditional-mode sync heading.\nSection:\n$section")
+    }
+
+    @Test
+    fun `conditional-mode async method shows the SYNC-ASYNC badge and control parameter wording`() {
+        val section = html
+            .substringAfter("""id="conditionalAsyncMethod"""")
+            .substringBefore("<h4 ")
+        assertTrue(section.contains("SYNC/ASYNC"),
+            "conditionalAsyncMethod section should contain a SYNC/ASYNC badge.\nSection:\n$section")
+        assertTrue(section.contains("the 'async' parameter controls whether"),
+            "conditionalAsyncMethod section should describe the control parameter.\nSection:\n$section")
+        assertTrue(section.contains("Response (sync — direct payload)"),
+            "conditionalAsyncMethod section should use the conditional-mode sync heading.\nSection:\n$section")
     }
 }

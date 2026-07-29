@@ -5,6 +5,8 @@ import com.giffardtechnologies.restdocs.DocValidator
 import com.giffardtechnologies.restdocs.documentIfAvailable
 import com.giffardtechnologies.restdocs.jackson.validation.Validatable
 import com.giffardtechnologies.restdocs.jackson.validation.ValidationException
+import com.giffardtechnologies.restdocs.storage.type.BasicType
+import com.giffardtechnologies.restdocs.storage.type.DataType
 import com.giffardtechnologies.restdocs.storage.type.Field
 import com.giffardtechnologies.restdocs.storage.type.FieldListElement
 import com.giffardtechnologies.restdocs.storage.type.validateHasNoDuplicates
@@ -15,6 +17,17 @@ import kotlinx.datetime.toKotlinLocalDate
 enum class HTTPMethod {
     GET, PUT, POST, DELETE, HEAD, OPTIONS, TRACE, CONNECT
 }
+
+/**
+ * How a method's async response shape behaves.
+ *
+ * [ALWAYS]: the method unconditionally returns its async shape (both [Method.jobResponse] and
+ * [Method.payloadResponse] are always relevant) — no runtime switch.
+ * [CONDITIONAL]: the method's sync/async behavior is chosen at runtime by a boolean parameter,
+ * resolved via [Method.asyncControlParameter] or the service-level
+ * [Common.asyncControlParameterName] default.
+ */
+enum class AsyncMode { ALWAYS, CONDITIONAL }
 
 /**
  * Represents a single API endpoint (method) in the REST documentation.
@@ -31,9 +44,21 @@ enum class HTTPMethod {
  * @property headers HTTP headers accepted by this method.
  * @property parameters Query or path parameters accepted by this method.
  * @property requestBody Description of the request body, if any.
- * @property response Description of the successful response body.
+ * @property response Description of the successful response body for a plain synchronous method.
+ * @property payloadResponse For an async method (pure, mixed, or conditional), the real data
+ * payload — returned directly by sync-mode calls, or obtained by polling after [jobResponse] is
+ * returned by async-mode calls.
+ * @property jobResponse For an async method (pure, mixed, or conditional), the job envelope
+ * returned immediately by async-mode calls, to be polled until [payloadResponse] is available.
  * @property successCodes HTTP status codes that indicate success.
  * @property failureCodes HTTP status codes that indicate failure.
+ * @property asyncMode Required whenever [jobResponse] or [payloadResponse] is set (and forbidden
+ * otherwise): whether this method's async shape is unconditional ([AsyncMode.ALWAYS]) or chosen
+ * at runtime by a boolean parameter ([AsyncMode.CONDITIONAL]).
+ * @property asyncControlParameter Overrides [Common.asyncControlParameterName] for this method:
+ * the name of the boolean parameter that switches this method between returning its payload
+ * synchronously and returning an async job to poll instead. Only valid when [asyncMode] is
+ * [AsyncMode.CONDITIONAL].
  */
 data class Method(
     val method: HTTPMethod? = null,
@@ -50,7 +75,8 @@ data class Method(
     @field:JsonProperty("request body")
     val requestBody: RequestBody? = null,
     val response: Response? = null,
-    val asyncResponse: Response? = null,
+    val payloadResponse: Response? = null,
+    val jobResponse: Response? = null,
     @field:JsonProperty("successful codes")
     val successCodes: ArrayList<String> = ArrayList(),
     @field:JsonProperty("failure codes")
@@ -58,7 +84,27 @@ data class Method(
     val deprecated: Boolean = false,
     val deprecationNote: String? = null,
     val deprecatedSince: String? = null,
+    @field:JsonProperty("async mode")
+    val asyncMode: AsyncMode? = null,
+    @field:JsonProperty("async control parameter")
+    val asyncControlParameter: String? = null,
 ) : Validatable {
+    /**
+     * Returns the effective name of the boolean parameter that controls this method's sync/async
+     * response, resolving [asyncControlParameter] against the service-level
+     * [Common.asyncControlParameterName] default, or `null` if neither is set.
+     */
+    fun resolveAsyncControlParameterName(commonDefault: String?): String? =
+        asyncControlParameter ?: commonDefault
+
+    /**
+     * Returns the [Field] among [parameters] matching the resolved async-control parameter name,
+     * or `null` if no such name is resolved or no parameter matches it.
+     */
+    fun resolveAsyncControlParameterField(commonDefault: String?): Field? {
+        val name = resolveAsyncControlParameterName(commonDefault) ?: return null
+        return parameters?.filterIsInstance<Field>()?.firstOrNull { it.name == name }
+    }
     /**
      * Validates this method, ensuring it has at least one of [id] or [path], and that parameter
      * names are unique. During accumulation phase, also checks that [name] is globally unique
@@ -112,15 +158,74 @@ data class Method(
         validate(validationContext)
         if (validationContext !is DocValidator.AccumulatingContext) {
             val ctx = validationContext as DocValidator.ValidationContext
-            val responseIsAsync = response?.let { ctx.responseIsAsync(it) } ?: false
-            // VALID-04: asyncResponse present but response has no job field
-            if (asyncResponse != null && !responseIsAsync) {
-                throw ValidationException("Method '$name': asyncResponse is present but response has no 'job' field")
+            val commonDefault = ctx.documentIfAvailable?.service?.common?.asyncControlParameterName
+            val isAsyncMethod = jobResponse != null || payloadResponse != null
+
+            if (response != null && isAsyncMethod) {
+                throw ValidationException(
+                    "Method '$name': 'response' cannot be set together with 'jobResponse' or 'payloadResponse'"
+                )
             }
-            // VALID-03: response has job field but no asyncResponse
-            if (responseIsAsync && asyncResponse == null) {
-                warningEmitter("WARNING: Method '$name': response has a job field but no asyncResponse block")
+
+            if (isAsyncMethod && asyncMode == null) {
+                throw ValidationException(
+                    "Method '$name': 'async mode' is required when 'jobResponse' or 'payloadResponse' is set"
+                )
             }
+            if (!isAsyncMethod && asyncMode != null) {
+                throw ValidationException(
+                    "Method '$name': 'async mode' cannot be set on a method with neither 'jobResponse' nor 'payloadResponse'"
+                )
+            }
+
+            if (asyncControlParameter != null && asyncMode != AsyncMode.CONDITIONAL) {
+                throw ValidationException(
+                    "Method '$name': 'async control parameter' can only be set when 'async mode' is 'conditional'"
+                )
+            }
+
+            when (asyncMode) {
+                AsyncMode.CONDITIONAL -> {
+                    val asyncControlName = resolveAsyncControlParameterName(commonDefault)
+                        ?: throw ValidationException(
+                            "Method '$name': 'async mode' is 'conditional' but no async control parameter " +
+                                "name is resolved (set 'async control parameter' on this method or the " +
+                                "service-level default)"
+                        )
+                    val asyncControlField = resolveAsyncControlParameterField(commonDefault)
+                        ?: throw ValidationException(
+                            "Method '$name': async control parameter '$asyncControlName' is not present in 'parameters'"
+                        )
+                    val isBoolean = asyncControlField.type == DataType.BOOLEAN ||
+                        asyncControlField.interpretedAs == BasicType.BOOLEAN
+                    if (!isBoolean) {
+                        throw ValidationException(
+                            "Method '$name': async control parameter '${asyncControlField.name}' must be a boolean parameter (or interpreted as one)"
+                        )
+                    }
+                    // conditional async: both fields are a hard requirement — the method cannot
+                    // function correctly at runtime otherwise.
+                    if (jobResponse == null || payloadResponse == null) {
+                        throw ValidationException(
+                            "Method '$name': has an async control parameter but is missing 'jobResponse' and/or 'payloadResponse'"
+                        )
+                    }
+                }
+                AsyncMode.ALWAYS -> {
+                    if (jobResponse == null) {
+                        throw ValidationException(
+                            "Method '$name': 'async mode' is 'always' but has 'payloadResponse' with no 'jobResponse'"
+                        )
+                    }
+                    if (payloadResponse == null) {
+                        throw ValidationException(
+                            "Method '$name': 'async mode' is 'always' but has 'jobResponse' with no 'payloadResponse'"
+                        )
+                    }
+                }
+                null -> Unit
+            }
+
             // deprecated but no deprecatedSince recorded
             if (deprecated && deprecatedSince == null) {
                 warningEmitter("WARNING: Method '$name': deprecated but has no 'deprecatedSince' date")

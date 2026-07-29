@@ -38,11 +38,11 @@ class DataObjectUsageClassifierTest {
     }
 
     @Test
-    fun `TypeRefSpec in asyncResponse classifies type as ResponseOnly`() {
+    fun `TypeRefSpec in jobResponse classifies type as ResponseOnly`() {
         val doc = document("test") {
             addDataObject(dataObject("Foo") {})
             service = Service(
-                methods = Array.of(method(asyncResponse = Response(TypeSpec.TypeRefSpec("Foo", context))))
+                methods = Array.of(method(jobResponse = Response(TypeSpec.TypeRefSpec("Foo", context))))
             )
         }
         assertEquals(DataObjectClassification.ResponseOnly, DataObjectUsageClassifier(doc).classify("Foo"))
@@ -206,7 +206,7 @@ class DataObjectUsageClassifierTest {
     private fun method(
         params: List<Field> = emptyList(),
         response: Response? = null,
-        asyncResponse: Response? = null,
+        jobResponse: Response? = null,
     ) = Method(
         method = Method.HTTPMethod.POST,
         id = 1,
@@ -214,6 +214,6 @@ class DataObjectUsageClassifierTest {
         isAuthenticationRequired = false,
         parameterElementList = FieldElementList(Array.ofAll(params)),
         response = response,
-        asyncResponse = asyncResponse,
+        jobResponse = jobResponse,
     )
 }

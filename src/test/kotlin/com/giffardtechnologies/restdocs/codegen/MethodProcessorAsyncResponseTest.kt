@@ -28,6 +28,10 @@ class MethodProcessorAsyncResponseTest {
     private val testPackage = "com.test.requests"
     private val dtoPackage = "com.test.dto"
 
+    // A minimal jobResponse used by tests focused on payloadResponse behavior — its presence is
+    // what makes a method "async" (see MethodProcessor.getClassNames' `isAsyncMethod` check).
+    private val minimalJobResponse = Response(typeSpec = TypeSpec.BasicSpec(DataType.IntType))
+
     @BeforeEach
     fun setUp() {
         val fieldAndTypeProcessor = FieldAndTypeProcessor(dtoPackage, dtoPackage)
@@ -46,8 +50,8 @@ class MethodProcessorAsyncResponseTest {
     // -- getClassNames tests --
 
     @Test
-    fun `getClassNames returns null asyncResponseClassName when method has no asyncResponse`() {
-        val method = createMethod(asyncResponse = null)
+    fun `getClassNames returns null asyncResponseClassName when method has no jobResponse or payloadResponse`() {
+        val method = createMethod()
         val classNames = methodProcessor.getClassNames(method)
 
         assertEquals(ClassName(testPackage, "TestMethodRequest"), classNames.requestClassName)
@@ -55,13 +59,13 @@ class MethodProcessorAsyncResponseTest {
     }
 
     @Test
-    fun `getClassNames returns asyncResponseClassName for ObjectSpec asyncResponse`() {
-        val asyncResponse = Response(
+    fun `getClassNames returns asyncResponseClassName for ObjectSpec payloadResponse`() {
+        val payloadResponse = Response(
             typeSpec = objectSpec {
                 add(field("status", "status", TypeSpec.BasicSpec(DataType.StringType)))
             }
         )
-        val method = createMethod(asyncResponse = asyncResponse)
+        val method = createMethod(jobResponse = minimalJobResponse, payloadResponse = payloadResponse)
         val classNames = methodProcessor.getClassNames(method)
 
         assertEquals(
@@ -71,24 +75,24 @@ class MethodProcessorAsyncResponseTest {
     }
 
     @Test
-    fun `getClassNames returns scalar ClassName for BasicSpec asyncResponse`() {
-        val asyncResponse = Response(
+    fun `getClassNames returns scalar ClassName for BasicSpec payloadResponse`() {
+        val payloadResponse = Response(
             typeSpec = TypeSpec.BasicSpec(DataType.LongType)
         )
-        val method = createMethod(asyncResponse = asyncResponse)
+        val method = createMethod(jobResponse = minimalJobResponse, payloadResponse = payloadResponse)
         val classNames = methodProcessor.getClassNames(method)
 
         assertEquals(ClassName("kotlin", "Long"), classNames.asyncResponseClassName)
     }
 
     @Test
-    fun `getClassNames returns null asyncResponseClassName for TypeRefSpec asyncResponse`() {
-        val asyncResponse = Response(
+    fun `getClassNames returns null asyncResponseClassName for TypeRefSpec payloadResponse`() {
+        val payloadResponse = Response(
             typeSpec = TypeSpec.TypeRefSpec("SomeType", object : com.giffardtechnologies.restdocs.domain.Context {
                 override fun getTypeByName(name: String) = null
             })
         )
-        val method = createMethod(asyncResponse = asyncResponse)
+        val method = createMethod(jobResponse = minimalJobResponse, payloadResponse = payloadResponse)
         val classNames = methodProcessor.getClassNames(method)
 
         assertNull(classNames.asyncResponseClassName)
@@ -97,14 +101,14 @@ class MethodProcessorAsyncResponseTest {
     // -- processMethod tests --
 
     @Test
-    fun `processMethod generates AsyncResponse class when asyncResponse has ObjectSpec`() {
-        val asyncResponse = Response(
+    fun `processMethod generates AsyncResponse class when payloadResponse has ObjectSpec`() {
+        val payloadResponse = Response(
             typeSpec = objectSpec {
                 add(field("resultUrl", "resultUrl", TypeSpec.BasicSpec(DataType.StringType)))
                 add(field("progress", "progress", TypeSpec.BasicSpec(DataType.IntType)))
             }
         )
-        val method = createMethod(asyncResponse = asyncResponse)
+        val method = createMethod(jobResponse = minimalJobResponse, payloadResponse = payloadResponse)
         methodProcessor.processMethod(method)
 
         // The output file should exist in the requests package directory
@@ -132,8 +136,8 @@ class MethodProcessorAsyncResponseTest {
     }
 
     @Test
-    fun `processMethod does not generate AsyncResponse class when no asyncResponse`() {
-        val method = createMethod(asyncResponse = null)
+    fun `processMethod does not generate AsyncResponse class when no jobResponse or payloadResponse`() {
+        val method = createMethod()
         methodProcessor.processMethod(method)
 
         val outputFile = File(
@@ -150,13 +154,13 @@ class MethodProcessorAsyncResponseTest {
     }
 
     @Test
-    fun `processMethod does not generate AsyncResponse class for TypeRefSpec asyncResponse`() {
-        val asyncResponse = Response(
+    fun `processMethod does not generate AsyncResponse class for TypeRefSpec payloadResponse`() {
+        val payloadResponse = Response(
             typeSpec = TypeSpec.TypeRefSpec("ExistingType", object : com.giffardtechnologies.restdocs.domain.Context {
                 override fun getTypeByName(name: String) = null
             })
         )
-        val method = createMethod(asyncResponse = asyncResponse)
+        val method = createMethod(jobResponse = minimalJobResponse, payloadResponse = payloadResponse)
         methodProcessor.processMethod(method)
 
         val outputFile = File(
@@ -173,19 +177,19 @@ class MethodProcessorAsyncResponseTest {
     }
 
     @Test
-    fun `processMethod generates both Response and AsyncResponse when both have ObjectSpec`() {
-        val response = Response(
+    fun `processMethod generates both Response and AsyncResponse when jobResponse and payloadResponse both have ObjectSpec`() {
+        val jobResponse = Response(
             typeSpec = objectSpec {
                 add(field("job", "job", TypeSpec.BasicSpec(DataType.IntType)))
                 add(field("status", "status", TypeSpec.BasicSpec(DataType.StringType)))
             }
         )
-        val asyncResponse = Response(
+        val payloadResponse = Response(
             typeSpec = objectSpec {
                 add(field("data", "data", TypeSpec.BasicSpec(DataType.StringType)))
             }
         )
-        val method = createMethod(response = response, asyncResponse = asyncResponse)
+        val method = createMethod(jobResponse = jobResponse, payloadResponse = payloadResponse)
         methodProcessor.processMethod(method)
 
         val outputFile = File(
@@ -205,11 +209,11 @@ class MethodProcessorAsyncResponseTest {
     }
 
     @Test
-    fun `processMethod resolves without error and generates no nested class for BasicSpec asyncResponse`() {
-        val asyncResponse = Response(
+    fun `processMethod resolves without error and generates no nested class for BasicSpec payloadResponse`() {
+        val payloadResponse = Response(
             typeSpec = TypeSpec.BasicSpec(DataType.LongType)
         )
-        val method = createMethod(asyncResponse = asyncResponse)
+        val method = createMethod(jobResponse = minimalJobResponse, payloadResponse = payloadResponse)
         methodProcessor.processMethod(method)
 
         val outputFile = File(
@@ -233,7 +237,8 @@ class MethodProcessorAsyncResponseTest {
 
     private fun createMethod(
         response: Response? = null,
-        asyncResponse: Response? = null,
+        jobResponse: Response? = null,
+        payloadResponse: Response? = null,
     ): Method {
         return Method(
             method = Method.HTTPMethod.POST,
@@ -242,7 +247,8 @@ class MethodProcessorAsyncResponseTest {
             isAuthenticationRequired = true,
             parameterElementList = FieldElementList(Array.empty()),
             response = response,
-            asyncResponse = asyncResponse,
+            jobResponse = jobResponse,
+            payloadResponse = payloadResponse,
         )
     }
 }

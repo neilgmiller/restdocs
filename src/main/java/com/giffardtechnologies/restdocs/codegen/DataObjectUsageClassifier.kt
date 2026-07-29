@@ -49,7 +49,8 @@ class DataObjectUsageClassifier(document: Document) {
                     walkParamContext(field.type)
                 }
                 method.response?.typeSpec?.let { walkResponseContext(it) }
-                method.asyncResponse?.typeSpec?.let { walkResponseContext(it) }
+                method.jobResponse?.typeSpec?.let { walkResponseContext(it) }
+                method.payloadResponse?.typeSpec?.let { walkResponseContext(it) }
             }
         }
 

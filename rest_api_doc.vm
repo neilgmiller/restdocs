@@ -360,10 +360,13 @@
             <h2>Methods</h2>
 #foreach( $method in $document.service.methods )
                 <section class="methods">
-                    <h4 id="$method.name">$method.name#if($helper.isDeprecated($method)) <span style="background-color:#c0392b;color:#fff;padding:2px 6px;border-radius:3px;font-size:0.7em;margin-left:6px;">DEPRECATED</span>#end<span style="font-size: 0.6em; font-weight: normal; margin-bottom: .8em; margin-left: .4em;">(id: $method.id)</span></h4>
+                    <h4 id="$method.name">$method.name#if($helper.isDeprecated($method)) <span style="background-color:#c0392b;color:#fff;padding:2px 6px;border-radius:3px;font-size:0.7em;margin-left:6px;">DEPRECATED</span>#end#if($helper.hasAsyncControlParameter($method)) <span style="background-color:#2980b9;color:#fff;padding:2px 6px;border-radius:3px;font-size:0.7em;margin-left:6px;">SYNC/ASYNC</span>#elseif($helper.isAlwaysAsync($method)) <span style="background-color:#16a085;color:#fff;padding:2px 6px;border-radius:3px;font-size:0.7em;margin-left:6px;">ASYNC</span>#end<span style="font-size: 0.6em; font-weight: normal; margin-bottom: .8em; margin-left: .4em;">(id: $method.id)</span></h4>
                     <p>$helper.getDescription($method)</p>
 #if ($helper.isDeprecated($method))
                     <p><strong>Deprecated</strong>#if($helper.hasDeprecatedSince($method)) since $method.deprecatedSince#end#if($helper.hasDeprecationNote($method)): $method.deprecationNote#end</p>
+#end
+#if ($helper.hasAsyncControlParameter($method))
+                    <p><strong>Sync/Async:</strong> the '$helper.asyncControlParameterName($method)' parameter controls whether this call returns its payload synchronously or an async job to poll instead.</p>
 #end
                     <h5>Allowed Protocols</h5>
                         <ul>
@@ -385,6 +388,56 @@
                     <p style="font-weight: bold">$method.requestBody.encoding</p>
                     <p>$link.type($method.requestBody.description)</p>
         #end
+        #if ($helper.isAsyncMethod($method))
+                    <h5>Response (async — job to poll)</h5>
+        #if ($helper.hasDescription($method.jobResponse))
+                    <p>$method.jobResponse.description</p>
+        #end
+        #if ($helper.hasNoPayload($method.jobResponse))
+                    <p>No payload.</p>
+        #elseif ($helper.isTypeRef($method.jobResponse))
+                    <p>$link.typeSimple($method.jobResponse.typeRef)</p>
+        #elseif ($helper.hasFields($method.jobResponse))
+                    <table>
+                        #parameterheaders
+            #foreach( $field in $helper.getFields($method.jobResponse) )
+                    #fieldrow( $field )
+            #end
+                    </table>
+        #else
+                    <table>
+                        #fieldheaders
+                        #fieldrow( $helper.responseAsField($method.jobResponse) )
+                    </table>
+        #end
+        #if ($helper.isAlwaysAsync($method))
+                    <h5>Response (payload — after job completes)</h5>
+                    <p>Content appears in the <code>jr</code> field once the job completes.</p>
+        #else
+                    <h5>Response (sync — direct payload)</h5>
+                    <p>Content appears in the <code>jr</code> field when <code>jobStatus</code> is <code>0</code>.</p>
+        #end
+        #if ($helper.hasDescription($method.payloadResponse))
+                    <p>$method.payloadResponse.description</p>
+        #end
+            #if ($helper.hasNoPayload($method.payloadResponse))
+                    <p>No payload.</p>
+            #elseif ($helper.hasFields($method.payloadResponse))
+                    <table>
+                        #fieldheaders
+                #foreach( $field in $helper.getFields($method.payloadResponse) )
+                        #fieldrow( $field )
+                #end
+                    </table>
+            #elseif ($helper.isTypeRef($method.payloadResponse))
+                    <p>$link.typeSimple($method.payloadResponse.typeRef)</p>
+            #else
+                    <table>
+                        #fieldheaders
+                        #fieldrow( $helper.responseAsField($method.payloadResponse) )
+                    </table>
+            #end
+        #else
                     <h5>Response</h5>
         #if ($helper.hasDescription($method.response))
                     <p>$method.response.description</p>
@@ -401,26 +454,6 @@
             #end
                     </table>
         #end
-        #if ($method.asyncResponse)
-                    <h5>Async Response (via getAsyncJobStatus)</h5>
-                    <p>Content appears in the <code>jr</code> field when <code>jobStatus</code> is <code>0</code>.</p>
-            #if ($helper.hasNoPayload($method.asyncResponse))
-                    <p>No payload.</p>
-            #elseif ($helper.hasFields($method.asyncResponse))
-                    <table>
-                        #fieldheaders
-                #foreach( $field in $helper.getFields($method.asyncResponse) )
-                        #fieldrow( $field )
-                #end
-                    </table>
-            #elseif ($helper.isTypeRef($method.asyncResponse))
-                    <p>$link.typeSimple($method.asyncResponse.typeRef)</p>
-            #else
-                    <table>
-                        #fieldheaders
-                        #fieldrow( $helper.asyncResponseAsField($method.asyncResponse) )
-                    </table>
-            #end
         #end
 <!--                    <h5>Success Codes</h5>
                         <ul>

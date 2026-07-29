@@ -1,5 +1,6 @@
 package com.giffardtechnologies.restdocs.htmlgen
 
+import com.giffardtechnologies.restdocs.storage.AsyncMode
 import com.giffardtechnologies.restdocs.storage.Common
 import com.giffardtechnologies.restdocs.storage.DataObject
 import com.giffardtechnologies.restdocs.storage.Document
@@ -149,12 +150,45 @@ class ObjectInspectionHelper(val document: Document) {
     }
 
     /**
-     * Builds a synthetic [Field] representing a scalar `asyncResponse`, so it can be rendered
-     * through the same `#fieldrow` table as object-shaped responses. The name is always "jr" —
-     * the field the async job result is delivered in — since [Response] has no wire name of its
-     * own, only an optional [Response.longName] for documentation.
+     * The resolved name of the boolean parameter that switches [method] between sync and async
+     * response shapes (its own override, or the service-level default), or `null` if none.
      */
-    fun asyncResponseAsField(response: Response): Field {
+    fun asyncControlParameterName(method: Method): String? {
+        return method.resolveAsyncControlParameterName(document.service?.common?.asyncControlParameterName)
+    }
+
+    /**
+     * Whether [method] has a runtime sync/async switch — i.e. its [Method.asyncMode] is
+     * [AsyncMode.CONDITIONAL] — as opposed to being unconditionally async ([AsyncMode.ALWAYS])
+     * or plain synchronous (`null`).
+     */
+    fun hasAsyncControlParameter(method: Method): Boolean {
+        return method.asyncMode == AsyncMode.CONDITIONAL
+    }
+
+    /**
+     * Whether [method] is unconditionally async ([AsyncMode.ALWAYS]) — always returns its async
+     * shape, with no runtime switch.
+     */
+    fun isAlwaysAsync(method: Method): Boolean {
+        return method.asyncMode == AsyncMode.ALWAYS
+    }
+
+    /**
+     * Whether [method] is an async method (pure, mixed, or conditional) — i.e. has an
+     * [Method.asyncMode] set — as opposed to a plain synchronous method that only has `response`.
+     */
+    fun isAsyncMethod(method: Method): Boolean {
+        return method.asyncMode != null
+    }
+
+    /**
+     * Builds a synthetic [Field] representing a scalar `jobResponse`/`payloadResponse`, so it can
+     * be rendered through the same `#fieldrow` table as object-shaped responses. The name is
+     * always "jr" — the field the async job result is delivered in — since [Response] has no wire
+     * name of its own, only an optional [Response.longName] for documentation.
+     */
+    fun responseAsField(response: Response): Field {
         return Field(
             name = "jr",
             longName = response.longName ?: "",

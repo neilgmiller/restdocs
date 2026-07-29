@@ -1,6 +1,7 @@
 package com.giffardtechnologies.restdocs.codegen
 
 import com.giffardtechnologies.meter.file
+import com.giffardtechnologies.restdocs.domain.Field
 import com.giffardtechnologies.restdocs.domain.Method
 import com.giffardtechnologies.restdocs.domain.Response
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -33,6 +34,10 @@ import com.giffardtechnologies.restdocs.domain.type.TypeSpec as DomainTypeSpec
  * @property bitSetProcessor A processor for handling bitsets.
  * @property usePath A flag to determine if path-based requests should be used.
  * @property supportPackage The package name for supporting classes.
+ * @property asyncControlParameterName The service-level default name of the boolean parameter
+ * that switches a method between sync and async response shapes (mirrors
+ * [com.giffardtechnologies.restdocs.domain.Service.Common.asyncControlParameterName]); overridden
+ * per-method by [Method.asyncControlParameter].
  */
 class MethodProcessor(
     private val codeDirectory: File,
@@ -43,7 +48,18 @@ class MethodProcessor(
     bitSetProcessor: BitSetProcessor,
     private val usePath: Boolean = false,
     supportPackage: String = "$requestsPackage.support",
+    private val asyncControlParameterName: String? = null,
 ) {
+
+    /**
+     * Returns the [Field] among [method]'s parameters that controls its sync/async response
+     * shape, resolving [Method.asyncControlParameter] against [asyncControlParameterName], or
+     * `null` if no such parameter is resolved or configured.
+     */
+    private fun resolveAsyncControlField(method: Method): Field? {
+        val name = method.asyncControlParameter ?: asyncControlParameterName ?: return null
+        return method.parameters.find { it.name == name }.getOrNull()
+    }
 
     private val mAuthenticatedAllegoRequestClassName = ClassName(
         supportPackage,
@@ -155,16 +171,37 @@ class MethodProcessor(
     /**
      * Holds the generated class names for a method's request, response, and async response.
      *
-     * @property requestClassName The [ClassName] for the generated request class.
+     * @property requestClassName The [ClassName] for the generated request class. When
+     *   [hasAsyncControlParameter] is true, this is a container class (not itself constructible)
+     *   holding the nested `Async`/`Sync` request classes; otherwise it's the request class itself.
      * @property responseClassName The [ClassName] for the generated response class.
      * @property asyncResponseClassName The [ClassName] for the generated async response class,
      *   or null when the method has no `asyncResponse` block.
+     * @property hasAsyncControlParameter Whether the method has a resolved async control
+     *   parameter, in which case [requestClassName] generates nested `Async`/`Sync` classes
+     *   instead of being directly constructible.
      */
     data class MethodClassNames(
         val requestClassName: ClassName,
         val responseClassName: ClassName,
         val asyncResponseClassName: ClassName? = null,
-    )
+        val hasAsyncControlParameter: Boolean = false,
+    ) {
+        /**
+         * The [ClassName] to construct/pass to `execute()` for the async (job-returning) path.
+         * For methods without a resolved async control parameter, this is just [requestClassName]
+         * itself.
+         */
+        val asyncRequestClassName: ClassName
+            get() = if (hasAsyncControlParameter) requestClassName.nestedClass("Async") else requestClassName
+
+        /**
+         * The [ClassName] to construct/pass to `execute()` for the sync (payload-returning) path,
+         * or `null` when the method has no resolved async control parameter.
+         */
+        val syncRequestClassName: ClassName?
+            get() = if (hasAsyncControlParameter) requestClassName.nestedClass("Sync") else null
+    }
 
     /**
      * Generates the class names for a given [Method].
@@ -176,7 +213,11 @@ class MethodProcessor(
         val methodName = StringUtils.capitalize(method.name)
         val requestClassName = ClassName(requestsPackage, methodName + "Request")
 
-        val responseClassName = method.response?.let { response ->
+        val isAsyncMethod = method.jobResponse != null
+        val effectiveResponse = if (isAsyncMethod) method.jobResponse else method.response
+        val effectiveAsyncResponse = if (isAsyncMethod) method.payloadResponse else null
+
+        val responseClassName = effectiveResponse?.let { response ->
             when (response.typeSpec) {
                 is DomainTypeSpec.TypeRefSpec -> {
                     ClassName(typeRefPackage, response.typeSpec.referenceName)
@@ -190,7 +231,7 @@ class MethodProcessor(
             }
         } ?: Unit::class.asClassName()
 
-        val asyncResponseClassName = method.asyncResponse?.let { asyncResponse ->
+        val asyncResponseClassName = effectiveAsyncResponse?.let { asyncResponse ->
             when (val spec = asyncResponse.typeSpec) {
                 is DomainTypeSpec.ObjectSpec -> {
                     ClassName(requestsPackage, methodName + "AsyncResponse")
@@ -202,7 +243,9 @@ class MethodProcessor(
             }
         }
 
-        return MethodClassNames(requestClassName, responseClassName, asyncResponseClassName)
+        val hasAsyncControlParameter = resolveAsyncControlField(method) != null
+
+        return MethodClassNames(requestClassName, responseClassName, asyncResponseClassName, hasAsyncControlParameter)
     }
 
     /**
@@ -211,26 +254,33 @@ class MethodProcessor(
      * @param method The method to process.
      */
     fun processMethod(method: Method) {
-        val (requestClassName, responseClassName, asyncResponseClassName) = getClassNames(method)
+        val (requestClassName, responseClassName, asyncResponseClassName, hasAsyncControlParameter) = getClassNames(method)
         // Path-only methods (no id) are not yet supported — see PROJECT.md Out of Scope
         val methodId = requireNotNull(method.id) {
             "Method '${method.name}' has no id — path-based dispatch is not yet supported in MethodProcessor"
         }
 
+        val asyncControlField = resolveAsyncControlField(method)
         val superClassName = getSuperClassName(method)
-        val superClassType = superClassName.parameterizedBy(responseClassName)
 
         val requestClassBuilder = TypeSpec.classBuilder(requestClassName)
-            .superclass(superClassType)
-            .addSuperclassConstructorParameter("%L", methodId)
             .addModifiers(KModifier.PUBLIC)
 
-        if (method.deprecated) {
-            requestClassBuilder.addAnnotation(
-                AnnotationSpec.builder(Deprecated::class)
-                    .addMember("message = %S", method.deprecationNote ?: "")
-                    .build()
-            )
+        // When the method has a resolved async control parameter, `requestClassName` becomes a
+        // container (not itself constructible or a request) holding nested `Async`/`Sync` request
+        // classes instead of being the request class itself — see the branch below.
+        if (!hasAsyncControlParameter) {
+            requestClassBuilder
+                .superclass(superClassName.parameterizedBy(responseClassName))
+                .addSuperclassConstructorParameter("%L", methodId)
+
+            if (method.deprecated) {
+                requestClassBuilder.addAnnotation(
+                    AnnotationSpec.builder(Deprecated::class)
+                        .addMember("message = %S", method.deprecationNote ?: "")
+                        .build()
+                )
+            }
         }
 
         if (method.parameters.isEmpty) {
@@ -272,107 +322,202 @@ class MethodProcessor(
             )
             requestClassBuilder.addType(paramsTypeSpec)
 
-            // make the constructor that the builder will use
-            val constructorBuilder = FunSpec.constructorBuilder()
+            // make the constructor that the builder will use; when the method has an async control
+            // field, it's forced to `true` or `false` here and omitted from the public constructor
+            // entirely — callers never see or set it (see the nested `Async`/`Sync` classes below).
+            fun buildParamsForwardingConstructor(forceControlFieldTrue: Boolean): FunSpec {
+                val constructorBuilder = FunSpec.constructorBuilder()
+                val formatBuilder = StringBuilder("Params(")
+                val parameterNames = ArrayList<String>()
 
-            val formatBuilder = StringBuilder("Params(")
-            val parameterNames = ArrayList<String>()
-
-            method.parameters.forEach { field ->
-                // largely copied code from ObjectProcessor
-                val propertySpec = fieldAndTypeProcessor.createPropertySpec(
-                    field,
-                    false,
-                    objectClassName = requestClassName,
-                    initializeWithDefault = false,
-                    initializeCollections = false,
-                )
-                val parameterSpecBuilder = ParameterSpec.builder(field.longName, propertySpec.type)
-                if (propertySpec.type.isNullable) {
-                    constructorBuilder.addParameter(
-                        parameterSpecBuilder.defaultValue("null").build()
+                method.parameters.forEach { field ->
+                    if (asyncControlField != null && field.name == asyncControlField.name) {
+                        formatBuilder.append(if (forceControlFieldTrue) "true," else "false,")
+                        return@forEach
+                    }
+                    // largely copied code from ObjectProcessor
+                    val propertySpec = fieldAndTypeProcessor.createPropertySpec(
+                        field,
+                        false,
+                        objectClassName = requestClassName,
+                        initializeWithDefault = false,
+                        initializeCollections = false,
                     )
-                } else {
-                    parameterSpecBuilder.defaultValue(propertySpec.initializer)
-                    constructorBuilder.addParameter(parameterSpecBuilder.build())
+                    val parameterSpecBuilder = ParameterSpec.builder(field.longName, propertySpec.type)
+                    if (propertySpec.type.isNullable) {
+                        constructorBuilder.addParameter(
+                            parameterSpecBuilder.defaultValue("null").build()
+                        )
+                    } else {
+                        parameterSpecBuilder.defaultValue(propertySpec.initializer)
+                        constructorBuilder.addParameter(parameterSpecBuilder.build())
+                    }
+                    formatBuilder.append("%N,")
+                    parameterNames.add(field.longName)
                 }
-                formatBuilder.append("%N,")
-                parameterNames.add(field.longName)
+                formatBuilder.append(")")
 
-//                if (field.type is DomainTypeSpec.ObjectSpec) {
-//                    val subObjectClassName = objectProcessor.getSubObjectClassName(requestClassName, field, false)
-//                    val subObjectTypeSpec =
-//                        objectProcessor.processObjectToTypeSpec(subObjectClassName, field.type, false)
-////                if (forceTopLevel) {
-////                    // TODO this could be more cleanly separated or parent method named - write vs process
-////                    writeClassToFile(subObjectClassName, subObjectTypeSpec)
-////                } else {
-//                    requestClassBuilder.addType(subObjectTypeSpec)
-////                }
-//                }
-            }
-            formatBuilder.append(")")
-
-            requestClassBuilder.addSuperclassConstructorParameter("params")
-
-            requestClassBuilder.primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addModifiers(KModifier.PRIVATE)
-                    .addParameter("params", paramsClassName)
-                    .build()
-            )
-
-            requestClassBuilder.addFunction(
-                constructorBuilder
+                return constructorBuilder
                     .callThisConstructor(CodeBlock.of(formatBuilder.toString(), *parameterNames.toTypedArray()))
                     .build()
-            )
+            }
 
-            requestClassBuilder.addType(
-                TypeSpec.companionObjectBuilder()
-                    .addFunction(
-                        FunSpec.builder("deserializeFromParams")
-                            .addParameter("json", Json::class.asClassName())
-                            .addParameter("jsonString", String::class.asClassName())
-                            .returns(requestClassName)
-                            .addCode(
-                                CodeBlock.of("return %T(json.decodeFromString<%T>(jsonString))", requestClassName, paramsClassName)
-                            )
+            if (hasAsyncControlParameter && asyncResponseClassName != null) {
+                // The container itself is never constructed — it just holds the nested Async/Sync
+                // request classes plus their shared Params.
+                requestClassBuilder.primaryConstructor(
+                    FunSpec.constructorBuilder()
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
+
+                fun buildVariantClassBuilder(nestedName: String, variantResponseClassName: ClassName): TypeSpec.Builder {
+                    val variantClassName = requestClassName.nestedClass(nestedName)
+                    val variantBuilder = TypeSpec.classBuilder(variantClassName)
+                        .superclass(superClassName.parameterizedBy(variantResponseClassName))
+                        .addSuperclassConstructorParameter("%L", methodId)
+                        .addSuperclassConstructorParameter("params")
+                        .addModifiers(KModifier.PUBLIC)
+
+                    if (method.deprecated) {
+                        variantBuilder.addAnnotation(
+                            AnnotationSpec.builder(Deprecated::class)
+                                .addMember("message = %S", method.deprecationNote ?: "")
+                                .build()
+                        )
+                    }
+
+                    // internal (not private) so the container's companion object — a sibling
+                    // nested class, not this class itself — can still construct it from raw,
+                    // undecoded params; it stays out of the class's public API either way.
+                    variantBuilder.primaryConstructor(
+                        FunSpec.constructorBuilder()
+                            .addModifiers(KModifier.INTERNAL)
+                            .addParameter("params", paramsClassName)
                             .build()
                     )
-                    .addFunction(
-                        FunSpec.builder("serializeFromParams")
+                    variantBuilder.addFunction(
+                        FunSpec.builder("deserializeResponse")
+                            .addModifiers(KModifier.OVERRIDE)
                             .addParameter("json", Json::class.asClassName())
-                            .addParameter("request", requestClassName)
-                            .returns(String::class.asClassName())
-                            .addCode(
-                                CodeBlock.of("return json.%1M<%2T>(request.requestParams as %2T)", encodeToString, paramsClassName)
-                            )
+                            .addParameter("jsonElement", JsonElement::class.asClassName())
+                            .returns(variantResponseClassName)
+                            .addCode("return json.%M(jsonElement)", decodeFromJsonElement)
                             .build()
                     )
-                    .build()
-            )
+                    return variantBuilder
+                }
 
-            deserializeWhenBlock.addStatement(
-                "%L -> %T.deserializeFromParams(json, jsonString)",
-                methodId,
-                requestClassName,
-            )
-            serializeWhenBlock.addStatement(
-                "is %1T -> %1T.serializeFromParams(json, request)",
-                requestClassName,
-            )
+                val asyncClassName = requestClassName.nestedClass("Async")
+                val asyncBuilder = buildVariantClassBuilder("Async", responseClassName)
+                asyncBuilder.addFunction(buildParamsForwardingConstructor(forceControlFieldTrue = true))
+                requestClassBuilder.addType(asyncBuilder.build())
+
+                val syncClassName = requestClassName.nestedClass("Sync")
+                val syncBuilder = buildVariantClassBuilder("Sync", asyncResponseClassName)
+                syncBuilder.addFunction(buildParamsForwardingConstructor(forceControlFieldTrue = false))
+                requestClassBuilder.addType(syncBuilder.build())
+
+                requestClassBuilder.addType(
+                    TypeSpec.companionObjectBuilder()
+                        .addFunction(
+                            FunSpec.builder("deserializeFromParams")
+                                .addParameter("json", Json::class.asClassName())
+                                .addParameter("jsonString", String::class.asClassName())
+                                .returns(asyncClassName)
+                                .addCode(
+                                    CodeBlock.of("return %T(json.decodeFromString<%T>(jsonString))", asyncClassName, paramsClassName)
+                                )
+                                .build()
+                        )
+                        .addFunction(
+                            FunSpec.builder("serializeFromParams")
+                                .addParameter("json", Json::class.asClassName())
+                                .addParameter("request", mAllegoBaseRequestClassName.parameterizedBy(STAR))
+                                .returns(String::class.asClassName())
+                                .addCode(
+                                    CodeBlock.of("return json.%1M<%2T>(request.requestParams as %2T)", encodeToString, paramsClassName)
+                                )
+                                .build()
+                        )
+                        .build()
+                )
+
+                deserializeWhenBlock.addStatement(
+                    "%L -> %T.deserializeFromParams(json, jsonString)",
+                    methodId,
+                    requestClassName,
+                )
+                serializeWhenBlock.addStatement(
+                    "is %1T -> %2T.serializeFromParams(json, request)",
+                    asyncClassName,
+                    requestClassName,
+                )
+                serializeWhenBlock.addStatement(
+                    "is %1T -> %2T.serializeFromParams(json, request)",
+                    syncClassName,
+                    requestClassName,
+                )
+            } else {
+                requestClassBuilder.addSuperclassConstructorParameter("params")
+
+                requestClassBuilder.primaryConstructor(
+                    FunSpec.constructorBuilder()
+                        .addModifiers(KModifier.PRIVATE)
+                        .addParameter("params", paramsClassName)
+                        .build()
+                )
+
+                requestClassBuilder.addFunction(buildParamsForwardingConstructor(forceControlFieldTrue = true))
+
+                requestClassBuilder.addType(
+                    TypeSpec.companionObjectBuilder()
+                        .addFunction(
+                            FunSpec.builder("deserializeFromParams")
+                                .addParameter("json", Json::class.asClassName())
+                                .addParameter("jsonString", String::class.asClassName())
+                                .returns(requestClassName)
+                                .addCode(
+                                    CodeBlock.of("return %T(json.decodeFromString<%T>(jsonString))", requestClassName, paramsClassName)
+                                )
+                                .build()
+                        )
+                        .addFunction(
+                            FunSpec.builder("serializeFromParams")
+                                .addParameter("json", Json::class.asClassName())
+                                .addParameter("request", requestClassName)
+                                .returns(String::class.asClassName())
+                                .addCode(
+                                    CodeBlock.of("return json.%1M<%2T>(request.requestParams as %2T)", encodeToString, paramsClassName)
+                                )
+                                .build()
+                        )
+                        .build()
+                )
+
+                deserializeWhenBlock.addStatement(
+                    "%L -> %T.deserializeFromParams(json, jsonString)",
+                    methodId,
+                    requestClassName,
+                )
+                serializeWhenBlock.addStatement(
+                    "is %1T -> %1T.serializeFromParams(json, request)",
+                    requestClassName,
+                )
+            }
         }
 
-        requestClassBuilder.addFunction(
-            FunSpec.builder("deserializeResponse")
-                .addModifiers(KModifier.OVERRIDE)
-                .addParameter("json", Json::class.asClassName())
-                .addParameter("jsonElement", JsonElement::class.asClassName())
-                .returns(responseClassName)
-                .addCode("return json.%M(jsonElement)", decodeFromJsonElement)
-                .build()
-        )
+        if (!hasAsyncControlParameter) {
+            requestClassBuilder.addFunction(
+                FunSpec.builder("deserializeResponse")
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addParameter("json", Json::class.asClassName())
+                    .addParameter("jsonElement", JsonElement::class.asClassName())
+                    .returns(responseClassName)
+                    .addCode("return json.%M(jsonElement)", decodeFromJsonElement)
+                    .build()
+            )
+        }
 
         TypeSpec.interfaceBuilder(ClassName(requestClassName.packageName, requestClassName.simpleName, "RequestConfig"))
 
@@ -387,9 +532,13 @@ class MethodProcessor(
                 builder.build()
             )
 
-        val responseClassTypeSpec = createResponseClassDefinition(method.response, responseClassName)
+        val isAsyncMethod = method.jobResponse != null
+        val effectiveResponse = if (isAsyncMethod) method.jobResponse else method.response
+        val effectiveAsyncResponse = if (isAsyncMethod) method.payloadResponse else null
+
+        val responseClassTypeSpec = createResponseClassDefinition(effectiveResponse, responseClassName)
         val asyncResponseClassTypeSpec = asyncResponseClassName?.let {
-            createAsyncResponseClassDefinition(method.asyncResponse, it)
+            createAsyncResponseClassDefinition(effectiveAsyncResponse, it)
         }
 
         file(requestClassName) {

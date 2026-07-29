@@ -9,15 +9,18 @@ data objects:
 service:
     description: Test service for async response generation
     base path: /api/test
+    common:
+        async control parameter: async
     methods:
-        # Case 1: pure async — response is a typeref to AsyncJobResponse, asyncResponse is inline object
+        # Case 1: pure async — jobResponse is a typeref to AsyncJobResponse, payloadResponse is inline object
         - name: pureAsyncMethod
           id: 1
           authentication required: yes
           description: A pure async method
-          response:
+          async mode: always
+          jobResponse:
               typeref: AsyncJobResponse
-          asyncResponse:
+          payloadResponse:
               type: object
               fields:
                   - name: resultUrl
@@ -28,12 +31,13 @@ service:
                     longName: completedAt
                     type: long
                     description: Completion timestamp
-        # Case 2: mixed — response has job field + other fields, asyncResponse is inline object
+        # Case 2: mixed — jobResponse has job field + other fields, payloadResponse is inline object
         - name: mixedAsyncMethod
           id: 2
           authentication required: yes
           description: A mixed async method
-          response:
+          async mode: always
+          jobResponse:
               type: object
               fields:
                   - name: job
@@ -44,33 +48,35 @@ service:
                     longName: immediateData
                     type: string
                     description: Data available immediately
-          asyncResponse:
+          payloadResponse:
               type: object
               fields:
                   - name: analysisResult
                     longName: analysisResult
                     type: string
                     description: The analysis result
-        # Case 4: typeRef async response — asyncResponse refers to a named data object
+        # Case 4: typeRef payload response — payloadResponse refers to a named data object
         - name: typeRefAsyncMethod
           id: 4
           authentication required: yes
-          description: An async method with a typeRef async response
-          response:
+          description: An async method with a typeRef payload response
+          async mode: always
+          jobResponse:
               typeref: AsyncJobResponse
-          asyncResponse:
+          payloadResponse:
               typeref: AsyncJobResponse
-        # Case 5: scalar async response — asyncResponse is a bare scalar type
+        # Case 5: scalar payload response — payloadResponse is a bare scalar type
         - name: scalarAsyncMethod
           id: 5
           authentication required: yes
-          description: An async method with a scalar async response
-          response:
+          description: An async method with a scalar payload response
+          async mode: always
+          jobResponse:
               typeref: AsyncJobResponse
-          asyncResponse:
+          payloadResponse:
               type: long
               longName: analysisScore
-        # Case 3: sync — no asyncResponse block (regression)
+        # Case 3: sync — no jobResponse/payloadResponse block (regression)
         - name: syncMethod
           id: 3
           authentication required: yes
@@ -82,3 +88,84 @@ service:
                     longName: data
                     type: string
                     description: The data
+        # Case 6: async control parameter — sync/async chosen at runtime by a parameter, using
+        # the service-level default parameter name ("async")
+        - name: conditionalAsyncMethod
+          id: 6
+          authentication required: yes
+          description: A method whose sync/async behavior is chosen by the 'async' parameter
+          async mode: conditional
+          parameters:
+              - name: async
+                longName: async
+                type: boolean
+                required: yes
+          jobResponse:
+              type: object
+              fields:
+                  - name: jobID
+                    longName: jobID
+                    type: string
+                    description: The async job identifier
+          payloadResponse:
+              type: object
+              fields:
+                  - name: payload
+                    longName: payload
+                    type: string
+                    description: The synchronous payload
+        # Case 7: async control parameter — method overrides the service-level default with its
+        # own parameter name ("runAsync")
+        - name: conditionalAsyncMethodOverride
+          id: 7
+          authentication required: yes
+          description: A method that overrides the default async control parameter name
+          async mode: conditional
+          async control parameter: runAsync
+          parameters:
+              - name: runAsync
+                longName: runAsync
+                type: boolean
+                required: yes
+          jobResponse:
+              type: object
+              fields:
+                  - name: jobID
+                    longName: jobID
+                    type: string
+                    description: The async job identifier
+          payloadResponse:
+              type: object
+              fields:
+                  - name: payload
+                    longName: payload
+                    type: string
+                    description: The synchronous payload
+        # Case 8: async control parameter — the control parameter is a non-boolean type that's
+        # interpreted as a boolean (e.g. an int wire representation)
+        - name: conditionalAsyncMethodInterpretedBoolean
+          id: 8
+          authentication required: yes
+          description: A method whose control parameter is an int interpreted as a boolean
+          async mode: conditional
+          async control parameter: async
+          parameters:
+              - name: async
+                longName: async
+                type: int
+                interpretedAs: boolean
+                required: yes
+          jobResponse:
+              type: object
+              fields:
+                  - name: jobID
+                    longName: jobID
+                    type: string
+                    description: The async job identifier
+          payloadResponse:
+              type: object
+              fields:
+                  - name: payload
+                    longName: payload
+                    type: string
+                    description: The synchronous payload

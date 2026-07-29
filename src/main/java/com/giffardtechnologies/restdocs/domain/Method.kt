@@ -15,13 +15,16 @@ class Method(
     var failureCodes: Array<String> = Array.empty(),
     var successCodes: Array<String> = Array.empty(),
     var response: Response? = null,
-    var asyncResponse: Response? = null,
+    var payloadResponse: Response? = null,
+    var jobResponse: Response? = null,
     var requestBody: RequestBody? = null,
     val headers: Array<Field> = Array.empty(),
     val description: String? = null,
     val deprecated: Boolean = false,
     val deprecationNote: String? = null,
     val deprecatedSince: LocalDate? = null,
+    val asyncMode: AsyncMode? = null,
+    val asyncControlParameter: String? = null,
 ) {
     enum class HTTPMethod {
         GET,
@@ -32,6 +35,11 @@ class Method(
         OPTIONS,
         TRACE,
         CONNECT
+    }
+
+    enum class AsyncMode {
+        ALWAYS,
+        CONDITIONAL
     }
 
     val parameters = parameterElementList.fields

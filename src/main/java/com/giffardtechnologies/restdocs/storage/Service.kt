@@ -25,6 +25,10 @@ data class Service(
  * @property parameters Query or path parameters that apply to every method in the service.
  * @property responseDataObjects Shared data objects used in method responses.
  * @property enums Enumerations that are scoped to the service.
+ * @property asyncControlParameterName The default name of the boolean parameter that switches a
+ * method between returning its payload synchronously and returning an async job to poll instead.
+ * Applies to any method that declares a parameter with this name; a method may override this with
+ * its own `asyncControlParameter`.
  */
 class Common(
     val headers: ArrayList<Field>? = null,
@@ -32,4 +36,6 @@ class Common(
     @field:JsonProperty("response objects")
     val responseDataObjects: ArrayList<DataObject> = ArrayList(),
     val enums: ArrayList<NamedEnumeration>? = null,
+    @field:JsonProperty("async control parameter")
+    val asyncControlParameterName: String? = null,
 )
