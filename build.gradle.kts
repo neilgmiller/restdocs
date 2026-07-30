@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.giffardtechnologies"
-version = "3.0-SNAPSHOT"
+version = "3.1-SNAPSHOT"
 
 kotlin {
     jvmToolchain(17)
